@@ -1,7 +1,0 @@
-# Surowe eksporty rozmów mogą zawierać sekrety lub dane osobowe.
-SESJE/*-RAW.*
-SESJE/*-raw.*
-*.secret.md
-*.private.md
-.env
-.env.*
