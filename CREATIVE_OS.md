@@ -118,6 +118,6 @@ Git pokazuje diff; ta sekcja wyjaśnia problem, decyzję, dowód, zachowane elem
 - **EVOLUTION-2026-005 — jeden plik:** pięć plików i osobny kernel zaparkowano, bo brak dowodu, że mniejsza wersja nie wystarcza. Git zapewnia historię. Status: `ACTIVE LEAN ARCHITECTURE`.
 - **EVOLUTION-2026-006 — autonomia AI:** AI wykonuje pracę operacyjną, użytkownik rozstrzyga kierunek. Korekta, gdy AI dwukrotnie zmieni semantyczny stan bez podstawy albo nadmiar pytań przerzuci pracę na użytkownika. Status: `ACTIVE RULE`.
 - **EVOLUTION-2026-007 — BPM:160:** pauza wynika z perfekcjonizmu silniejszego niż test widza. Powrót ma nastąpić przez mały publikowalny test, nie dalsze bezterminowe polerowanie. Status: `PROJECT PAUSED / PRIORITY PRESERVED`.
-- **EVOLUTION-2026-008 — sprzątanie repo:** pełny stary system zachowujemy na branchach archiwalnych; aktywne drzewo redukujemy do czterech plików. Nie tworzymy workshopu jako cmentarzyska. Status: `PROPOSED IN CLEANUP PR`.
+- **EVOLUTION-2026-008 — sprzątanie repo:** pełny stary system zachowujemy na branchach archiwalnych; aktywne drzewo zredukowano do czterech plików. Nie utworzono workshopu jako cmentarzyska. Status: `COMPLETED / MERGED`; commit: `7cc2cf2b794d646527a4c5469fd7a764b4f9e190`.
 
 Nowy wpis ewolucji musi podać: problem, wcześniejszą postać, decyzję, dowód, co zachowujemy, co parkujemy, warunek powrotu i `SUPERSEDES`, jeśli dotyczy.
