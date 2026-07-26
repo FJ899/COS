@@ -24,6 +24,7 @@ Ten plik jest indeksem materiałów użytych do testowania Cognitive OS. Surowe 
 | ID | Materiał | Typ | Zakres | Metoda | Wynik główny | Artefakt | Status |
 |---|---|---|---|---|---|---|---|
 | AUD-2026-001 | `4AI 2.0.docx` | techniczna / produktowa / wielosesyjna | 163 strony; rozwój 4-AI Lab | Prompt 1: ślepy inwentarz; Prompt 2: audyt repo | rozmowa jest przede wszystkim katalogiem awarii procesu: overclaim, scope creep, semantic reopen, mock przedstawiony jako działająca implementacja | `PILOT/AUDYTY/AUD-2026-001_4AI.md`; `COS/SESJE/2026-07-23-001.md` | closed |
+| AUD-2026-002 | rozmowa „AI Collaboration Operating System” | strategiczna / metaprojektowa / kontrolna | krótsza, odrębna rozmowa na podobny temat | Prompt 1: ślepy inwentarz; Prompt 2: audyt repo | podobny scope creep wystąpił w skompresowanej formie: szybkie zamrożenie uniwersalnego systemu bez pomiaru kosztu i prostszej alternatywy | `PILOT/AUDYTY/AUD-2026-002_AI_COLLABORATION_OS.md`; `COS/SESJE/2026-07-23-002.md` | closed |
 
 ## Minimalne dane dla nowego wpisu
 
@@ -41,4 +42,9 @@ Ten plik jest indeksem materiałów użytych do testowania Cognitive OS. Surowe 
 
 ## Następny wymagany kontrast
 
-Druga rozmowa powinna różnić się od `AUD-2026-001`: najlepiej być krótsza, mieć jasno określony rezultat i nie dotyczyć rozbudowy architektury. Ma sprawdzić, czy koszt protokołu nie przewyższa korzyści w prostszym przypadku.
+Trzecia rozmowa powinna maksymalizować kontrast względem pierwszych dwóch:
+
+- inna domena niż projektowanie systemów AI;
+- najlepiej rozmowa przebiegająca dobrze;
+- jasno określony rezultat;
+- zmierzony czas bootstrapu, analizy i protokołu.
