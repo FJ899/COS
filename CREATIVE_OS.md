@@ -78,6 +78,10 @@ Pięć plików, osobny kernel COS i dodatkowe warstwy. Nie teraz: brak dowodu, �
 
 Miesięczny katalog bieżących szkiców. Nie teraz: Git, branche i jeden plik mogą wystarczyć; workshop nie może stać się cmentarzyskiem. Powrót: pojawią się aktywne materiały, których nie da się sensownie utrzymać w branchu lub poza kanonem.
 
+### IDEA-2026-003 — hybrydowa architektura API + WebAI — `PARKING`
+
+Połączyć modele frontier dostępne przez interfejs webowy jako warstwę planowania, krytyki i pracy na dużym kontekście z kontrolowaną orkiestracją oraz tańszymi modelami wykonawczymi przez API. Źródło: wcześniejszy pomysł `hybrid API/WebView`, doświadczenie użytkownika z WebAI oraz obserwacje z eksperymentów planner–worker. Nie teraz: brak porównywalnego benchmarku WebAI kontra API, konkretnego zadania wymagającego tej architektury oraz sprawdzenia bezpieczeństwa, zgodności, odtwarzalności i kosztu obsługi. Warunek powrotu: wykonać na jednym rzeczywistym zadaniu porównanie trzech wariantów — jeden model frontier przez API; WebAI frontier jako planner plus tani worker API; frontier API jako planner plus tani worker API — mierząc jakość wyniku, koszt, czas, liczbę interwencji człowieka, utratę decyzji i możliwość wznowienia. Alias: `hybrid API/WebView`. Werdykt: warto zachować, nie budować pełnego systemu bez wyniku testu.
+
 ---
 
 ## 4. Aktualny Handoff
