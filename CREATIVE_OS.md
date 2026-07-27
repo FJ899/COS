@@ -49,6 +49,7 @@ AI pyta użytkownika, gdy nowy kierunek zastępuje aktualny rezultat; kilka opcj
 
 | Projekt | Status | Gdzie stanąłem | Brak do wznowienia / zakończenia | Jeden następny krok | Źródło prawdy |
 |---|---|---|---|---|---|
+| Narzędzie pisarskie | `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH REQUIRED` | Kierunek został rozpoznany w materiałach pilota jako wartościowy, a użytkownik jawnie ustawił go jako pierwszy projekt w kolejce. Nie przeprowadzono jeszcze rekonstrukcji jego pełnego stanu. | Zebrać materiały projektu i ustalić jedno lokalne źródło prawdy. | Uruchomić Creative OS Project Reconstructor na rozmowach, załącznikach i istniejących artefaktach narzędzia pisarskiego oraz przygotować minimalny `PROJECT_STATE.md`. | `UNASSIGNED` — do ustalenia podczas rekonstrukcji |
 | BPM:160 | `PAUSED / QUEUED #2`, priorytet zachowany | Presja stworzenia idealnego świata zaczęła dominować nad testem oczekiwań widza. Prostym kontrdowodem były krótkie materiały o podstawowym bodźcu z ogromnym zainteresowaniem. | Mały, publikowalny test widza bez wcześniejszego zbudowania idealnego świata. | Zdefiniować jeden minimalny test reakcji widza i porównać go z aktualnym planem. | lokalny system BPM:160, zwłaszcza `23_LIVE_TODO.md` i najnowszy zatwierdzony handover |
 | Creative OS | `ACTIVE / LEAN PILOT` | Zatwierdzono jeden wersjonowany plik, wchłonięcie reguł COS i Navigation Protocol jako tagu. | Dowód, że system przechwytuje pomysł i umożliwia wznowienie bez archeologii stanu. | Wykonać pierwszy realny cykl: przechwycić pomysł, potem wznowić projekt z tej tabeli i lokalnego źródła. | ten plik |
 | Creative OS Project Reconstructor | `ACTIVE / V1.0 STABILIZATION` | Prompt v1.0, stan projektu, archiwum ewolucji, parking pomysłów i pięć testów regresji zostały zapisane w prywatnym repo. | Dowód stabilności z kolejnych rzeczywistych rekonstrukcji; brak długoterminowej walidacji. | Użyć wersji v1.0 na następnym rzeczywistym projekcie i zapisać tylko konkretną porażkę, jeżeli wystąpi. | prywatne repo `litrgratis-pixel/creative-os-project-reconstructor`, przede wszystkim `PROJECT_STATE.md` |
@@ -106,7 +107,7 @@ Powód: checkpoint wykazał `SIMPLIFY`, użytkownik zatwierdził lean, a poprzed
 
 Warunek reopen: dwie konkretne i porównywalne porażki wersji jednoplikowej, których nie rozwiąże mała korekta.
 
-Stan: Creative OS `ACTIVE / LEAN PILOT`; BPM:160 `PAUSED / QUEUED #2`, priorytet zachowany; COS `ARCHIVED AS EXPERIMENT / ABSORBED AS RULES / NOT DEVELOPED AS SEPARATE SYSTEM`; Navigation Protocol `ACTIVE RULE`.
+Stan: Creative OS `ACTIVE / LEAN PILOT`; Narzędzie pisarskie `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH REQUIRED`; BPM:160 `PAUSED / QUEUED #2`, priorytet zachowany; COS `ARCHIVED AS EXPERIMENT / ABSORBED AS RULES / NOT DEVELOPED AS SEPARATE SYSTEM`; Navigation Protocol `ACTIVE RULE`.
 
 Następny krok: w następnej sesji przechwycić każdy nowy pomysł bez rozwijania, a potem sprawdzić wznowienie projektu na podstawie tabeli i lokalnego źródła.
 
