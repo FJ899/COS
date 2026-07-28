@@ -2,7 +2,7 @@
 system: creative-os-lean
 version: 1.0
 status: ACTIVE_LEAN_PILOT
-updated_at: 2026-07-27
+updated_at: 2026-07-28
 history: git
 ---
 
@@ -49,7 +49,7 @@ AI pyta użytkownika, gdy nowy kierunek zastępuje aktualny rezultat; kilka opcj
 
 | Projekt | Status | Gdzie stanąłem | Brak do wznowienia / zakończenia | Jeden następny krok | Źródło prawdy |
 |---|---|---|---|---|---|
-| Narzędzie pisarskie / ScriptOps | `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH APPROVED / REPOSITORY REQUIRED` | Zrekonstruowano rozwój od działającego workflow Liścionka przez Mądry Warsztat / S2 Studio do ScriptOps. Proces źródłowy dał obserwowalne rezultaty, istnieje częściowo wykonywalny prototyp v2, a zakres v5 RC1 został zamknięty w pakiecie implementacyjnym. Brak dowodu, że v5 RC1 został zbudowany. | Zapisać zatwierdzony `PROJECT_STATE.md` w prywatnym repo projektu; ustalić, czy istnieje późniejsza implementacja; następnie porównać kod z `RC1_SCOPE_LOCK.md` i wykonać test pełnej pętli RC1. | Utworzyć prywatne repo `litrgratis-pixel/scriptops` i zapisać w nim zatwierdzony `PROJECT_STATE.md`. | zatwierdzony `PROJECT_STATE.md` z rekonstrukcji 2026-07-27; docelowo prywatne repo `litrgratis-pixel/scriptops` |
+| Narzędzie pisarskie / ScriptOps | `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH ACTIVE / ACCESS CHECK REQUIRED` | Zrekonstruowano rozwój od działającego workflow Liścionka przez Mądry Warsztat / S2 Studio do ScriptOps. Proces źródłowy dał obserwowalne rezultaty, istnieje częściowo wykonywalny prototyp v2, a zakres v5 RC1 został zamknięty w pakiecie implementacyjnym. Zatwierdzony `PROJECT_STATE.md` zapisano w prywatnym repo. Brak dowodu, że v5 RC1 został zbudowany. | Ustalić, czy istnieje późniejsza implementacja lub wynik pracy Codex; jeśli nie, porównać `scriptops-v2-single.py` z `RC1_SCOPE_LOCK.md`, a następnie wykonać test pełnej pętli RC1. | Sprawdzić notatki, lokalne foldery i dostępne repozytoria pod kątem późniejszej implementacji ScriptOps RC1. | prywatne repo `litrgratis-pixel/scriptops`, przede wszystkim `PROJECT_STATE.md` |
 | BPM:160 | `PAUSED / QUEUED #2`, priorytet zachowany | Presja stworzenia idealnego świata zaczęła dominować nad testem oczekiwań widza. Prostym kontrdowodem były krótkie materiały o podstawowym bodźcu z ogromnym zainteresowaniem. | Mały, publikowalny test widza bez wcześniejszego zbudowania idealnego świata. | Zdefiniować jeden minimalny test reakcji widza i porównać go z aktualnym planem. | lokalny system BPM:160, zwłaszcza `23_LIVE_TODO.md` i najnowszy zatwierdzony handover |
 | Creative OS | `ACTIVE / LEAN PILOT` | Zatwierdzono jeden wersjonowany plik, wchłonięcie reguł COS i Navigation Protocol jako tagu. | Dowód, że system przechwytuje pomysł i umożliwia wznowienie bez archeologii stanu. | Wykonać pierwszy realny cykl: przechwycić pomysł, potem wznowić projekt z tej tabeli i lokalnego źródła. | ten plik |
 | Creative OS Project Reconstructor | `ACTIVE / V1.0 STABILIZATION` | Prompt v1.0, stan projektu, archiwum ewolucji, parking pomysłów i pięć testów regresji zostały zapisane w prywatnym repo. | Dowód stabilności z kolejnych rzeczywistych rekonstrukcji; brak długoterminowej walidacji. | Użyć wersji v1.0 na następnym rzeczywistym projekcie i zapisać tylko konkretną porażkę, jeżeli wystąpi. | prywatne repo `litrgratis-pixel/creative-os-project-reconstructor`, przede wszystkim `PROJECT_STATE.md` |
@@ -107,7 +107,7 @@ Powód: checkpoint wykazał `SIMPLIFY`, użytkownik zatwierdził lean, a poprzed
 
 Warunek reopen: dwie konkretne i porównywalne porażki wersji jednoplikowej, których nie rozwiąże mała korekta.
 
-Stan: Creative OS `ACTIVE / LEAN PILOT`; Narzędzie pisarskie / ScriptOps `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH APPROVED / REPOSITORY REQUIRED`; BPM:160 `PAUSED / QUEUED #2`, priorytet zachowany; COS `ARCHIVED AS EXPERIMENT / ABSORBED AS RULES / NOT DEVELOPED AS SEPARATE SYSTEM`; Navigation Protocol `ACTIVE RULE`.
+Stan: Creative OS `ACTIVE / LEAN PILOT`; Narzędzie pisarskie / ScriptOps `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH ACTIVE / ACCESS CHECK REQUIRED`; BPM:160 `PAUSED / QUEUED #2`, priorytet zachowany; COS `ARCHIVED AS EXPERIMENT / ABSORBED AS RULES / NOT DEVELOPED AS SEPARATE SYSTEM`; Navigation Protocol `ACTIVE RULE`.
 
 Następny krok: w następnej sesji przechwycić każdy nowy pomysł bez rozwijania, a potem sprawdzić wznowienie projektu na podstawie tabeli i lokalnego źródła.
 
