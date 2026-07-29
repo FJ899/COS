@@ -10,7 +10,7 @@ updated_at: "2026-07-29"
 
 ## 1. Aktualny rezultat
 
-Najpierw odzyskać dostępny stan wcześniejszego lokalnego systemu BPM:160. Po zamknięciu odzyskiwania zdefiniować jeden mały, publikowalny test reakcji widza, który nie wymaga wcześniejszego zbudowania idealnego świata.
+Najpierw odzyskać dostępny stan wcześniejszego lokalnego systemu BPM:160. Po prawidłowym zamknięciu odzyskiwania zdefiniować jeden mały, publikowalny test reakcji widza, który nie wymaga wcześniejszego zbudowania idealnego świata.
 
 Projekt pozostaje w kolejce jako numer 2 i nie jest obecnie aktywnym projektem wykonawczym.
 
@@ -68,15 +68,26 @@ Wynik zapisać jako jeden z dwóch stanów:
 - `SOURCE RECOVERY FOUND — READ_ONLY REVIEW REQUIRED`;
 - `SOURCE RECOVERY NOT FOUND — PROCEED TO MINIMAL VIEWER TEST DEFINITION`.
 
-## 7. Następny etap po zamknięciu odzyskiwania
+## 7. Przejście po wyniku odzyskiwania
 
-Dopiero po zamknięciu `SOURCE RECOVERY`:
+### Gdy wynik to `FOUND`
+
+1. przeprowadzić `READ_ONLY REVIEW` odnalezionych źródeł;
+2. sklasyfikować ich aktualność i sprzeczności;
+3. zaktualizować `PROJECT_STATE.md` minimalną deltą;
+4. dopiero po ustaleniu nowego stanu przejść do definicji testu widza.
+
+### Gdy wynik to `NOT FOUND`
+
+Można przejść bezpośrednio do definicji minimalnego testu widza.
+
+W obu wariantach test powinien:
 
 1. nazwać jedną hipotezę dotyczącą reakcji widza;
-2. przygotować najmniejszy materiał, który może ją obalić albo wesprzeć;
+2. użyć najmniejszego materiału, który może ją obalić albo wesprzeć;
 3. określić obserwowalną miarę reakcji;
-4. opublikować test bez rozbudowy świata ponad minimum konieczne;
-5. zapisać wynik jako `KEEP / SMALL PATCH / FAILURE`.
+4. zostać opublikowany bez rozbudowy świata ponad minimum konieczne;
+5. zakończyć się wynikiem `KEEP / SMALL PATCH / FAILURE`.
 
 ## 8. Zakaz dryfu
 
