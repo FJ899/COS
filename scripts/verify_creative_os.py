@@ -72,13 +72,14 @@ def check_header_and_lean_owner(content: str) -> None:
         "status: ACTIVE_LEAN_PILOT",
         "Rozmowa prowadzi proces; repozytorium zachowuje stan.",
         "Każda informacja ma jednego właściciela.",
+        "STARTED` / `OK` / `PARTIAL` / `BLOCKED` / `FAILED",
     ]
     for marker in required:
         if marker not in content:
             fail(f"CREATIVE_OS.md nie zawiera wymaganej reguły: {marker}")
     if "prywatne repo" in content.lower():
         fail("CREATIVE_OS.md utrwala zmienną właściwość widoczności repozytorium")
-    print("[PASS] nagłówek i właściciel stanu są spójne")
+    print("[PASS] nagłówek, właściciel stanu i truthful execution są spójne")
 
 
 def check_projects(content: str) -> None:
@@ -104,7 +105,7 @@ def check_projects(content: str) -> None:
 def check_idea_inbox(content: str) -> None:
     blocks = re.split(r"(?=^### IDEA-)", content, flags=re.MULTILINE)
     idea_blocks = [block for block in blocks if block.startswith("### IDEA-")]
-    if len(idea_blocks) < 3:
+    if len(idea_blocks) < 4:
         fail("Idea Inbox nie zawiera oczekiwanego zestawu pomysłów")
 
     for block in idea_blocks:
@@ -117,15 +118,17 @@ def check_idea_inbox(content: str) -> None:
 
 def check_handoff(content: str) -> None:
     required = [
-        "Stan: Creative OS `ACTIVE / LEAN PILOT`",
-        "ScriptOps `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH ACTIVE / ACCESS CHECK REQUIRED`",
-        "BPM:160 `PAUSED / QUEUED #2`",
-        "Navigation Protocol `ACTIVE RULE`",
+        "### DEC-2026-003 — uczciwe wykonanie w architekturze lean",
+        "Stan: Creative OS `ACTIVE / LEAN PILOT / TRUTHFUL EXECUTION ACTIVE`",
+        "ScriptOps `QUEUED #1 / NOT ACTIVATED / ACCESS CHECK REQUIRED`",
+        "BPM:160 `PAUSED / SOURCE PATH REQUIRED`",
+        "Evidence-Guided Maintenance Loop `PARKED / CONTRACT PREPARED`",
+        "Następny krok: przeprowadzić operacyjny cold start",
     ]
     for marker in required:
         if marker not in content:
             fail(f"Aktualny Handoff nie zawiera: {marker}")
-    print("[PASS] Aktualny Handoff jest zgodny z tabelą")
+    print("[PASS] Aktualny Handoff zachowuje truthful execution i wynik cold startu")
 
 
 def check_instructions() -> None:
