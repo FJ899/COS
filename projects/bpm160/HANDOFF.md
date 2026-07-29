@@ -41,9 +41,24 @@ Przeprowadzić `SOURCE RECOVERY` i zapisać wynik jako:
 - `SOURCE RECOVERY FOUND — READ_ONLY REVIEW REQUIRED`, albo
 - `SOURCE RECOVERY NOT FOUND — PROCEED TO MINIMAL VIEWER TEST DEFINITION`.
 
-## Po odzyskaniu albo świadomym zamknięciu odzyskiwania
+## Rozgałęzienie po wyniku
 
-Przygotować jeden minimalny test reakcji widza. Test ma wyprzedzać dalszą rozbudowę świata i zakończyć się obserwowalnym wynikiem `KEEP / SMALL PATCH / FAILURE`.
+### `FOUND`
+
+```text
+READ_ONLY REVIEW
+→ klasyfikacja aktualności i sprzeczności
+→ aktualizacja PROJECT_STATE.md
+→ dopiero potem definicja testu widza
+```
+
+### `NOT FOUND`
+
+```text
+PROCEED TO MINIMAL VIEWER TEST DEFINITION
+```
+
+Test ma wyprzedzać dalszą rozbudowę świata i zakończyć się obserwowalnym wynikiem `KEEP / SMALL PATCH / FAILURE`.
 
 ## Kryterium poprawnego wznowienia
 
@@ -52,4 +67,5 @@ Nowa sesja działa poprawnie, gdy AI:
 1. rozpoznaje pauzę i kolejkę numer 2;
 2. nie dopisuje brakującego kanonu;
 3. zaczyna od odzyskania źródeł;
-4. po negatywnym wyniku odzyskiwania proponuje jeden minimalny test, nie pełną rozbudowę projektu.
+4. przy `FOUND` najpierw analizuje źródła i aktualizuje stan;
+5. przy `NOT FOUND` proponuje jeden minimalny test, nie pełną rozbudowę projektu.
