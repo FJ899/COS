@@ -15,6 +15,7 @@ REQUIRED_FILES = [
     "ARCHIVE_INDEX.md",
     ".gitignore",
     "continuity/COLD_START_AUDIT-001.md",
+    "scripts/README.md",
 ]
 
 EXPECTED_PROJECTS = {
@@ -127,19 +128,23 @@ def check_handoff(content: str) -> None:
     print("[PASS] Aktualny Handoff jest zgodny z tabelą")
 
 
-def check_readme() -> None:
+def check_instructions() -> None:
     readme = read_text("README.md")
-    required = [
+    required_readme = [
         "Creative OS — instrukcja operacyjna",
         "# 4. Start każdej sesji",
         "# 6. Obsługa każdego nowego pomysłu",
         "Hierarchia źródeł",
-        "scripts/verify_creative_os.py",
     ]
-    for marker in required:
+    for marker in required_readme:
         if marker not in readme:
             fail(f"README.md nie zawiera wymaganej instrukcji: {marker}")
-    print("[PASS] README zawiera protokół startu, pomysłów i walidacji")
+
+    validation = read_text("scripts/README.md")
+    for marker in ["python scripts/verify_creative_os.py", "GitHub Actions", "PARKING"]:
+        if marker not in validation:
+            fail(f"scripts/README.md nie zawiera instrukcji: {marker}")
+    print("[PASS] instrukcje startu, pomysłów i walidacji są dostępne")
 
 
 def check_archive() -> None:
@@ -179,7 +184,7 @@ def main() -> None:
     check_projects(content)
     check_idea_inbox(content)
     check_handoff(content)
-    check_readme()
+    check_instructions()
     check_archive()
     check_continuity_audit()
     print("[PASS] Creative OS Lean jest spójny i ma odtwarzalny punkt wejścia")
