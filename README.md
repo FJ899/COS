@@ -141,6 +141,31 @@ Brak sprzeczności oznacza rozpoczęcie pracy bez dodatkowego pytania.
 6. Działania odwracalne i operacyjne wykonuje samodzielnie.
 7. Pytanie do użytkownika pojawia się dopiero, gdy potrzebny jest wybór kierunku.
 
+## Kontrakt wykonania
+
+Gdy AI wykonuje operację, a nie tylko analizuje lub rekomenduje, raportuje:
+
+```text
+STATUS WYKONANIA: STARTED | OK | PARTIAL | BLOCKED | FAILED
+DOWÓD:
+WYKONANE ELEMENTY:
+NIEWYKONANE ELEMENTY:
+BŁĘDY:
+RETRY / ESKALACJA:
+```
+
+Znaczenie:
+
+- `STARTED` — operacja została uruchomiona, ale nie ma jeszcze końcowego wyniku; wymagany jest identyfikator albo sposób ponownego sprawdzenia;
+- `OK` — główny rezultat istnieje i ma obserwowalny dowód;
+- `PARTIAL` — istnieje użyteczny wynik, lecz co najmniej jeden wymagany albo niezależny element nie został wykonany;
+- `BLOCKED` — kontynuacja wymaga decyzji użytkownika, dostępu, źródła albo zewnętrznego warunku;
+- `FAILED` — główny rezultat nie powstał.
+
+AI nie uznaje działania za zakończone wyłącznie na podstawie własnej deklaracji. `PARTIAL` nie jest pełnym sukcesem. Błędy i elementy niewykonane pozostają jawne do naprawy albo świadomego zamknięcia. Operacja destrukcyjna, trudno odwracalna, publiczna lub kosztowna wymaga odpowiedniego progu decyzji użytkownika.
+
+Szczegółowe logi, retry, checkpointy i auto-heal należą do lokalnego systemu wykonawczego projektu. Creative OS przechowuje jedynie stan wysokiego poziomu, wpływ błędu, warunek wznowienia i jeden następny krok.
+
 ---
 
 # 6. Obsługa każdego nowego pomysłu
@@ -548,6 +573,7 @@ Polecenia są skrótami, nie obowiązkowym językiem. Zwykła rozmowa ma działa
 ## Na końcu
 
 - [ ] zapisano rezultat i decyzje;
+- [ ] wykonanie operacyjne ma jawny status i obserwowalny dowód; wynik częściowy nie został nazwany pełnym sukcesem;
 - [ ] zaktualizowano kartę projektu tylko na poziomie wysokim;
 - [ ] nadpisano aktualny handoff;
 - [ ] wskazano jeden następny krok;
