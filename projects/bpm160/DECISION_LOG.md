@@ -18,7 +18,7 @@ Powrót do projektu ma rozpocząć się od małego, publikowalnego testu reakcji
 
 Status: `ACTIVE`
 
-Przed odtworzeniem backlogu, kanonu lub planu należy odnaleźć wcześniejszy lokalny system, zwłaszcza `23_LIVE_TODO.md` i najnowszy zatwierdzony handover. Brakujących szczegółów nie wolno uzupełniać przez zgadywanie.
+Przed odtworzeniem backlogu, kanonu lub planu należy odnaleźć wcześniejszy lokalny system, zwłaszcza `23_LIVE_TODO.md` i najnowszy zatwierdzony handover. Brakujących szczegółów nie wolno uzupełniać z pamięci AI. Szczegółów nie wolno odtwarzać przez zgadywanie.
 
 ## DEC-BPM-004 — wynik odzyskiwania musi być jawny
 
