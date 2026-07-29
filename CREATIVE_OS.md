@@ -24,6 +24,7 @@ Osobista pamięć projektów, pomysłów i wznowienia pracy. Szczegóły rozwini
 8. Reguły zmieniaj na checkpointach, nie po każdym odkryciu, poza bezpieczeństwem i utratą danych.
 9. Handoff jest nadpisywany; Git zachowuje historię. Pełny audyt jest wyjątkiem.
 10. AI nie uznaje działania za zakończone wyłącznie na podstawie własnej deklaracji. `OK` wymaga obserwowalnego dowodu; wynik częściowy pozostaje `PARTIAL`, a błędy i elementy niewykonane pozostają jawne do naprawy albo świadomego zamknięcia.
+11. Przed dodaniem nowej funkcji lub warstwy AI wskazuje: konkretny problem albo porażkę; dlaczego Git, GitHub, istniejący plik, walidator lub obecny proces nie wystarcza; obserwowalny test zaliczenia; nowy koszt utrzymania. Zwykła korekta techniczna bez zmiany zachowania lub stanu nie wymaga osobnej ceremonii.
 
 Minimalny werdykt dla nowej informacji: `ZMIENIA PLAN` / `NIE ZMIENIA PLANU` / `TRZEBA SPRAWDZIĆ`.
 
@@ -52,9 +53,9 @@ AI pyta użytkownika, gdy nowy kierunek zastępuje aktualny rezultat; kilka opcj
 
 | Projekt | Status | Gdzie stanąłem | Brak do wznowienia / zakończenia | Jeden następny krok | Źródło prawdy |
 |---|---|---|---|---|---|
-| Narzędzie pisarskie / ScriptOps | `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH ACTIVE / ACCESS CHECK REQUIRED` | Zrekonstruowano rozwój od działającego workflow Liścionka przez Mądry Warsztat / S2 Studio do ScriptOps. Proces źródłowy dał obserwowalne rezultaty, istnieje częściowo wykonywalny prototyp v2, a zakres v5 RC1 został zamknięty w pakiecie implementacyjnym. Zatwierdzony `PROJECT_STATE.md` zapisano w repo projektu. Niezależny cold start poprawnie wznowił projekt i zatrzymał się na blokadzie. Brak dowodu, że v5 RC1 został zbudowany. | Ustalić, czy istnieje późniejsza implementacja lub wynik pracy Codex; jeśli nie, porównać `scriptops-v2-single.py` z `sources/RC1_SCOPE_LOCK.md`, a następnie wykonać test pełnej pętli RC1. | Sprawdzić notatki, lokalne foldery i dostępne repozytoria pod kątem późniejszej implementacji ScriptOps RC1. | repo `litrgratis-pixel/scriptops`, przede wszystkim `PROJECT_STATE.md` |
-| BPM:160 | `PAUSED / QUEUED #2`, priorytet zachowany | Presja stworzenia idealnego świata zaczęła dominować nad testem oczekiwań widza. Prostym kontrdowodem były krótkie materiały o podstawowym bodźcu z ogromnym zainteresowaniem. Audyt ciągłości wykazał brak dostępnej ścieżki do lokalnego źródła prawdy. | Dostępne lokalne źródło prawdy oraz mały, publikowalny test widza bez wcześniejszego zbudowania idealnego świata. | Zabezpieczyć lokalny stan BPM:160, a następnie zdefiniować jeden minimalny test reakcji widza i porównać go z aktualnym planem. | lokalny system BPM:160, zwłaszcza `23_LIVE_TODO.md` i najnowszy zatwierdzony handover; ścieżka repo do ustalenia |
-| Creative OS | `ACTIVE / LEAN PILOT` | Kontrakt uczciwego wykonania zastosowano podczas zabezpieczania ciągłości: niezależny cold start odtworzył mapę ekosystemu i poprawnie wznowił ScriptOps, a repo otrzymało deterministyczny walidator. Wynik pozostaje `PARTIAL`, ponieważ pełny cykl obsługi nowego pomysłu i BPM:160 nie zostały jeszcze sprawdzone. | Rzeczywisty test operacyjny przechwycenia pomysłu z aliasem oraz zabezpieczenie źródła prawdy BPM:160. | Przeprowadzić drugi cold start: obsłużyć testowy pomysł bez duplikatu i wznowić projekt z lokalnego źródła. | ten plik |
+| Narzędzie pisarskie / ScriptOps | `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH ACTIVE / ACCESS CHECK REQUIRED` | Zrekonstruowano rozwój od działającego workflow Liścionka przez Mądry Warsztat / S2 Studio do ScriptOps. Proces źródłowy dał obserwowalne rezultaty, istnieje częściowo wykonywalny prototyp v2, a zakres v5 RC1 został zamknięty w pakiecie implementacyjnym. Zatwierdzony `PROJECT_STATE.md` zapisano w repo projektu. Niezależny cold start poprawnie wznowił projekt i zatrzymał się na blokadzie. Pełny prototyp jest dostępny jako `legacy/scriptops-v2-single.py`. Brak dowodu, że v5 RC1 został zbudowany. | Ustalić, czy istnieje późniejsza implementacja lub wynik pracy Codex; jeśli nie, porównać `legacy/scriptops-v2-single.py` z `sources/RC1_SCOPE_LOCK.md`, a następnie wykonać test pełnej pętli RC1. | Sprawdzić notatki, lokalne foldery i dostępne repozytoria pod kątem późniejszej implementacji ScriptOps RC1. | repo `litrgratis-pixel/scriptops`, przede wszystkim `PROJECT_STATE.md` |
+| BPM:160 | `PAUSED / QUEUED #2 / SOURCE OF TRUTH PROVISIONAL / SOURCE RECOVERY REQUIRED` | Presja stworzenia idealnego świata zaczęła dominować nad testem oczekiwań widza. Prostym kontrdowodem były krótkie materiały o podstawowym bodźcu z ogromnym zainteresowaniem. Utworzono dostępny minimalny stan odzyskiwania, ale wcześniejszy `23_LIVE_TODO.md`, handover i Control Tower pozostają nieodnalezione. | Odnalezienie albo jawne zamknięcie odzyskiwania wcześniejszych źródeł, a następnie mały publikowalny test widza bez wcześniejszego zbudowania idealnego świata. | Przeprowadzić `SOURCE RECOVERY`; gdy wynik będzie `NOT FOUND`, zdefiniować jeden minimalny test reakcji widza. | `projects/bpm160/PROJECT_STATE.md` |
+| Creative OS | `ACTIVE / LEAN PILOT` | Niezależny cold start odtworzył mapę ekosystemu i poprawnie wznowił ScriptOps. Repo ma deterministyczny walidator, lekki filtr użyteczności dla nowych funkcji i dostępny punkt odzyskiwania BPM:160. Wynik pozostaje `PARTIAL`, ponieważ operacyjny cold start 002 i odzyskanie wcześniejszych źródeł BPM:160 nie zostały jeszcze wykonane. | Rzeczywisty test obsługi nowego pomysłu z aliasem oraz wynik `SOURCE RECOVERY` BPM:160. | Uruchomić scenariusz `continuity/COLD_START_TEST-002.md`, a następnie przeprowadzić odzyskiwanie źródeł BPM:160. | ten plik |
 | Creative OS Project Reconstructor | `ACTIVE / V1.0 STABILIZATION` | Prompt v1.0, stan projektu, archiwum ewolucji, parking pomysłów i pięć testów regresji zostały zapisane w repo projektu. Niezależne AI poprawnie odtworzyło rolę narzędzia. | Dowód stabilności z kolejnych rzeczywistych rekonstrukcji; brak długoterminowej walidacji. | Użyć wersji v1.0 na następnym rzeczywistym projekcie i zapisać tylko konkretną porażkę, jeżeli wystąpi. | repo `litrgratis-pixel/creative-os-project-reconstructor`, przede wszystkim `PROJECT_STATE.md` |
 
 Kilka projektów może istnieć jednocześnie, ale każdy ma najwyżej jeden aktualny rezultat. Pauza nie oznacza porzucenia.
@@ -90,33 +91,41 @@ Połączyć modele frontier dostępne przez interfejs webowy jako warstwę plano
 
 Projekt: Creative OS. Źródło / bodziec: wcześniejszy system dobowych logów i auto-heal oraz analiza `notebooklm-skill`. Wartość: wykrywanie fałszywego sukcesu, powtarzalnych błędów i rozwijanie systemu na podstawie dowodów operacyjnych. Nie teraz: Creative OS nie ma stałego runtime, a jednoplikowa architektura nie wykazała potrzeby osobnego mechanizmu utrzymaniowego. Warunek powrotu: uruchomienie automatycznych workflow albo dwa powtarzalne przypadki błędu, niewykonania lub utraty stanu wymagające ręcznej rekonstrukcji. Alias: `daily review`, `auto-heal`, `self-improvement loop`, `maintenance engine`. Werdykt: kontrakt uczciwego wykonania jest aktywny; scheduler, event log, bounded auto-heal i adapter NotebookLM pozostają zaparkowane.
 
+### IDEA-2026-005 — GitHub Issues / Projects jako widoki pochodne — `PARKING`
+
+Projekt: Creative OS. Źródło / bodziec: analizy redundancji i roadmapa Lean Integration. Wartość: wizualizacja pomysłów oraz statusów bez budowania własnego dashboardu. Nie teraz: stworzyłoby drugie miejsce stanu i konieczność synchronizacji z `CREATIVE_OS.md`; obecny jeden plik i walidator nie wykazały porażki skalowania. Warunek powrotu: dwa konkretne przypadki utraty, duplikacji lub kosztownej obsługi pomysłów albo statusów, których nie naprawi mała korekta jednego pliku. Alias: `GitHub dashboard`, `Issues Idea Inbox`, `Projects portfolio view`.
+
+### IDEA-2026-006 — ciągły Reconstructor monitorujący rozmowy — `PARKING`
+
+Projekt: Creative OS Project Reconstructor. Źródło / bodziec: roadmapa automatycznej aktualizacji `PROJECT_STATE.md`. Wartość: proponowanie aktualizacji stanu bez ręcznego uruchamiania rekonstrukcji. Nie teraz: wymaga stałego runtime, dostępu do rozmów, kontraktu prywatności, wykrywania checkpointów, zatwierdzania, retry i rozwiązywania konfliktów; brak powtarzalnego dowodu, że ręczny tryb zawiódł. Warunek powrotu: co najmniej dwa udokumentowane przypadki utraty lub kosztownego odtworzenia stanu mimo obecnego handoffu i walidatorów oraz gotowy kontrakt dostępu i zatwierdzania. Alias: `Continuous Reconstruction`, `background Project Reconstructor`, `conversation monitor`.
+
 ---
 
 ## 4. Aktualny Handoff
 
-### DEC-2026-003 — uczciwe wykonanie w architekturze lean
+### DEC-2026-004 — Lean Feature Razor i odzyskiwanie BPM:160
 
-Status: `ACTIVE`. Extends: `DEC-2026-002`; nie zastępuje decyzji o Creative OS Lean.
+Status: `ACTIVE`. Extends: `DEC-2026-003`; nie zastępuje decyzji o Creative OS Lean ani truthful execution.
 
 Wybrano:
 
-1. Praca wykonawcza otrzymuje status `STARTED / OK / PARTIAL / BLOCKED / FAILED`.
-2. `OK` wymaga obserwowalnego dowodu; deklaracja AI nie wystarcza.
-3. `PARTIAL` zachowuje niewykonane elementy i błędy zamiast udawać pełny sukces.
-4. Błędy o wpływie na wynik, bezpieczeństwo albo wznowienie mają pierwszeństwo przed rozwijaniem nowych funkcji.
-5. Creative OS przechowuje tylko stan wysokiego poziomu; szczegółowe logi, retry, checkpointy i auto-heal należą do lokalnych systemów wykonawczych.
-6. Evidence-Guided Maintenance Loop oraz adapter NotebookLM są zachowane jako `PARKING`, bez aktywacji schedulera lub nowego kernela.
-7. Deterministyczne walidatory mogą chronić spójność repo, ale nie są nowym źródłem prawdy ani autonomicznym runtime.
+1. Nowa funkcja lub warstwa musi wskazać konkretny problem, brak istniejącego rozwiązania, obserwowalny test oraz koszt utrzymania.
+2. Filtr jest lekki: zwykłe poprawki techniczne bez zmiany zachowania lub stanu nie wymagają nowego procesu decyzyjnego.
+3. Decision Logi przechowują decyzje semantyczne; techniczne zmiany należą do Git, a ważna decyzja może wskazywać realizujący ją commit lub PR.
+4. Maszynowy nagłówek YAML jest testowany w lokalnych handoffach ScriptOps i BPM:160, ale pozostaje częścią tego samego pliku, nie drugim źródłem prawdy.
+5. BPM:160 otrzymuje dostępny, minimalny stan odzyskiwania w `projects/bpm160/`; szczegóły nieobecne w źródłach pozostają jawnie nieznane.
+6. ScriptOps przechowuje pełny prototyp v2 jako pojedynczy plik kanoniczny; części pozostają wyłącznie dowodem odtwarzalności.
+7. GitHub Issues, GitHub Projects, centralny dashboard i ciągły Reconstructor pozostają `PARKING` do czasu konkretnej porażki obecnego Lean.
 
-Nie wybrano: dobowego schedulera, trwałego event logu w Creative OS, automatycznego samoprzepisywania, automatycznego wdrażania nowych funkcji, NotebookLM jako zależności rdzenia ani zmiany zamrożonego Reconstructora v1.0 bez przypadku regresyjnego.
+Nie wybrano: usunięcia Decision Logów, redukcji statusów do `DOING / DONE / PARKED`, automatycznej synchronizacji GitHub Projects, obowiązkowego tagowania każdej drobnej operacji, zatrzymywania przy każdej rozstrzygalnej sprzeczności ani monitora rozmów działającego w tle.
 
-Powód: analiza działającego kontraktu `notebooklm-skill`, przypomnienie wcześniejszego mechanizmu auto-heal, jawna decyzja użytkownika o wchłonięciu najwartościowszych zasad oraz niezależny cold start, który dostarczył obserwowalnego dowodu ciągłości i konkretnych luk.
+Powód: trzy niezależne analizy trafnie wskazały ryzyko duplikacji, lecz część ich roadmapy usuwała pamięć semantyczną albo tworzyła nowe równoległe źródła stanu. Wdrożono tylko poprawki usuwające obserwowane tarcie i zamykające potwierdzoną lukę BPM:160.
 
-Warunek dalszej rozbudowy: automatyczny runtime albo dwa konkretne i porównywalne przypadki, których nie rozwiąże kontrakt wykonania, walidator i mała korekta lean.
+Warunek dalszej rozbudowy: dwie konkretne, porównywalne porażki jednego pliku, lokalnych źródeł i walidatorów, których nie naprawi mała korekta.
 
-Stan: Creative OS `ACTIVE / LEAN PILOT / TRUTHFUL EXECUTION ACTIVE`; cold start `PASS WITH FIXES`; ScriptOps `QUEUED #1 / NOT ACTIVATED / ACCESS CHECK REQUIRED`; BPM:160 `PAUSED / SOURCE PATH REQUIRED`; Evidence-Guided Maintenance Loop `PARKED / CONTRACT PREPARED`; NotebookLM adapter `PARKED / OPTIONAL PILOT`; Creative OS Project Reconstructor `ACTIVE / V1.0 STABILIZATION / UNCHANGED`.
+Stan: Creative OS `ACTIVE / LEAN PILOT / TRUTHFUL EXECUTION ACTIVE / FEATURE RAZOR ACTIVE`; cold start 001 `PASS WITH FIXES`; cold start 002 `PREPARED / NOT EXECUTED`; ScriptOps `QUEUED #1 / NOT ACTIVATED / ACCESS CHECK REQUIRED`; BPM:160 `PAUSED / SOURCE OF TRUTH PROVISIONAL / SOURCE RECOVERY REQUIRED`; GitHub derived views `PARKED`; Continuous Reconstructor `PARKED`; Creative OS Project Reconstructor `ACTIVE / V1.0 STABILIZATION / UNCHANGED`.
 
-Następny krok: przeprowadzić operacyjny cold start z testowym pomysłem, a następnie zabezpieczyć lokalne źródło prawdy BPM:160.
+Następny krok: wykonać operacyjny cold start 002, a następnie przeprowadzić `SOURCE RECOVERY` BPM:160.
 
 ---
 
@@ -134,5 +143,6 @@ Git pokazuje diff; ta sekcja wyjaśnia problem, decyzję, dowód, zachowane elem
 - **EVOLUTION-2026-008 — sprzątanie repo:** pełny stary system zachowujemy na branchach archiwalnych; aktywne drzewo zredukowano do czterech plików. Nie utworzono workshopu jako cmentarzyska. Status: `COMPLETED / MERGED`; commit: `7cc2cf2b794d646527a4c5469fd7a764b4f9e190`.
 - **EVOLUTION-2026-009 — truthful execution:** problemem była możliwość opisania pracy jako wykonanej bez rozróżnienia wyniku rozpoczętego, częściowego, zablokowanego i nieudanego. Wcześniej Creative OS wymagał dowodu przy zmianie planu, ale nie miał jawnego kontraktu pojedynczego wykonania. Decyzja: wchłonąć statusy `STARTED / OK / PARTIAL / BLOCKED / FAILED`, obowiązek obserwowalnego dowodu, zachowanie wyników cząstkowych oraz kontrolę operacji destrukcyjnych. Dowód: kontrakty i stany częściowe przeanalizowane w `notebooklm-skill`, historyczny mechanizm dobowych logów i auto-heal użytkownika oraz jawna decyzja wdrożeniowa. Zachowujemy lean, jeden plik, lokalną własność szczegółowych logów i pierwszeństwo błędów przed rozwojem. Parkujemy scheduler 24h, event log, retry engine, bounded auto-heal, MCP i adapter NotebookLM. Warunek powrotu: automatyczny runtime albo dwa porównywalne problemy, których nie rozwiąże mała korekta obecnych plików. Supersedes: brak; extends `EVOLUTION-2026-003` i `EVOLUTION-2026-006`. Status: `ACTIVE RULE / HEAVIER RUNTIME PARKED`.
 - **EVOLUTION-2026-010 — niezależny cold start i walidator:** problemem była niezweryfikowana deklaracja, że repo wystarczy do wznowienia bez rozmowy. Wcześniej istniały instrukcje, lecz brak niezależnego wykonania. Decyzja: zachować raport cold startu, dodać deterministyczny walidator i poprawić wyłącznie wykryte rozjazdy. Dowód: obce AI bez wcześniejszej pamięci odtworzyło ekosystem, wznowiło ScriptOps i odmówiło implementacji bez dowodu; wykryło brak ścieżki BPM:160. Zachowujemy jednoplikowego właściciela stanu; skrypt i workflow są kontrolą, nie nowym kernelem. Parkujemy automatyczny runner wielu modeli i centralny dashboard. Warunek powrotu: dwie regresje niewykryte przez obecną kontrolę albo potrzeba cyklicznego runtime. Supersedes: brak; extends `EVOLUTION-2026-009`. Status: `OBSERVED WORKING RESULT / PARTIAL PORTFOLIO CONTINUITY`.
+- **EVOLUTION-2026-011 — Feature Razor i źródło odzyskiwania BPM:160:** problemem były jednocześnie ryzyko duplikowania funkcji Git/GitHub oraz realny brak dostępnego źródła BPM:160. Wcześniej analizy proponowały zarówno trafne uproszczenia, jak i regresje: usuwanie semantycznych logów, równoległe statusy w Projects oraz stały monitor rozmów. Decyzja: wchłonąć czteropunktowy filtr użyteczności i szablon PR, pozostawić decyzje semantyczne poza technicznym `git log`, przetestować YAML w tym samym handoffie oraz utworzyć minimalne, jawnie niepełne źródło odzyskiwania BPM:160. Dowód: niezależny cold start wykazał tarcie odtwarzania prototypu i brak ścieżki BPM; analizy redundancji wskazały ryzyko drugich źródeł prawdy. Zachowujemy Navigation Protocol, hierarchię źródeł, Resume Protocol, Decision Logi semantyczne i walidatory. Parkujemy Issues/Projects jako derived views, centralny dashboard, automatyczną synchronizację i ciągły Reconstructor. Warunek powrotu: dwie porównywalne porażki obecnego Lean albo wynik testu operacyjnego pokazujący konkretną potrzebę. Supersedes: brak; extends `EVOLUTION-2026-007` i `EVOLUTION-2026-010`. Status: `ACTIVE SMALL PATCH / BPM SOURCE RECOVERY ENABLED`.
 
 Nowy wpis ewolucji musi podać: problem, wcześniejszą postać, decyzję, dowód, co zachowujemy, co parkujemy, warunek powrotu i `SUPERSEDES`, jeśli dotyczy.
