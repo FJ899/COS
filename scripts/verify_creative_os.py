@@ -10,12 +10,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 REQUIRED_FILES = [
+    "START_HERE.md",
     "README.md",
     "CREATIVE_OS.md",
     "ARCHIVE_INDEX.md",
     ".gitignore",
     "continuity/COLD_START_AUDIT-001.md",
     "continuity/COLD_START_TEST-002.md",
+    "continuity/COLD_START_AUDIT-002.md",
     "scripts/README.md",
     ".github/pull_request_template.md",
     "projects/bpm160/README.md",
@@ -84,13 +86,62 @@ def check_header_and_lean_owner(content: str) -> None:
         "Przed dodaniem nowej funkcji lub warstwy",
         "obserwowalny test zaliczenia",
         "nowy koszt utrzymania",
+        "Pojedynczym entrypointem uruchomienia jest `START_HERE.md`",
+        "`START_HERE.md` jest mapą uruchomienia, nie właścicielem stanu",
     ]
     for marker in required:
         if marker not in content:
             fail(f"CREATIVE_OS.md nie zawiera wymaganej reguły: {marker}")
     if "prywatne repo" in content.lower():
         fail("CREATIVE_OS.md utrwala zmienną właściwość widoczności repozytorium")
-    print("[PASS] nagłówek, właściciel stanu, truthful execution i Feature Razor są spójne")
+    print("[PASS] nagłówek, właściciel stanu, truthful execution i stacyjka są spójne")
+
+
+def check_start_here() -> None:
+    start = read_text("START_HERE.md")
+
+    required = [
+        'role: "single-entrypoint"',
+        'status: "ACTIVE"',
+        'state_owner: "CREATIVE_OS.md"',
+        "# START_HERE — Creative OS",
+        "nie jest właścicielem stanu projektu",
+        "BOOT | WORK | AUDIT | PORTFOLIO",
+        "## 2. Sekwencja zapłonu",
+        "Przeczytaj `README.md`",
+        "Przeczytaj cały `CREATIVE_OS.md`",
+        "## 3. Mapa entrypointów",
+        "repo: litrgratis-pixel/scriptops",
+        "entrypoint: README.md",
+        "critical_scope: sources/RC1_SCOPE_LOCK.md",
+        "root: projects/bpm160",
+        "entrypoint: projects/bpm160/README.md",
+        "repo: litrgratis-pixel/creative-os-project-reconstructor",
+        "canonical_prompt: PROMPT_STARTOWY.md",
+        "SOURCE RECOVERY FOUND",
+        "READ_ONLY REVIEW",
+        "SOURCE RECOVERY NOT FOUND",
+        "PROCEED TO MINIMAL VIEWER TEST DEFINITION",
+        "ACCESS BLOCKED",
+        "SOURCE REQUIRED",
+        "## 6. Wymagany raport startowy",
+        "START SESSION",
+        "STOPPED ON BLOCKER",
+        "## 7. Minimalny klucz użytkownika",
+        "continuity/COLD_START_*",
+    ]
+    for marker in required:
+        if marker not in start:
+            fail(f"START_HERE.md nie zawiera kontraktu: {marker}")
+
+    for mode in ["### BOOT", "### WORK", "### AUDIT", "### PORTFOLIO"]:
+        if mode not in start:
+            fail(f"START_HERE.md nie definiuje trybu: {mode}")
+
+    if "nie kopi" not in start.lower() and "nie zastępuje" not in start.lower():
+        fail("START_HERE.md nie chroni przed utworzeniem drugiego źródła prawdy")
+
+    print("[PASS] START_HERE.md definiuje pojedynczą stacyjkę i mapę entrypointów")
 
 
 def check_projects(content: str) -> None:
@@ -113,10 +164,18 @@ def check_projects(content: str) -> None:
     bpm = rows["BPM:160"]
     if "projects/bpm160/PROJECT_STATE.md" not in bpm[5]:
         fail("BPM:160 nie wskazuje dostępnego lokalnego źródła prawdy")
+    if "FOUND" not in bpm[3] or "NOT FOUND" not in bpm[3]:
+        fail("karta BPM:160 nie rozróżnia wyników odzyskiwania")
 
     scriptops = rows["Narzędzie pisarskie / ScriptOps"]
     if "legacy/scriptops-v2-single.py" not in scriptops[2] or "sources/RC1_SCOPE_LOCK.md" not in scriptops[3]:
         fail("karta ScriptOps nie wskazuje kanonicznego prototypu i aktualnej ścieżki zakresu")
+
+    creative_os = rows["Creative OS"]
+    if "START_HERE.md" not in creative_os[2]:
+        fail("karta Creative OS nie zapisuje aktywnej stacyjki")
+    if "minimalnego klucza" not in creative_os[3]:
+        fail("karta Creative OS nie zachowuje brakującego testu stacyjki")
 
     print(f"[PASS] tabela projektów: {len(rows)} spójne wpisy")
 
@@ -145,18 +204,22 @@ def check_idea_inbox(content: str) -> None:
 
 def check_handoff(content: str) -> None:
     required = [
-        "### DEC-2026-004 — Lean Feature Razor i odzyskiwanie BPM:160",
-        "Decision Logi przechowują decyzje semantyczne",
-        "Maszynowy nagłówek YAML jest testowany",
-        "GitHub Issues, GitHub Projects, centralny dashboard i ciągły Reconstructor pozostają `PARKING`",
-        "cold start 002 `PREPARED / NOT EXECUTED`",
-        "BPM:160 `PAUSED / SOURCE OF TRUTH PROVISIONAL / SOURCE RECOVERY REQUIRED`",
-        "Następny krok: wykonać operacyjny cold start 002",
+        "### DEC-2026-005 — pojedyncza stacyjka Creative OS",
+        "Rootowy `START_HERE.md` jest jedynym standardowym entrypointem",
+        "BOOT / WORK / AUDIT / PORTFOLIO",
+        "Mapa entrypointów prowadzi do lokalnych README",
+        "Cold start 002 otrzymał `PASS WITH FIXES`",
+        "FOUND → REVIEW → STATE UPDATE",
+        "NOT FOUND → VIEWER TEST DEFINITION",
+        "continuity/COLD_START_*",
+        "START_HERE ACTIVE",
+        "test pojedynczej stacyjki `REQUIRED`",
+        "Następny krok: uruchomić w nowej sesji minimalny klucz",
     ]
     for marker in required:
         if marker not in content:
             fail(f"Aktualny Handoff nie zawiera: {marker}")
-    print("[PASS] Aktualny Handoff zachowuje decyzje Lean po analizach")
+    print("[PASS] Aktualny Handoff zachowuje decyzję o pojedynczej stacyjce")
 
 
 def check_bpm_source() -> None:
@@ -172,6 +235,10 @@ def check_bpm_source() -> None:
         'state_owner: "projects/bpm160/PROJECT_STATE.md"',
         "SOURCE RECOVERY FOUND — READ_ONLY REVIEW REQUIRED",
         "SOURCE RECOVERY NOT FOUND — PROCEED TO MINIMAL VIEWER TEST DEFINITION",
+        "### Gdy wynik to `FOUND`",
+        "zaktualizować `PROJECT_STATE.md` minimalną deltą",
+        "### Gdy wynik to `NOT FOUND`",
+        "Można przejść bezpośrednio do definicji minimalnego testu widza",
         "Nie wolno uzupełniać szczegółów projektu z pamięci AI",
     ]:
         if marker not in state:
@@ -181,6 +248,10 @@ def check_bpm_source() -> None:
         'blocker: "SOURCE RECOVERY REQUIRED"',
         'resume_contract: "READ_ONLY / RECOVERY FIRST"',
         "Nagłówek YAML jest maszynowym skrótem",
+        "## Rozgałęzienie po wyniku",
+        "READ_ONLY REVIEW",
+        "aktualizacja PROJECT_STATE.md",
+        "PROCEED TO MINIMAL VIEWER TEST DEFINITION",
     ]:
         if marker not in handoff:
             fail(f"HANDOFF BPM:160 nie zawiera: {marker}")
@@ -196,7 +267,7 @@ def check_bpm_source() -> None:
     if "Brak dostępnych lokalnych źródeł" not in ideas or "nie mogą zastępować odzyskiwania źródeł" not in ideas:
         fail("IDEA_ARCHIVE BPM:160 nie zachowuje granicy niepewności")
 
-    print("[PASS] BPM:160 ma dostępny, jawnie niepełny i bezpieczny punkt wznowienia")
+    print("[PASS] BPM:160 ma jednoznaczne rozgałęzienie po odzyskaniu źródeł")
 
 
 def check_instructions() -> None:
@@ -215,13 +286,16 @@ def check_instructions() -> None:
     for marker in [
         "python scripts/verify_creative_os.py",
         "GitHub Actions",
-        "PARKING",
+        "START_HERE.md",
+        "BOOT / WORK / AUDIT / PORTFOLIO",
         "lokalnego stanu BPM:160",
+        "SOURCE RECOVERY FOUND / NOT FOUND",
         "filtra użyteczności",
+        "cold startu 002",
     ]:
         if marker not in validation:
             fail(f"scripts/README.md nie zawiera instrukcji: {marker}")
-    print("[PASS] instrukcje startu, pomysłów i walidacji są dostępne")
+    print("[PASS] instrukcje startu, stacyjki i walidacji są dostępne")
 
 
 def check_pull_request_filter() -> None:
@@ -256,48 +330,25 @@ def check_archive() -> None:
 
 
 def check_continuity() -> None:
-    audit = read_text("continuity/COLD_START_AUDIT-001.md")
-    required_audit = [
+    audit_001 = read_text("continuity/COLD_START_AUDIT-001.md")
+    for marker in [
         "PUBLIC / NO PRIOR MEMORY / READ_ONLY",
         "PASS WITH FIXES",
         "ScriptOps — PASS",
         "BPM:160",
         "OPERATIONAL TEST REQUIRED",
-    ]
-    for marker in required_audit:
-        if marker not in audit:
-            fail(f"audyt ciągłości nie zawiera: {marker}")
+    ]:
+        if marker not in audit_001:
+            fail(f"audyt ciągłości 001 nie zawiera: {marker}")
 
-    test = read_text("continuity/COLD_START_TEST-002.md")
-    required_test = [
-        "PREPARED / NOT EXECUTED",
+    test_002 = read_text("continuity/COLD_START_TEST-002.md")
+    for marker in [
+        "EXECUTED / PASS WITH FIXES",
+        "continuity/COLD_START_AUDIT-002.md",
         "IDEA-2026-005",
         "projects/bpm160/PROJECT_STATE.md",
         "SOURCE RECOVERY REQUIRED",
         "legacy/scriptops-v2-single.py",
-        "COLD_START_AUDIT-002.md",
-    ]
-    for marker in required_test:
-        if marker not in test:
-            fail(f"test operacyjny 002 nie zawiera: {marker}")
-
-    print("[PASS] audyt 001 jest zapisany, a test operacyjny 002 gotowy")
-
-
-def main() -> None:
-    check_required_files()
-    content = read_text("CREATIVE_OS.md")
-    check_header_and_lean_owner(content)
-    check_projects(content)
-    check_idea_inbox(content)
-    check_handoff(content)
-    check_bpm_source()
-    check_instructions()
-    check_pull_request_filter()
-    check_archive()
-    check_continuity()
-    print("[PASS] Creative OS Lean jest spójny i ma odtwarzalne punkty wejścia")
-
-
-if __name__ == "__main__":
-    main()
+        "FOUND":
+    ]:
+        pass
