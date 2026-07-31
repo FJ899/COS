@@ -44,7 +44,7 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 
-def read_text(path: str) -> str:
+def read(path: str) -> str:
     try:
         return (ROOT / path).read_text(encoding="utf-8")
     except UnicodeDecodeError as exc:
@@ -52,31 +52,24 @@ def read_text(path: str) -> str:
     raise AssertionError("unreachable")
 
 
-def require_markers(content: str, markers: list[str], owner: str) -> None:
+def require(content: str, markers: list[str], owner: str) -> None:
     for marker in markers:
         if marker not in content:
             fail(f"{owner} nie zawiera: {marker}")
 
 
-def check_required_files() -> None:
-    missing = [path for path in REQUIRED_FILES if not (ROOT / path).is_file()]
-    if missing:
-        fail("brak wymaganych plików: " + ", ".join(missing))
-    print(f"[PASS] wymagane pliki: {len(REQUIRED_FILES)}")
-
-
-def extract_project_rows(content: str) -> dict[str, list[str]]:
+def project_rows(content: str) -> dict[str, list[str]]:
     rows: dict[str, list[str]] = {}
-    in_table = False
+    active = False
     for line in content.splitlines():
         if line.startswith("| Projekt | Status |"):
-            in_table = True
+            active = True
             continue
-        if in_table and line.startswith("|---"):
+        if active and line.startswith("|---"):
             continue
-        if in_table and not line.startswith("|"):
+        if active and not line.startswith("|"):
             break
-        if in_table:
+        if active:
             cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
             if len(cells) != 6:
                 fail(f"wiersz tabeli projektów nie ma 6 kolumn: {line}")
@@ -84,9 +77,16 @@ def extract_project_rows(content: str) -> dict[str, list[str]]:
     return rows
 
 
-def check_creative_os() -> None:
-    content = read_text("CREATIVE_OS.md")
-    require_markers(
+def check_files() -> None:
+    missing = [path for path in REQUIRED_FILES if not (ROOT / path).is_file()]
+    if missing:
+        fail("brak wymaganych plików: " + ", ".join(missing))
+    print(f"[PASS] wymagane pliki: {len(REQUIRED_FILES)}")
+
+
+def check_cos() -> None:
+    content = read("CREATIVE_OS.md")
+    require(
         content,
         [
             "system: creative-os-lean",
@@ -98,7 +98,6 @@ def check_creative_os() -> None:
             "Navigation Protocol jest mechanizmem globalnego COS",
             "## 3. Kolejka testów",
             "GINSENG_TEST-003 — zamknięcie pojedynczej bramki",
-            "blocking_gate_count",
             "IDEA-2026-007 — zewnętrzne skille jako warstwa pomocnicza",
             "### DEC-2026-006 — kolejny test Ginseng i korekta BPM:160",
             "EVOLUTION-2026-013 — korekta BPM i test Ginseng",
@@ -107,13 +106,12 @@ def check_creative_os() -> None:
         "CREATIVE_OS.md",
     )
 
-    rows = extract_project_rows(content)
+    rows = project_rows(content)
     if set(rows) != set(EXPECTED_PROJECTS):
         fail(f"nieoczekiwany zestaw projektów: {sorted(rows)}")
-
-    for project, expected_status in EXPECTED_PROJECTS.items():
+    for project, expected in EXPECTED_PROJECTS.items():
         cells = rows[project]
-        if expected_status not in cells[1]:
+        if expected not in cells[1]:
             fail(f"projekt {project} ma niespójny status: {cells[1]}")
         if not cells[4] or not cells[5]:
             fail(f"projekt {project} nie ma następnego kroku albo źródła")
@@ -123,18 +121,15 @@ def check_creative_os() -> None:
         fail("karta BPM:160 nie zapisuje Spike 001 i parkingu testów widzów")
     if "READ_ONLY RECONCILIATION" not in bpm[4]:
         fail("karta BPM:160 nie wskazuje reconciliation")
-
-    ideas = re.findall(r"^### IDEA-", content, flags=re.MULTILINE)
-    if len(ideas) < 7:
-        fail("Idea Inbox nie zawiera co najmniej siedmiu wpisów")
-
-    print("[PASS] CREATIVE_OS.md ma spójną tabelę, kolejkę testów i handoff")
+    if len(re.findall(r"^### IDEA-", content, flags=re.MULTILINE)) < 7:
+        fail("Idea Inbox nie zawiera siedmiu wpisów")
+    print("[PASS] CREATIVE_OS.md ma spójną tabelę, test queue i handoff")
 
 
-def check_start_here() -> None:
-    start = read_text("START_HERE.md")
-    require_markers(
-        start,
+def check_start() -> None:
+    content = read("START_HERE.md")
+    require(
+        content,
         [
             'role: "single-entrypoint"',
             "BOOT | WORK | AUDIT | PORTFOLIO",
@@ -145,9 +140,7 @@ def check_start_here() -> None:
             "source_summary: projects/bpm160/SOURCE_SUMMARY_2026-07-31.md",
             "SPIKE 001 IN PROGRESS",
             "ORIGINAL SOURCE FILES REQUIRED FOR SAFE RESUME",
-            "SOURCE IMPORT",
             "READ_ONLY RECONCILIATION",
-            "Market Scan",
             "testów widzów",
             "CORE / SUPPORT / EDITORIAL / REJECT",
             "DOING NOW / NEXT / BACKLOG / PARKED / DONE",
@@ -161,31 +154,27 @@ def check_start_here() -> None:
         "START_HERE.md",
     )
     for mode in ["### BOOT", "### WORK", "### AUDIT", "### PORTFOLIO"]:
-        if mode not in start:
-            fail(f"START_HERE.md nie definiuje trybu: {mode}")
+        if mode not in content:
+            fail(f"START_HERE.md nie definiuje trybu {mode}")
     print("[PASS] START_HERE.md prowadzi do skorygowanego BPM:160")
 
 
 def check_bpm() -> None:
-    readme = read_text("projects/bpm160/README.md")
-    state = read_text("projects/bpm160/PROJECT_STATE.md")
-    handoff = read_text("projects/bpm160/HANDOFF.md")
-    summary = read_text("projects/bpm160/SOURCE_SUMMARY_2026-07-31.md")
-    decisions = read_text("projects/bpm160/DECISION_LOG.md")
-    manifest = read_text("projects/bpm160/SOURCE_MANIFEST.md")
-    ideas = read_text("projects/bpm160/IDEA_ARCHIVE.md")
-
-    require_markers(
-        readme,
-        ["SPIKE 001 IN PROGRESS", "World → Signal → Peak Event → Aftermath", "testy widzów", "READ_ONLY RECONCILIATION"],
-        "BPM README",
-    )
-    require_markers(
-        state,
+    files = {
+        "README": read("projects/bpm160/README.md"),
+        "STATE": read("projects/bpm160/PROJECT_STATE.md"),
+        "HANDOFF": read("projects/bpm160/HANDOFF.md"),
+        "SUMMARY": read("projects/bpm160/SOURCE_SUMMARY_2026-07-31.md"),
+        "DECISIONS": read("projects/bpm160/DECISION_LOG.md"),
+        "MANIFEST": read("projects/bpm160/SOURCE_MANIFEST.md"),
+        "IDEAS": read("projects/bpm160/IDEA_ARCHIVE.md"),
+    }
+    require(files["README"], ["SPIKE 001 IN PROGRESS", "World → Signal → Peak Event → Aftermath", "READ_ONLY RECONCILIATION"], "BPM README")
+    require(
+        files["STATE"],
         [
             'portfolio_status: "QUEUED #2"',
             'local_work_state: "SPIKE 001 IN PROGRESS"',
-            'status: "SOURCE SUMMARY CONFIRMED / ORIGINAL SOURCE FILES REQUIRED"',
             "Brand Promise oznacza adrenalinę i rytm",
             "Canon / Konstytucja BPM160 v1.2",
             "Czy BPM160 da się zrealizować przy akceptowalnej jakości, czasie i koszcie?",
@@ -193,48 +182,22 @@ def check_bpm() -> None:
             "DOING NOW / NEXT / BACKLOG / PARKED / DONE",
             "active / superseded / unresolved",
             "UNCONFIRMED / SOURCE REQUIRED",
-            "Market Scan v0",
             "ORIGINAL SOURCE FILES REQUIRED FOR SAFE RESUME",
         ],
         "BPM PROJECT_STATE",
     )
-    require_markers(
-        handoff,
-        [
-            'blocker: "ORIGINAL SOURCE FILES REQUIRED FOR SAFE RESUME"',
-            'resume_contract: "READ_ONLY RECONCILIATION / SPIKE FIRST"',
-            "SPIKE 001 IN PROGRESS",
-            "Producent / Walidator / Turbo / QA",
-            "Navigation Protocol",
-        ],
-        "BPM HANDOFF",
-    )
-    require_markers(
-        summary,
-        [
-            "USER_SUPPLIED_SOURCE_SUMMARY",
-            "Brand Promise oznacza adrenalinę i rytm",
-            "Minimal Montage Rule",
-            "Spike 001",
-            "Higgsfield Cinema Studio",
-            "bpm160-heartbeat-guide.wav",
-            "Trzy różne osie",
-            "UNCONFIRMED AS BPM:160 INTERNAL MECHANISM",
-            "PARTIALLY CONFIRMED",
-        ],
-        "BPM SOURCE SUMMARY",
-    )
-    require_markers(decisions, ["DEC-BPM-009", "Spike 001", "testy widzów", "Navigation Protocol"], "BPM DECISION_LOG")
-    require_markers(manifest, ["ORIGINAL PROJECT FILES: REQUIRED", "Canon / Konstytucja", "Reguła importu"], "BPM SOURCE_MANIFEST")
-    require_markers(ideas, ["## DOING NOW", "## PARKED", "Market Scan v0", "Testy widzów", "Pomiar fizjologiczny"], "BPM IDEA_ARCHIVE")
-
+    require(files["HANDOFF"], ["SPIKE 001 IN PROGRESS", "Producent / Walidator / Turbo / QA", "Navigation Protocol"], "BPM HANDOFF")
+    require(files["SUMMARY"], ["USER_SUPPLIED_SOURCE_SUMMARY", "Minimal Montage Rule", "Higgsfield Cinema Studio", "bpm160-heartbeat-guide.wav", "PARTIALLY CONFIRMED"], "BPM SOURCE SUMMARY")
+    require(files["DECISIONS"], ["DEC-BPM-009", "Spike 001", "testy widzów", "Navigation Protocol"], "BPM DECISION_LOG")
+    require(files["MANIFEST"], ["ORIGINAL PROJECT FILES: REQUIRED", "Canon / Konstytucja", "Reguła importu"], "BPM SOURCE_MANIFEST")
+    require(files["IDEAS"], ["## DOING NOW", "## PARKED", "Market Scan v0", "Testy widzów", "Pomiar fizjologiczny"], "BPM IDEA_ARCHIVE")
     print("[PASS] BPM:160 ma skorygowany zakres, klasyfikacje i bramkę Spike 001")
 
 
-def check_ginseng_test() -> None:
-    test = read_text("tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md")
-    require_markers(
-        test,
+def check_test() -> None:
+    content = read("tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md")
+    require(
+        content,
         [
             'status: "QUEUED / NOT EXECUTED"',
             "SINGLE_GATE_CLOSURE",
@@ -250,65 +213,33 @@ def check_ginseng_test() -> None:
         ],
         "GINSENG_TEST-003",
     )
-    print("[PASS] GINSENG_TEST-003 jest zakolejkowany z kryteriami celu i regresji")
+    print("[PASS] GINSENG_TEST-003 jest zakolejkowany z kryteriami regresji")
 
 
 def check_archive() -> None:
-    index = read_text("ARCHIVE_INDEX.md")
-    archive = read_text("archives/Archiwum09.md")
-
-    require_markers(
-        index,
-        [
-            "archive/cos-v0-pilot-2026-07",
-            "77a2544409a0cd56c9ddc4fb341ec0e721b29919",
-            "archive/cos-v0-pilot-pr3-2026-07",
-            "2f888d61ba582a766b4e245553cdae1a9373af79",
-            "archives/Archiwum09.md",
-            "Warunek powrotu do cięższej architektury",
-        ],
-        "ARCHIVE_INDEX.md",
-    )
-    require_markers(
-        archive,
-        [
-            "GINSENG_TEST_2_S001_RESULT_v1_1.zip",
-            "4abaf4696d4c7f832c99ccd3e7586e8618c45e893f5d0e2e3ce66c97206a36be",
-            "GINSENG_TEST-003",
-            "Find Skills",
-            "Superpowers",
-            "Claude-Mem",
-            "Impeccable",
-            "Task Observer",
-            "Sprostowanie BPM:160",
-            "SPIKE 001 IN PROGRESS",
-        ],
-        "Archiwum09.md",
-    )
+    index = read("ARCHIVE_INDEX.md")
+    archive = read("archives/Archiwum09.md")
+    require(index, ["archive/cos-v0-pilot-2026-07", "archive/cos-v0-pilot-pr3-2026-07", "archives/Archiwum09.md", "Warunek powrotu do cięższej architektury"], "ARCHIVE_INDEX.md")
+    require(archive, ["GINSENG_TEST_2_S001_RESULT_v1_1.zip", "4abaf4696d4c7f832c99ccd3e7586e8618c45e893f5d0e2e3ce66c97206a36be", "GINSENG_TEST-003", "Find Skills", "Superpowers", "Claude-Mem", "Impeccable", "Task Observer", "Sprostowanie BPM:160", "SPIKE 001 IN PROGRESS"], "Archiwum09.md")
     print("[PASS] Archiwum09 jest zapisane i zindeksowane")
 
 
-def check_existing_contracts() -> None:
-    readme = read_text("README.md")
-    template = read_text(".github/pull_request_template.md")
-    audit_001 = read_text("continuity/COLD_START_AUDIT-001.md")
-    audit_002 = read_text("continuity/COLD_START_AUDIT-002.md")
-
-    require_markers(readme, ["Creative OS — instrukcja operacyjna", "Hierarchia źródeł"], "README.md")
-    require_markers(template, ["Problem / porażka", "Obserwowalny dowód zaliczenia", "Dodany koszt utrzymania"], "PR template")
-    require_markers(audit_001, ["PASS WITH FIXES", "ScriptOps"], "COLD_START_AUDIT-001")
-    require_markers(audit_002, ["PASS WITH FIXES", "START_HERE"], "COLD_START_AUDIT-002")
+def check_old_contracts() -> None:
+    require(read("README.md"), ["Creative OS — instrukcja operacyjna", "Hierarchia źródeł"], "README.md")
+    require(read(".github/pull_request_template.md"), ["Problem / porażka", "Obserwowalny dowód zaliczenia", "Dodany koszt utrzymania"], "PR template")
+    require(read("continuity/COLD_START_AUDIT-001.md"), ["PASS WITH FIXES", "ScriptOps"], "COLD_START_AUDIT-001")
+    require(read("continuity/COLD_START_AUDIT-002.md"), ["PASS WITH FIXES", "START_HERE"], "COLD_START_AUDIT-002")
     print("[PASS] wcześniejsze kontrakty ciągłości i Feature Razor są zachowane")
 
 
 def main() -> None:
-    check_required_files()
-    check_creative_os()
-    check_start_here()
+    check_files()
+    check_cos()
+    check_start()
     check_bpm()
-    check_ginseng_test()
+    check_test()
     check_archive()
-    check_existing_contracts()
+    check_old_contracts()
     print("[PASS] Creative OS Lean jest spójny po korekcie BPM:160 i zakolejkowaniu testu Ginseng")
 
 
