@@ -1,25 +1,42 @@
-# BPM:160 — lokalne źródło odzyskiwania
+# BPM:160 — lokalny punkt wznowienia
 
-Ten katalog jest dostępnym lokalnym źródłem stanu projektu BPM:160 do czasu odnalezienia i zaimportowania wcześniejszego lokalnego systemu.
+Ten katalog przechowuje skorygowany stan wysokiego poziomu BPM:160 oraz mapę do odzyskania plików pierwotnych.
 
 ## Status
 
-`PAUSED / QUEUED #2 / SOURCE OF TRUTH PROVISIONAL / SOURCE RECOVERY REQUIRED`
+```text
+PORTFOLIO: QUEUED #2
+LOCAL WORK: SPIKE 001 IN PROGRESS
+SOURCE: SUMMARY CONFIRMED / ORIGINAL FILES REQUIRED
+```
 
 ## Kolejność startu
 
 1. `PROJECT_STATE.md`
 2. `HANDOFF.md`
-3. `DECISION_LOG.md`
-4. `SOURCE_MANIFEST.md`
-5. `IDEA_ARCHIVE.md`
+3. `SOURCE_SUMMARY_2026-07-31.md`
+4. `DECISION_LOG.md`
+5. `SOURCE_MANIFEST.md`
+6. `IDEA_ARCHIVE.md`
 
-## Granica
+## Najważniejsza korekta
 
-Pliki zapisują wyłącznie informacje potwierdzone w Creative OS i historii Git. Nie odtwarzają brakujących szczegółów fabuły, świata, backlogu ani decyzji z nieudostępnionego `23_LIVE_TODO.md` i najnowszego handoveru.
+BPM:160 nie jest projektem zdefiniowanym przez przyszły test widza. To projekt krótkich filmów kinowych i reklam opartych na ekstremalnych światach, rytmie i Peak Event.
 
-`PROJECT_STATE.md` jest obecnie właścicielem dostępnego stanu BPM:160. Po odnalezieniu oryginalnych źródeł należy je porównać w trybie `READ_ONLY`, a następnie uzupełnić ten stan minimalną deltą. Nie wolno utrzymywać dwóch równoległych kanonów.
+Bieżącą bramką jest `Spike 001`:
+
+```text
+World → Signal → Peak Event → Aftermath
+```
+
+Celem jest sprawdzenie wykonalności przy akceptowalnej jakości, czasie i koszcie.
+
+Testy widzów, Market Scan, pomiar fizjologiczny, rozszerzenie Canon i dodatkowe światy pozostają na `PARKING` do czasu zamknięcia Spike 001.
+
+## Granica źródłowa
+
+`SOURCE_SUMMARY_2026-07-31.md` zapisuje jawne sprostowanie użytkownika. Nie zastępuje Canon v1.2, LIVE TODO, handoveru, Decision Logu ani Evidence Package.
 
 ## Jeden następny krok
 
-Odnaleźć i zaimportować wcześniejsze źródła BPM:160, zwłaszcza `23_LIVE_TODO.md` i najnowszy zatwierdzony handover. Gdy źródła nie istnieją, zapisać jawnie `SOURCE RECOVERY NOT FOUND`, a dopiero potem przygotować jeden mały, publikowalny test reakcji widza.
+Odnaleźć lub przekazać pliki pierwotne i wykonać `READ_ONLY RECONCILIATION`, a następnie wznowić wyłącznie Spike 001.

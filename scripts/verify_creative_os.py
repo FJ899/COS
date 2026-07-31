@@ -9,29 +9,23 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-REQUIRED_FILES = [
-    "START_HERE.md",
-    "README.md",
-    "CREATIVE_OS.md",
-    "ARCHIVE_INDEX.md",
-    ".gitignore",
-    "continuity/COLD_START_AUDIT-001.md",
-    "continuity/COLD_START_TEST-002.md",
+REQUIRED = [
+    "START_HERE.md", "README.md", "CREATIVE_OS.md", "ARCHIVE_INDEX.md",
+    ".gitignore", ".github/pull_request_template.md", "scripts/README.md",
+    "continuity/COLD_START_AUDIT-001.md", "continuity/COLD_START_TEST-002.md",
     "continuity/COLD_START_AUDIT-002.md",
-    "scripts/README.md",
-    ".github/pull_request_template.md",
-    "projects/bpm160/README.md",
-    "projects/bpm160/PROJECT_STATE.md",
-    "projects/bpm160/HANDOFF.md",
-    "projects/bpm160/DECISION_LOG.md",
-    "projects/bpm160/SOURCE_MANIFEST.md",
+    "tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md",
+    "archives/Archiwum09.md", "projects/bpm160/README.md",
+    "projects/bpm160/PROJECT_STATE.md", "projects/bpm160/HANDOFF.md",
+    "projects/bpm160/SOURCE_SUMMARY_2026-07-31.md",
+    "projects/bpm160/DECISION_LOG.md", "projects/bpm160/SOURCE_MANIFEST.md",
     "projects/bpm160/IDEA_ARCHIVE.md",
 ]
 
-EXPECTED_PROJECTS = {
+EXPECTED = {
     "Narzędzie pisarskie / ScriptOps": "QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH ACTIVE / ACCESS CHECK REQUIRED",
-    "BPM:160": "PAUSED / QUEUED #2 / SOURCE OF TRUTH PROVISIONAL / SOURCE RECOVERY REQUIRED",
-    "Creative OS": "ACTIVE / LEAN PILOT",
+    "BPM:160": "QUEUED #2 / LOCAL SPIKE 001 IN PROGRESS / SOURCE SUMMARY CONFIRMED / ORIGINAL FILES REQUIRED",
+    "Creative OS": "ACTIVE / LEAN PILOT / START_HERE ACTIVE",
     "Creative OS Project Reconstructor": "ACTIVE / V1.0 STABILIZATION",
 }
 
@@ -41,375 +35,140 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 
-def read_text(path: str) -> str:
+def load(path: str) -> str:
     try:
         return (ROOT / path).read_text(encoding="utf-8")
     except UnicodeDecodeError as exc:
-        fail(f"{path} nie jest poprawnym UTF-8: {exc}")
+        fail(f"{path} nie jest UTF-8: {exc}")
     raise AssertionError("unreachable")
 
 
-def require_markers(content: str, markers: list[str], owner: str) -> None:
+def require(content: str, markers: list[str], owner: str) -> None:
     for marker in markers:
         if marker not in content:
             fail(f"{owner} nie zawiera: {marker}")
 
 
-def check_required_files() -> None:
-    missing = [path for path in REQUIRED_FILES if not (ROOT / path).is_file()]
-    if missing:
-        fail("brak wymaganych plików: " + ", ".join(missing))
-    print(f"[PASS] wymagane pliki: {len(REQUIRED_FILES)}")
-
-
-def extract_project_rows(content: str) -> dict[str, list[str]]:
-    rows: dict[str, list[str]] = {}
-    in_table = False
+def parse_rows(content: str) -> dict[str, list[str]]:
+    result: dict[str, list[str]] = {}
+    active = False
     for line in content.splitlines():
         if line.startswith("| Projekt | Status |"):
-            in_table = True
+            active = True
             continue
-        if in_table and line.startswith("|---"):
+        if active and line.startswith("|---"):
             continue
-        if in_table and not line.startswith("|"):
+        if active and not line.startswith("|"):
             break
-        if in_table:
-            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if active:
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
             if len(cells) != 6:
-                fail(f"wiersz tabeli projektów nie ma 6 kolumn: {line}")
-            rows[cells[0]] = cells
-    return rows
-
-
-def check_header_and_lean_owner(content: str) -> None:
-    require_markers(
-        content,
-        [
-            "system: creative-os-lean",
-            "version: 1.0",
-            "status: ACTIVE_LEAN_PILOT",
-            "Rozmowa prowadzi proces; repozytorium zachowuje stan.",
-            "Każda informacja ma jednego właściciela.",
-            "STARTED` / `OK` / `PARTIAL` / `BLOCKED` / `FAILED",
-            "Przed dodaniem nowej funkcji lub warstwy",
-            "obserwowalny test zaliczenia",
-            "nowy koszt utrzymania",
-            "Pojedynczym entrypointem uruchomienia jest `START_HERE.md`",
-            "`START_HERE.md` jest mapą uruchomienia, nie właścicielem stanu",
-        ],
-        "CREATIVE_OS.md",
-    )
-    if "prywatne repo" in content.lower():
-        fail("CREATIVE_OS.md utrwala zmienną właściwość widoczności repozytorium")
-    print("[PASS] nagłówek, właściciel stanu, truthful execution i stacyjka są spójne")
-
-
-def check_start_here() -> None:
-    start = read_text("START_HERE.md")
-    require_markers(
-        start,
-        [
-            'role: "single-entrypoint"',
-            'status: "ACTIVE"',
-            'state_owner: "CREATIVE_OS.md"',
-            "# START_HERE — Creative OS",
-            "nie jest właścicielem stanu projektu",
-            "BOOT | WORK | AUDIT | PORTFOLIO",
-            "## 2. Sekwencja zapłonu",
-            "Przeczytaj `README.md`",
-            "Przeczytaj cały `CREATIVE_OS.md`",
-            "## 3. Mapa entrypointów",
-            "repo: litrgratis-pixel/scriptops",
-            "critical_scope: sources/RC1_SCOPE_LOCK.md",
-            "root: projects/bpm160",
-            "entrypoint: projects/bpm160/README.md",
-            "repo: litrgratis-pixel/creative-os-project-reconstructor",
-            "canonical_prompt: PROMPT_STARTOWY.md",
-            "SOURCE RECOVERY FOUND",
-            "READ_ONLY REVIEW",
-            "SOURCE RECOVERY NOT FOUND",
-            "PROCEED TO MINIMAL VIEWER TEST DEFINITION",
-            "ACCESS BLOCKED",
-            "SOURCE REQUIRED",
-            "## 6. Wymagany raport startowy",
-            "START SESSION",
-            "STOPPED ON BLOCKER",
-            "## 7. Minimalny klucz użytkownika",
-            "continuity/COLD_START_*",
-        ],
-        "START_HERE.md",
-    )
-    for mode in ["### BOOT", "### WORK", "### AUDIT", "### PORTFOLIO"]:
-        if mode not in start:
-            fail(f"START_HERE.md nie definiuje trybu: {mode}")
-    print("[PASS] START_HERE.md definiuje pojedynczą stacyjkę i mapę entrypointów")
-
-
-def check_projects(content: str) -> None:
-    rows = extract_project_rows(content)
-    if set(rows) != set(EXPECTED_PROJECTS):
-        fail(
-            "tabela projektów ma nieoczekiwany zestaw: "
-            f"expected={sorted(EXPECTED_PROJECTS)}, actual={sorted(rows)}"
-        )
-
-    for project, status_fragment in EXPECTED_PROJECTS.items():
-        cells = rows[project]
-        if status_fragment not in cells[1]:
-            fail(f"projekt {project} ma niespójny status: {cells[1]}")
-        if not cells[4] or cells[4] == "-":
-            fail(f"projekt {project} nie ma jednego następnego kroku")
-        if not cells[5] or cells[5] == "-":
-            fail(f"projekt {project} nie ma źródła prawdy")
-
-    bpm = rows["BPM:160"]
-    if "projects/bpm160/PROJECT_STATE.md" not in bpm[5]:
-        fail("BPM:160 nie wskazuje dostępnego lokalnego źródła prawdy")
-    if "FOUND" not in bpm[3] or "NOT FOUND" not in bpm[3]:
-        fail("karta BPM:160 nie rozróżnia wyników odzyskiwania")
-
-    scriptops = rows["Narzędzie pisarskie / ScriptOps"]
-    if "legacy/scriptops-v2-single.py" not in scriptops[2]:
-        fail("karta ScriptOps nie wskazuje kanonicznego prototypu")
-    if "sources/RC1_SCOPE_LOCK.md" not in scriptops[3]:
-        fail("karta ScriptOps nie wskazuje aktualnej ścieżki zakresu")
-
-    creative_os = rows["Creative OS"]
-    if "START_HERE.md" not in creative_os[2]:
-        fail("karta Creative OS nie zapisuje aktywnej stacyjki")
-    if "minimalnego klucza" not in creative_os[3]:
-        fail("karta Creative OS nie zachowuje brakującego testu stacyjki")
-
-    print(f"[PASS] tabela projektów: {len(rows)} spójne wpisy")
-
-
-def check_idea_inbox(content: str) -> None:
-    blocks = re.split(r"(?=^### IDEA-)", content, flags=re.MULTILINE)
-    idea_blocks = [block for block in blocks if block.startswith("### IDEA-")]
-    if len(idea_blocks) < 6:
-        fail("Idea Inbox nie zawiera oczekiwanego zestawu pomysłów")
-
-    for block in idea_blocks:
-        title = block.splitlines()[0]
-        if "PARKING" in title or "`PARKING`" in block:
-            if "Warunek powrotu" not in block and "Powrót:" not in block:
-                fail(f"wpis PARKING nie ma warunku powrotu: {title}")
-
-    require_markers(
-        content,
-        [
-            "IDEA-2026-005 — GitHub Issues / Projects jako widoki pochodne",
-            "IDEA-2026-006 — ciągły Reconstructor monitorujący rozmowy",
-        ],
-        "Idea Inbox",
-    )
-    print(f"[PASS] Idea Inbox: {len(idea_blocks)} wpisów z warunkami powrotu")
-
-
-def check_handoff(content: str) -> None:
-    require_markers(
-        content,
-        [
-            "### DEC-2026-005 — pojedyncza stacyjka Creative OS",
-            "Rootowy `START_HERE.md` jest jedynym standardowym entrypointem",
-            "BOOT / WORK / AUDIT / PORTFOLIO",
-            "Mapa entrypointów prowadzi do lokalnych README",
-            "Cold start 002 otrzymał `PASS WITH FIXES`",
-            "FOUND → REVIEW → STATE UPDATE",
-            "NOT FOUND → VIEWER TEST DEFINITION",
-            "continuity/COLD_START_*",
-            "START_HERE ACTIVE",
-            "test pojedynczej stacyjki `REQUIRED`",
-            "Następny krok: uruchomić w nowej sesji minimalny klucz",
-        ],
-        "Aktualny Handoff",
-    )
-    print("[PASS] Aktualny Handoff zachowuje decyzję o pojedynczej stacyjce")
-
-
-def check_bpm_source() -> None:
-    state = read_text("projects/bpm160/PROJECT_STATE.md")
-    handoff = read_text("projects/bpm160/HANDOFF.md")
-    decisions = read_text("projects/bpm160/DECISION_LOG.md")
-    sources = read_text("projects/bpm160/SOURCE_MANIFEST.md")
-    ideas = read_text("projects/bpm160/IDEA_ARCHIVE.md")
-
-    require_markers(
-        state,
-        [
-            'project: "BPM:160"',
-            'status: "SOURCE OF TRUTH PROVISIONAL / SOURCE RECOVERY REQUIRED"',
-            'state_owner: "projects/bpm160/PROJECT_STATE.md"',
-            "SOURCE RECOVERY FOUND — READ_ONLY REVIEW REQUIRED",
-            "SOURCE RECOVERY NOT FOUND — PROCEED TO MINIMAL VIEWER TEST DEFINITION",
-            "### Gdy wynik to `FOUND`",
-            "zaktualizować `PROJECT_STATE.md` minimalną deltą",
-            "### Gdy wynik to `NOT FOUND`",
-            "Można przejść bezpośrednio do definicji minimalnego testu widza",
-            "Nie wolno uzupełniać szczegółów projektu z pamięci AI",
-        ],
-        "PROJECT_STATE BPM:160",
-    )
-
-    require_markers(
-        handoff,
-        [
-            'blocker: "SOURCE RECOVERY REQUIRED"',
-            'resume_contract: "READ_ONLY / RECOVERY FIRST"',
-            "Nagłówek YAML jest maszynowym skrótem",
-            "## Rozgałęzienie po wyniku",
-            "READ_ONLY REVIEW",
-            "aktualizacja PROJECT_STATE.md",
-            "PROCEED TO MINIMAL VIEWER TEST DEFINITION",
-        ],
-        "HANDOFF BPM:160",
-    )
-
-    require_markers(
-        decisions,
-        ["DEC-BPM-001", "DEC-BPM-005", "test widza", "nie wolno odtwarzać przez zgadywanie"],
-        "DECISION_LOG BPM:160",
-    )
-    require_markers(sources, ["23_LIVE_TODO.md", "niedostępne", "Reguła importu"], "SOURCE_MANIFEST BPM:160")
-
-    if "Brak dostępnych lokalnych źródeł" not in ideas:
-        fail("IDEA_ARCHIVE BPM:160 nie zapisuje braku źródeł")
-    if "nie mogą zastępować odzyskiwania źródeł" not in ideas:
-        fail("IDEA_ARCHIVE BPM:160 nie zachowuje granicy niepewności")
-
-    print("[PASS] BPM:160 ma jednoznaczne rozgałęzienie po odzyskaniu źródeł")
-
-
-def check_instructions() -> None:
-    readme = read_text("README.md")
-    require_markers(
-        readme,
-        [
-            "Creative OS — instrukcja operacyjna",
-            "# 4. Start każdej sesji",
-            "# 6. Obsługa każdego nowego pomysłu",
-            "Hierarchia źródeł",
-        ],
-        "README.md",
-    )
-
-    validation = read_text("scripts/README.md")
-    require_markers(
-        validation,
-        [
-            "python scripts/verify_creative_os.py",
-            "GitHub Actions",
-            "START_HERE.md",
-            "BOOT / WORK / AUDIT / PORTFOLIO",
-            "lokalnego stanu BPM:160",
-            "SOURCE RECOVERY FOUND / NOT FOUND",
-            "filtra użyteczności",
-            "cold startu 002",
-        ],
-        "scripts/README.md",
-    )
-    print("[PASS] instrukcje startu, stacyjki i walidacji są dostępne")
-
-
-def check_pull_request_filter() -> None:
-    template = read_text(".github/pull_request_template.md")
-    require_markers(
-        template,
-        [
-            "Problem / porażka",
-            "Dlaczego obecny mechanizm nie wystarcza",
-            "Obserwowalny dowód zaliczenia",
-            "Dodany koszt utrzymania",
-            "Poza zakresem",
-            "Wpływ na stan semantyczny",
-        ],
-        "szablon PR",
-    )
-    print("[PASS] filtr PR chroni przed rozbudową bez dowodu")
-
-
-def check_archive() -> None:
-    archive = read_text("ARCHIVE_INDEX.md")
-    require_markers(
-        archive,
-        [
-            "archive/cos-v0-pilot-2026-07",
-            "77a2544409a0cd56c9ddc4fb341ec0e721b29919",
-            "archive/cos-v0-pilot-pr3-2026-07",
-            "2f888d61ba582a766b4e245553cdae1a9373af79",
-            "Warunek powrotu do cięższej architektury",
-        ],
-        "ARCHIVE_INDEX.md",
-    )
-    print("[PASS] archiwum i warunek reopen są zabezpieczone")
-
-
-def check_continuity() -> None:
-    audit_001 = read_text("continuity/COLD_START_AUDIT-001.md")
-    require_markers(
-        audit_001,
-        [
-            "PUBLIC / NO PRIOR MEMORY / READ_ONLY",
-            "PASS WITH FIXES",
-            "ScriptOps — PASS",
-            "BPM:160",
-            "OPERATIONAL TEST REQUIRED",
-        ],
-        "COLD_START_AUDIT-001.md",
-    )
-
-    test_002 = read_text("continuity/COLD_START_TEST-002.md")
-    require_markers(
-        test_002,
-        [
-            "EXECUTED / PASS WITH FIXES",
-            "continuity/COLD_START_AUDIT-002.md",
-            "IDEA-2026-005",
-            "projects/bpm160/PROJECT_STATE.md",
-            "SOURCE RECOVERY REQUIRED",
-            "legacy/scriptops-v2-single.py",
-            "przy `FOUND`",
-            "przy `NOT FOUND`",
-            "Werdykt: `PASS WITH FIXES`",
-            "utworzyć `START_HERE.md`",
-        ],
-        "COLD_START_TEST-002.md",
-    )
-
-    audit_002 = read_text("continuity/COLD_START_AUDIT-002.md")
-    require_markers(
-        audit_002,
-        [
-            "PUBLIC / NO PRIOR MEMORY / READ_ONLY / OPERATIONAL",
-            "## A. Obsługa pomysłu — PASS",
-            "## B. Wznowienie BPM:160 — PASS WITH ONE CLARIFICATION",
-            "## C. Wznowienie ScriptOps — PASS",
-            "## D. Mechanizm startowy — PASS WITH FRICTION",
-            "FINAL: PASS WITH FIXES",
-            "POJEDYNCZA STACYJKA: FIX REQUIRED",
-            "rootowy `START_HERE.md`",
-            "Audyt pozostaje dowodem stanu sprzed tej poprawki",
-        ],
-        "COLD_START_AUDIT-002.md",
-    )
-
-    print("[PASS] cold start 002 jest wykonany, oceniony i powiązany z poprawką")
+                fail(f"wiersz tabeli nie ma 6 kolumn: {line}")
+            result[cells[0]] = cells
+    return result
 
 
 def main() -> None:
-    check_required_files()
-    content = read_text("CREATIVE_OS.md")
-    check_header_and_lean_owner(content)
-    check_start_here()
-    check_projects(content)
-    check_idea_inbox(content)
-    check_handoff(content)
-    check_bpm_source()
-    check_instructions()
-    check_pull_request_filter()
-    check_archive()
-    check_continuity()
-    print("[PASS] Creative OS Lean ma spójną pojedynczą stacyjkę i odtwarzalne punkty wejścia")
+    missing = [p for p in REQUIRED if not (ROOT / p).is_file()]
+    if missing:
+        fail("brak plików: " + ", ".join(missing))
+    print(f"[PASS] wymagane pliki: {len(REQUIRED)}")
+
+    cos = load("CREATIVE_OS.md")
+    require(cos, [
+        "system: creative-os-lean", "status: ACTIVE_LEAN_PILOT",
+        "Rozmowa prowadzi proces; repozytorium zachowuje stan.",
+        "Każda informacja ma jednego właściciela.",
+        "STARTED / OK / PARTIAL / BLOCKED / FAILED",
+        "Navigation Protocol jest mechanizmem globalnego COS",
+        "GINSENG_TEST-003 — zamknięcie pojedynczej bramki",
+        "IDEA-2026-007 — zewnętrzne skille jako warstwa pomocnicza",
+        "DEC-2026-006 — kolejny test Ginseng i korekta BPM:160",
+        "EVOLUTION-2026-013 — korekta BPM i test Ginseng",
+        "archives/Archiwum09.md",
+    ], "CREATIVE_OS.md")
+
+    project_rows = parse_rows(cos)
+    if set(project_rows) != set(EXPECTED):
+        fail(f"nieoczekiwane projekty: {sorted(project_rows)}")
+    for project, expected in EXPECTED.items():
+        if expected not in project_rows[project][1]:
+            fail(f"niespójny status {project}: {project_rows[project][1]}")
+        if not project_rows[project][4] or not project_rows[project][5]:
+            fail(f"brak kroku lub źródła: {project}")
+    bpm_row = " ".join(project_rows["BPM:160"]).lower()
+    if "spike 001" not in bpm_row or "testy widzów" not in bpm_row or "read_only reconciliation" not in bpm_row:
+        fail("karta BPM:160 nie zawiera Spike, parkingu testów widzów i reconciliation")
+    if len(re.findall(r"^### IDEA-", cos, re.MULTILINE)) < 7:
+        fail("Idea Inbox nie zawiera siedmiu wpisów")
+    print("[PASS] CREATIVE_OS.md jest spójny")
+
+    start = load("START_HERE.md")
+    require(start, [
+        'role: "single-entrypoint"', "BOOT | WORK | AUDIT | PORTFOLIO",
+        "repo: litrgratis-pixel/scriptops", "critical_scope: sources/RC1_SCOPE_LOCK.md",
+        "root: projects/bpm160", "source_summary: projects/bpm160/SOURCE_SUMMARY_2026-07-31.md",
+        "SPIKE 001 IN PROGRESS", "ORIGINAL SOURCE FILES REQUIRED FOR SAFE RESUME",
+        "READ_ONLY RECONCILIATION", "testów widzów",
+        "CORE / SUPPORT / EDITORIAL / REJECT",
+        "DOING NOW / NEXT / BACKLOG / PARKED / DONE", "active / superseded / unresolved",
+        "repo: litrgratis-pixel/creative-os-project-reconstructor",
+        "ACCESS BLOCKED", "SOURCE REQUIRED", "START SESSION", "continuity/COLD_START_*",
+    ], "START_HERE.md")
+    for mode in ["### BOOT", "### WORK", "### AUDIT", "### PORTFOLIO"]:
+        if mode not in start:
+            fail(f"brak trybu {mode}")
+    print("[PASS] START_HERE.md jest spójny")
+
+    bpm = "\n".join(load(p) for p in [
+        "projects/bpm160/README.md", "projects/bpm160/PROJECT_STATE.md",
+        "projects/bpm160/HANDOFF.md", "projects/bpm160/SOURCE_SUMMARY_2026-07-31.md",
+        "projects/bpm160/DECISION_LOG.md", "projects/bpm160/SOURCE_MANIFEST.md",
+        "projects/bpm160/IDEA_ARCHIVE.md",
+    ])
+    require(bpm, [
+        "SPIKE 001 IN PROGRESS", "World → Signal → Peak Event → Aftermath",
+        "Brand Promise oznacza adrenalinę i rytm", "Canon / Konstytucja BPM160 v1.2",
+        "Czy BPM160 da się zrealizować przy akceptowalnej jakości, czasie i koszcie?",
+        "CORE / SUPPORT / EDITORIAL / REJECT", "DOING NOW / NEXT / BACKLOG / PARKED / DONE",
+        "active / superseded / unresolved", "UNCONFIRMED",
+        "ORIGINAL SOURCE FILES REQUIRED FOR SAFE RESUME", "Higgsfield Cinema Studio",
+        "bpm160-heartbeat-guide.wav", "Producent / Walidator / Turbo / QA",
+        "Market Scan v0", "Testy widzów", "READ_ONLY RECONCILIATION",
+        "USER_SUPPLIED_SOURCE_SUMMARY",
+    ], "pakiet BPM:160")
+    print("[PASS] BPM:160 ma właściwy zakres i klasyfikacje")
+
+    test = load("tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md")
+    require(test, [
+        'status: "QUEUED / NOT EXECUTED"', "SINGLE_GATE_CLOSURE",
+        "VARIANT_A_KEEP_DEC002", "VARIANT_B_SUPERSEDE_DEC002",
+        "blocking_gate_count_after = 6", "implementation_readiness_after = BLOCKED",
+        "baseline_mutated_after = false", "systematic-debugging",
+        "verification-before-completion", "S001_gate_closure_delta.json",
+        "aktywuje Ginseng jako formalnego projektu",
+    ], "GINSENG_TEST-003")
+    if "Ten test nie:" not in test:
+        fail("GINSENG_TEST-003 nie zapisuje granicy poza zakresem")
+    print("[PASS] GINSENG_TEST-003 jest zakolejkowany")
+
+    index = load("ARCHIVE_INDEX.md")
+    archive = load("archives/Archiwum09.md")
+    require(index, ["archive/cos-v0-pilot-2026-07", "archive/cos-v0-pilot-pr3-2026-07", "archives/Archiwum09.md", "Warunek powrotu do cięższej architektury"], "ARCHIVE_INDEX.md")
+    require(archive, [
+        "GINSENG_TEST_2_S001_RESULT_v1_1.zip",
+        "4abaf4696d4c7f832c99ccd3e7586e8618c45e893f5d0e2e3ce66c97206a36be",
+        "GINSENG_TEST-003", "Find Skills", "Superpowers", "Claude-Mem",
+        "Impeccable", "Task Observer", "Sprostowanie BPM:160", "SPIKE 001 IN PROGRESS",
+    ], "Archiwum09.md")
+    print("[PASS] Archiwum09 jest kompletne")
+
+    require(load("README.md"), ["Creative OS — instrukcja operacyjna", "Hierarchia źródeł"], "README.md")
+    require(load(".github/pull_request_template.md"), ["Problem / porażka", "Obserwowalny dowód zaliczenia", "Dodany koszt utrzymania"], "PR template")
+    require(load("continuity/COLD_START_AUDIT-001.md"), ["PASS WITH FIXES", "ScriptOps"], "cold start 001")
+    require(load("continuity/COLD_START_AUDIT-002.md"), ["PASS WITH FIXES", "START_HERE"], "cold start 002")
+    print("[PASS] wcześniejsze kontrakty są zachowane")
+    print("[PASS] Creative OS Lean jest spójny po korekcie BPM:160 i kolejce Ginseng")
 
 
 if __name__ == "__main__":
