@@ -61,11 +61,12 @@ Status kanoniczny i status wdrożenia są niezależne. Dokument zatwierdzony, al
 ## Creative OS
 
 - **Repozytorium:** `litrgratis-pixel/COS`
-- **Rola:** pamięć, konstytucja, mapa projektów, decyzje i zależności
+- **Rola:** pamięć i konstytucja — określa, co jest prawdą, aktywne i kanoniczne dla projektu
 - **Poziom:** `GOVERNANCE`
 - **Status:** `ACTIVE / CANON IMPORT IN PROGRESS`
-- **Aktualny blocker:** zatwierdzony pakiet v1.1 nie znajduje się jeszcze na `main`
-- **Następny krok:** review i merge governance PR po potwierdzeniu zgodności
+- **Aktualny blocker:** zatwierdzony pakiet v1.1 nie znajduje się jeszcze na `main`, a aktywny entrypoint nadal wskazuje starszy handoff
+- **Następny krok:** review, minimalna aktualizacja entrypointu i merge governance PR po potwierdzeniu zgodności
+- **Granica z Ginseng:** COS przechowuje kanon; Ginseng wyjaśnia powody, alternatywy i wpływ potencjalnych zmian
 - **Źródło prawdy:** `CREATIVE_OS.md` oraz katalog `governance/` po merge
 
 ## Project Reconstructor
@@ -100,11 +101,17 @@ Status kanoniczny i status wdrożenia są niezależne. Dokument zatwierdzony, al
 
 ## Ginseng
 
-- **Rola:** przyszła ochrona intencji i Human Decision Gate support
-- **Poziom:** `POST-P3`
-- **Status:** `STRATEGICALLY_PRIMARY / RUNTIME_FROZEN`
-- **Warunek powrotu:** pełne P3A i P3B oraz jawna decyzja użytkownika
-- **Następny krok:** brak pracy implementacyjnej
+- **Formalna rola:** `DECISION INTELLIGENCE LAYER`
+- **Definicja wartości:** wersjonowana pamięć decyzji i analiza wpływu zmian; nie graf jako produkt
+- **Odpowiedzialność:** wyjaśnia dlaczego stan istnieje, jakie były alternatywy, jakie funkcje tworzą skutki i co może zmienić się po naruszeniu przesłanki
+- **Kanoniczne typy semantyczne:** `FACT`, `DECISION`, `HYPOTHESIS`, `FUNCTION / CAPABILITY`, Decision Lineage i niepotwierdzone relacje AI
+- **Poziom:** `CANONICAL SEMANTICS NOW / KERNEL AFTER P1 / RUNTIME AFTER P3`
+- **Status:** `STRATEGICALLY PRIMARY / CONTRACT CANONICAL_PENDING_MERGE / RUNTIME FROZEN`
+- **Aktualny blocker:** Executor nie uzyskał P1 ACCEPT
+- **Następny dozwolony krok po P1:** zdefiniować Minimal Kernel, Impact Class, confidence/uncertainty model i Creative OS self-test; bez wizualizacji
+- **Warunek runtime:** pełne P3A i P3B oraz jawna decyzja użytkownika
+- **Zakazane teraz:** implementacja runtime, wizualizacja, import zewnętrzny, automatyczne potwierdzanie relacji
+- **Źródło prawdy:** `GINSENG_DECISION_INTELLIGENCE_CONTRACT.md`
 
 ## Company Loop
 
@@ -133,6 +140,7 @@ Status kanoniczny i status wdrożenia są niezależne. Dokument zatwierdzony, al
 PRIORITY: EXECUTOR P1
 FIRST BLOCKER: PR #32
 SECOND BLOCKER: PR #29
+GINSENG: CONTRACT ONLY / RUNTIME FROZEN
 ARCHITECTURE: FROZEN
 ALLOWED WORK: IMPLEMENTATION ONLY
 FALSE SUCCESS TARGET: 0
