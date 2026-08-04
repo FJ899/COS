@@ -40,9 +40,9 @@ W tym rejestrze kanoniczne decyzje muszą mieć typ `USER_DECISION`.
 
 - **Data:** 2026-08-04
 - **Typ:** `USER_DECISION`
-- **Decyzja:** Ginseng chroni intencję, Creative OS przechowuje kanon, Executor wykonuje kontrakt, Verifier dostarcza niezależny dowód, a człowiek pozostaje właścicielem decyzji.
+- **Decyzja:** Ginseng jest Decision Intelligence Layer, Creative OS przechowuje kanon, Executor wykonuje kontrakt, Verifier dostarcza niezależny dowód, a człowiek pozostaje właścicielem decyzji.
 - **Nie zmienia:** lokalnych obowiązków repozytoriów projektowych.
-- **Status wdrożenia:** `PENDING_IMPLEMENTATION`
+- **Status wdrożenia:** `CANONICAL_ROLE_DEFINED / RUNTIME_PENDING`
 
 ## DEC-ECO-2026-003 — Kolejność rozwoju
 
@@ -121,7 +121,7 @@ W tym rejestrze kanoniczne decyzje muszą mieć typ `USER_DECISION`.
 
 - **Data:** 2026-08-04
 - **Typ:** `USER_DECISION`
-- **Decyzja:** zatwierdzono `INV-001`–`INV-007` jako fundament systemu.
+- **Decyzja:** zatwierdzono `INV-001`–`INV-011` jako fundament systemu oraz `GIN-001`–`GIN-007` jako invariants Ginsenga.
 - **Zmiana:** wymaga nowej decyzji kanonicznej i Human Decision Gate.
 - **Status wdrożenia:** `CANONICAL_PENDING_MERGE`
 
@@ -140,6 +140,65 @@ W tym rejestrze kanoniczne decyzje muszą mieć typ `USER_DECISION`.
 - **Decyzja:** zatwierdzenie dokumentu, import do COS i wdrożenie techniczne są niezależnymi stanami.
 - **Konsekwencje:** `APPROVED_NOT_YET_IMPORTED` nie może być przedstawiane jako `IMPLEMENTED`.
 - **Status wdrożenia:** `IMPLEMENTED_IN_GOVERNANCE_FILES_PENDING_MERGE`
+
+## DEC-ECO-2026-015 — Ginseng jako Decision Intelligence Layer
+
+- **Data:** 2026-08-04
+- **Typ:** `USER_DECISION`
+- **Decyzja:** formalna i zamrożona rola Ginsenga to `Decision Intelligence Layer`.
+- **Definicja:** Ginseng jest wersjonowanym systemem pamięci decyzji i wpływu zmian; przechowuje decyzje, przesłanki, alternatywy, funkcje, zależności, konsekwencje i niepewność.
+- **Odrzucona redukcja:** Ginseng nie jest „grafem projektów”, mapą zależności ani produktem wizualizacyjnym.
+- **Konsekwencje:** graf pozostaje sposobem reprezentacji, a nie definicją wartości.
+- **Dokument:** `GINSENG_DECISION_INTELLIGENCE_CONTRACT.md`
+- **Status wdrożenia:** `CANONICAL / RUNTIME_FROZEN`
+
+## DEC-ECO-2026-016 — Trzy rodzaje prawdy
+
+- **Data:** 2026-08-04
+- **Typ:** `USER_DECISION`
+- **Decyzja:** Ginseng i Creative OS muszą jawnie rozdzielać `FACT`, `DECISION` i `HYPOTHESIS`.
+- **Zakaz:** hipoteza, rekomendacja AI lub analiza nie mogą zostać automatycznie przedstawione jako fakt albo decyzja.
+- **Invariant:** `INV-008`, `GIN-002`.
+- **Status wdrożenia:** `CANONICAL / DATA MODEL DEFERRED_AFTER_P1`
+
+## DEC-ECO-2026-017 — FUNCTION / CAPABILITY i Decision Lineage
+
+- **Data:** 2026-08-04
+- **Typ:** `USER_DECISION`
+- **Decyzja:** analiza wpływu musi modelować funkcję lub capability pomiędzy elementem i istotnym efektem, a każda ważna decyzja musi zachować pełny Decision Lineage.
+- **Wzorzec:** `ELEMENT → FUNCTION / CAPABILITY → EFFECT`.
+- **Lineage:** problem, przesłanki, opcje, wybór, powód, odrzucenia i konsekwencje.
+- **Invariants:** `INV-010`, `INV-011`, `GIN-003`, `GIN-005`.
+- **Status wdrożenia:** `CANONICAL / DATA MODEL DEFERRED_AFTER_P1`
+
+## DEC-ECO-2026-018 — AI nie jest autorem potwierdzonej relacji
+
+- **Data:** 2026-08-04
+- **Typ:** `USER_DECISION`
+- **Decyzja:** AI może proponować relacje wyłącznie jako niewiążące i niepotwierdzone.
+- **Wymagane oznaczenie:** `POSSIBLY_*`, `UNCONFIRMED` albo `AI_ESTIMATE`, źródło i autor propozycji.
+- **Promocja do CONFIRMED:** wyłącznie przez autorytatywne źródło albo uprawnionego człowieka.
+- **Invariants:** `INV-009`, `GIN-004`.
+- **Status wdrożenia:** `CANONICAL / RUNTIME_ENFORCEMENT_DEFERRED_AFTER_P1`
+
+## DEC-ECO-2026-019 — Granica Ginseng — Creative OS
+
+- **Data:** 2026-08-04
+- **Typ:** `USER_DECISION`
+- **Decyzja:** Creative OS odpowiada za to, co jest kanonicznie prawdą dla projektu; Ginseng odpowiada za wyjaśnienie dlaczego ten stan istnieje i co stanie się po jego zmianie.
+- **Zakaz:** Ginseng nie może samodzielnie nadpisywać kanonu COS.
+- **Konsekwencje:** analiza Ginsenga może wywołać Human Decision Gate, ale nie zastępuje decyzji człowieka.
+- **Status wdrożenia:** `CANONICAL_BOUNDARY_DEFINED`
+
+## DEC-ECO-2026-020 — Kolejność rozwoju Ginsenga
+
+- **Data:** 2026-08-04
+- **Typ:** `USER_DECISION`
+- **Decyzja:** przed zamknięciem v1.1 utrwalamy wyłącznie definicję, invariants i semantyczne typy danych; nie budujemy funkcji.
+- **Po P1:** Minimal Kernel, Impact Class, confidence/uncertainty model, impact queries i Creative OS self-test.
+- **Po P3:** wizualizacja, scenariusze wielowariantowe i import zewnętrzny.
+- **Nie zmienia:** aktywnym priorytetem pozostaje Executor P1.
+- **Status wdrożenia:** `SEQUENCING_ACTIVE`
 
 ---
 
@@ -167,7 +226,7 @@ W tym rejestrze kanoniczne decyzje muszą mieć typ `USER_DECISION`.
 W przypadku konfliktu obowiązuje:
 
 1. najnowsza jawna decyzja użytkownika;
-2. aktywny pakiet kanoniczny;
+2. aktywny pakiet kanoniczny i jego jawnie wskazane kontrakty uzupełniające;
 3. ten rejestr;
 4. aktywny Project Contract;
 5. aktywny Task Contract;
