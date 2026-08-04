@@ -200,6 +200,20 @@ W tym rejestrze kanoniczne decyzje muszą mieć typ `USER_DECISION`.
 - **Nie zmienia:** aktywnym priorytetem pozostaje Executor P1.
 - **Status wdrożenia:** `SEQUENCING_ACTIVE`
 
+## DEC-ECO-2026-021 — Ginseng scope freeze
+
+- **Decision ID:** `ECOSYSTEM-2026-08-04-001`
+- **Data:** 2026-08-04
+- **Typ:** `USER_DECISION`
+- **Temat:** Ginseng scope freeze.
+- **Decyzja:** Ginseng pozostaje `Decision Intelligence Layer`. Runtime, wizualizacja, importy i funkcje produktowe pozostają zamrożone do przejścia odpowiednich bramek, w szczególności pełnego P3 dla runtime i wizualizacji.
+- **Powód:** ochrona przed rozszerzeniem zakresu, redukcją Ginsenga do „ładnego grafu” oraz utratą wartości wynikającej z pamięci decyzji i analizy wpływu zmian.
+- **Zamrożone semantycznie:** rola Ginsenga, granica z COS, `FACT / DECISION / HYPOTHESIS`, Decision Lineage, autorytet relacji oraz obowiązek wyjaśniania funkcji prowadzącej do skutku.
+- **Niezamrożone technicznie:** model danych, nazwy pól, nazwy `Node / Entity`, format przechowywania, JSON, SQL, API, indeksowanie i szczegóły implementacji. Mogą być wybierane lub zmieniane na podstawie realnych testów bez naruszania tożsamości Ginsenga.
+- **Nie zmienia:** celu Ginsenga, możliwości przyszłego zastosowania enterprise ani możliwości przeprowadzenia testów domenowych po otwarciu właściwych bramek.
+- **Zakaz:** istnienie grafu albo możliwość zbudowania panelu nie stanowią powodu do odwieszenia runtime’u lub wizualizacji.
+- **Status wdrożenia:** `CANONICAL_SCOPE_FROZEN / TECHNICAL_DESIGN_OPEN / RUNTIME_FROZEN`.
+
 ---
 
 # Format nowej decyzji
