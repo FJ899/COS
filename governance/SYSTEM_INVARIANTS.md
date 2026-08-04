@@ -68,6 +68,46 @@ FALSE SUCCESS = 0
 
 Brak wystarczającego prawa lub dowodu oznacza `REWORK` albo `STOP`, nigdy domyślny sukces.
 
+## INV-008 — DECISION TRUTH MUST BE TYPED
+
+Twierdzenia używane do sterowania projektem albo analizy wpływu muszą pozostać rozdzielone jako:
+
+```text
+FACT
+DECISION
+HYPOTHESIS
+```
+
+Hipoteza, analiza AI lub rekomendacja nie mogą zostać automatycznie przedstawione jako fakt albo decyzja.
+
+## INV-009 — AI CANNOT CONFIRM ITS OWN RELATION
+
+AI może wykryć i zaproponować potencjalną relację. Nie może samodzielnie nadać jej statusu `CONFIRMED`.
+
+Relacja proponowana przez AI musi pozostać `UNCONFIRMED` albo `AI_ESTIMATE` do czasu potwierdzenia przez autorytatywne źródło lub uprawnionego człowieka.
+
+## INV-010 — IMPORTANT DECISIONS REQUIRE LINEAGE
+
+Każda ważna decyzja musi zachować problem, przesłanki, rozważane opcje, wybraną opcję, powód wyboru, odrzucone alternatywy i oczekiwane konsekwencje.
+
+Usunięcie tych danych jest utratą Decision Lineage, a nie neutralnym uproszczeniem dokumentacji.
+
+## INV-011 — IMPACT MUST EXPLAIN FUNCTION
+
+Istotny skutek nie może być wyjaśniony wyłącznie relacją pomiędzy obiektami.
+
+Analiza musi pozwalać ustalić:
+
+```text
+ELEMENT
+   ↓
+FUNCTION / CAPABILITY
+   ↓
+EFFECT
+```
+
+Dla Ginsenga szczegółowe invariants `GIN-001`–`GIN-007` określa `GINSENG_DECISION_INTELLIGENCE_CONTRACT.md`.
+
 # Governance Control Rules
 
 ## ARCH-001 — NO HYPOTHETICAL ARCHITECTURE
@@ -102,6 +142,12 @@ Human Decision Gate jest obowiązkowy przed zmianą celu, zakresu, architektury,
 
 Executor nie może kontynuować na podstawie własnej interpretacji decyzji człowieka.
 
+## GOV-003 — GINSENG ANALYZES, COS OWNS CANON
+
+Ginseng analizuje powody, alternatywy, zależności, konsekwencje i niepewność.
+
+Creative OS pozostaje właścicielem aktywnego kanonu, statusu projektu i zapisanych decyzji człowieka. Analiza Ginsenga może uruchomić Human Decision Gate, ale nie może sama zmienić kanonu.
+
 # Kontrola zgodności
 
 Każda propozycja zmiany powinna odpowiedzieć:
@@ -112,4 +158,7 @@ Każda propozycja zmiany powinna odpowiedzieć:
 3. Czy wymaga Human Decision Gate?
 4. Jaki dowód potwierdzi rozwiązanie?
 5. Czy tworzy drogę do false success?
+6. Czy FACT, DECISION i HYPOTHESIS są rozdzielone?
+7. Czy relacja AI pozostaje niepotwierdzona?
+8. Czy ważna decyzja zachowuje lineage?
 ```
