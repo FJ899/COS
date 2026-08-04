@@ -143,6 +143,56 @@ STATUS
 
 **Werdykt:** `STOP` i unieważnienie wyników.
 
+## FM-013 — GINSENG DEGENERATES INTO AN OBJECT GRAPH
+
+**Opis:** Ginseng mapuje rzeczy i relacje, ale nie potrafi wyjaśnić funkcji, decyzji ani skutków zmiany.
+
+**Sygnał:** wynik składa się głównie z `A DEPENDS_ON B`, nie zawiera `FUNCTION / CAPABILITY`, Decision Lineage ani odpowiedzi na konkretne pytanie wpływu.
+
+**Kontrola:** `GIN-001`, `GIN-005`, `GIN-006` oraz wzorzec `ELEMENT → FUNCTION / CAPABILITY → EFFECT`.
+
+**Werdykt:** `REWORK`; mapa nie może zostać uznana za działający wynik Ginsenga.
+
+## FM-014 — AI INFERENCE BECOMES A CONFIRMED RELATION
+
+**Opis:** Relacja wygenerowana przez AI zostaje zapisana jako potwierdzona bez źródła lub decyzji człowieka.
+
+**Sygnał:** `PROPOSED_BY: AI` współistnieje z `STATUS: CONFIRMED` bez autorytatywnego źródła albo Human Decision Gate.
+
+**Kontrola:** `INV-009`, `GIN-004`, obowiązkowe `POSSIBLY_*`, `UNCONFIRMED` lub `AI_ESTIMATE`.
+
+**Werdykt:** `STOP` dla analizy sterującej zmianą; skażona relacja musi zostać cofnięta.
+
+## FM-015 — FACT, DECISION AND HYPOTHESIS ARE MIXED
+
+**Opis:** System przedstawia obserwację, wybór człowieka i przewidywanie AI jako równoważne twierdzenia.
+
+**Sygnał:** brak jawnego typu prawdy, źródła lub właściciela decyzji; hipoteza wpływa na kanon jak fakt.
+
+**Kontrola:** `INV-008`, `GIN-002` i zakaz automatycznej promocji typów.
+
+**Werdykt:** `REWORK`; wynik nie może sterować Executorem ani Human Decision Gate.
+
+## FM-016 — DECISION LINEAGE IS LOST
+
+**Opis:** System zachowuje końcową decyzję, ale usuwa problem, przesłanki, alternatywy, powody odrzucenia lub konsekwencje.
+
+**Sygnał:** istnieje odpowiedź „co wybrano”, ale nie można odtworzyć „dlaczego wybrano”.
+
+**Kontrola:** `INV-010`, `GIN-003` i minimalny format Decision Lineage.
+
+**Werdykt:** `REWORK`; decyzja pozostaje kanoniczna tylko wtedy, gdy jej lineage można odzyskać z autorytatywnego źródła.
+
+## FM-017 — GINSENG OVERWRITES COS CANON
+
+**Opis:** Wynik analizy Ginsenga bez jawnej decyzji człowieka zmienia aktywny status, priorytet, kontrakt albo kanon w Creative OS.
+
+**Sygnał:** zmiana kanoniczna nie posiada `USER_DECISION`, Human Decision Gate lub wpisu w decision register.
+
+**Kontrola:** `GOV-003`, `GIN-007` i rozdzielenie Ginseng — COS.
+
+**Werdykt:** `STOP` i przywrócenie ostatniego autorytatywnego stanu COS.
+
 # Zasada dodawania failure mode
 
 Nowy failure mode może zostać dodany, gdy:
