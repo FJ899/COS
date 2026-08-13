@@ -2,7 +2,7 @@
 document: ECOSYSTEM_DECISION_REGISTER
 version: 1
 status: CANONICAL
-updated_at: 2026-08-04
+updated_at: 2026-08-13
 owner: USER
 ---
 
@@ -213,6 +213,21 @@ W tym rejestrze kanoniczne decyzje muszą mieć typ `USER_DECISION`.
 - **Nie zmienia:** celu Ginsenga, możliwości przyszłego zastosowania enterprise ani możliwości przeprowadzenia testów domenowych po otwarciu właściwych bramek.
 - **Zakaz:** istnienie grafu albo możliwość zbudowania panelu nie stanowią powodu do odwieszenia runtime’u lub wizualizacji.
 - **Status wdrożenia:** `CANONICAL_SCOPE_FROZEN / TECHNICAL_DESIGN_OPEN / RUNTIME_FROZEN`.
+
+## DEC-ECO-2026-022 — Kontrolowana asymilacja wzorców zewnętrznych
+
+- **Data:** 2026-08-13
+- **Typ:** `USER_DECISION`
+- **Decyzja:** zewnętrzne rozwiązania asymilujemy wyłącznie zgodnie z architekturą głównego projektu. Zewnętrzne repozytorium jest `EVIDENCE`; wzorzec staje się częścią kanonu dopiero po jawnej decyzji użytkownika. Każda asymilacja zapisuje: co wdrażamy, co zastępujemy, dlaczego, czego nie narusza, status implementacji oraz bramkę dopuszczającą część techniczną.
+- **Właściciel:** `USER`
+- **Powód:** przejmować użyteczne wzorce bez rozszerzania architektury, duplikowania istniejących reguł ani przedstawiania odłożonych elementów jako zaimplementowanych.
+- **Zakres:** kontrolowana asymilacja zatwierdzonych wzorców z `MiniMax-AI/MiniMax-H3` i `cathrynlavery/diagram-design`; zapis szczegółowy w `governance/EXTERNAL_PATTERN_ASSIMILATION_2026-08-13.md`.
+- **Zastępuje:** ad-hoc przejmowanie wzorców, szerokie wyprzedzające ładowanie dokumentacji oraz niejawne retry/silent degradation tam, gdzie zatwierdzone wzorce wskazują rozwiązanie. Nie zastępuje istniejących invariantów ani kontraktów.
+- **Nie zmienia:** architektury v1.1, `INV-001`–`INV-011`, `GIN-001`–`GIN-007`, `ARCH-001`, `FALSE SUCCESS = 0`, priorytetu `EXECUTOR P1`, semantyki Ginsenga, kontraktu Executora ani istniejących bramek.
+- **Konsekwencje:** progressive disclosure jest stosowane teraz; complexity budget pozostaje interpretacją `ARCH-001`; default value ≠ user decision pozostaje pokryte przez `INV-005`; zasada Context-IR jest realizowana przez istniejący przepływ Ginseng/COS → Project Contract → Task Contract → Executor; controlled fallback wzmacnia `FALSE SUCCESS = 0`. Source vs semantic atom, retention analysis i latest-approved-version discipline są odłożone do `Executor P1 ACCEPT`; State → Action → State wolno rozważyć wyłącznie po realnym blockerze P1/P2; diagram runtime, Ginseng visualization i H3 video-specific workflows nie są teraz wdrażane.
+- **Status wdrożenia:** `CANONICAL DECISION RECORDED / RUNTIME IMPLEMENTATION DEFERRED`
+- **Powiązane repozytoria:** `JTJ07/COS`, evidence: `MiniMax-AI/MiniMax-H3`, `cathrynlavery/diagram-design`
+- **Powiązany PR:** draft PR z `agent/assimilate-minimax-diagram-patterns` do `agent/ecosystem-control-package-v1-1`
 
 ---
 

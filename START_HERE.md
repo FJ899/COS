@@ -47,6 +47,21 @@ Tryby:
 9. Zastosuj hierarchię źródeł; nie rozwiązuj konfliktu przez zgadywanie.
 10. Zwróć raport startowy, a dopiero potem zachowanie właściwe dla trybu.
 
+### Progressive disclosure
+
+Po wykonaniu obowiązkowych odczytów wymaganych powyżej stosuj zasadę:
+
+```text
+ROOT ROUTER + CANONICAL STATE
+        ↓
+SELECT PROJECT / TASK
+        ↓
+LOAD ONLY RELEVANT
+LOCAL CONTRACTS / STATE / HANDOFF / REFERENCES
+```
+
+Nie ładuj szeroko dokumentacji, referencji ani stanu spoza bieżącego projektu i zadania, jeżeli nie są potrzebne do rozstrzygnięcia aktualnego problemu. Ta reguła nie zmienia hierarchii źródeł, nie omija obowiązkowego state owner, nie zmienia stop rules i nie pozwala pomijać wymaganych kontraktów ani odczytów startowych.
+
 Nie czytaj automatycznie branchy archiwalnych, pełnej dokumentacji innych projektów ani plików `continuity/COLD_START_*`, chyba że celem sesji jest audyt ciągłości.
 
 ## 3. Mapa entrypointów
