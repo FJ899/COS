@@ -2,7 +2,7 @@
 system: creative-os-lean
 version: 1.0
 status: ACTIVE_LEAN_PILOT
-updated_at: 2026-07-31
+updated_at: 2026-08-17
 history: git
 ---
 
@@ -140,6 +140,78 @@ Decyzje:
 - Task Observer — alias Evidence-Guided Maintenance Loop; zachować mały checkpoint, nie pełny runtime.
 
 Warunek powrotu: konkretny problem projektu, audyt kodu i uprawnień, instalacja project-local przypięta do wersji oraz test przed/po.
+
+### IDEA-2026-008 — Radar Deep Dive Escalation — `PARKING`
+
+Po co: okresowy `ECOSYSTEM CAPABILITY RADAR` może znaleźć obiecujący mechanizm, ale krótki skan nie wystarcza do decyzji o asymilacji.
+
+Kandydat do przyszłej funkcji: gdy znalezisko przekroczy próg wartości, uruchomić ukierunkowany deep dive jego kodu, architektury, dokumentacji, testów, issue/failure modes i granic zaufania. Wynik ma odpowiedzieć: co przejąć, co zastąpić, czego nie kopiować, jaki jest koszt integracji, jakie regresje są możliwe i czy można dzięki temu usunąć część naszej przyszłej architektury.
+
+Nie teraz: radar pozostaje mechanizmem obserwacji; deep dive nie może automatycznie prowadzić do adopcji ani zmiany kanonu.
+
+Powrót: znalezisko z radaru otrzyma `INVESTIGATE_FURTHER` lub równoważny wysoki priorytet i będzie miało konkretną relację do istniejącego problemu COS / Ginseng / Executor.
+
+### IDEA-2026-009 — Component Impact & Integration Testing — `PARKING`
+
+Analogicznie do testowania nowej części bolidu: przed adopcją zewnętrznego komponentu najpierw określić pełny wektor wpływu zamiast testować cały system bez kierunku.
+
+Kandydat do przyszłej funkcji:
+
+```text
+COMPONENT / CHANGE
+      ↓
+FUNCTION / CAPABILITY IMPACT
+      ↓
+DIRECT + TRANSITIVE DEPENDENCIES
+      ↓
+INVARIANTS / CONTRACTS AT RISK
+      ↓
+TARGETED TEST PLAN
+      ↓
+ISOLATED CANDIDATE
+      ↓
+EXECUTOR + INDEPENDENT VERIFIER
+```
+
+Cel: `impact-before-adoption`, targeted regression i jawne `NO_KNOWN_IMPACT` tam, gdzie brak drogi zależności, zamiast pełnego ręcznego retestu wszystkiego albo swobodnego zgadywania przez AI.
+
+Nie teraz: nie tworzyć nowego Impact Engine przed dowodem, że istniejące Ginseng / lineage / testy nie wystarczają.
+
+Powrót: po Executor P1 ACCEPT i przy pierwszej rzeczywistej zmianie o nieoczywistym blast radius albo gdy dwa przypadki pokażą koszt pełnego retestu / ręcznej analizy zależności.
+
+### IDEA-2026-010 — Same Capability, Smaller Footprint — `PARKING`
+
+Zasada inżynierska: postęp nie musi oznaczać „nowsze” lub „więcej”. Czasami najlepsze rozwiązanie daje tę samą wymaganą funkcję przy mniejszym silniku, mniejszej architekturze i mniejszym koszcie utrzymania.
+
+Radar i przyszłe audyty powinny aktywnie szukać nie tylko nowych capability, ale również funkcjonalnie równoważnych mechanizmów o mniejszym:
+
+- runtime footprint;
+- dependency footprint;
+- state surface;
+- context footprint;
+- attack surface;
+- koszcie operacyjnym i utrzymaniowym;
+- złożoności architektury.
+
+Warunek: „mniejsze” jest ulepszeniem tylko wtedy, gdy zachowuje wymagane capability, invariants, trust boundary i obserwowalną jakość.
+
+Potencjalny wynik może brzmieć `REPLACE_WITH_SMALLER_EQUIVALENT` albo `DELETE_CUSTOM_COMPONENT`, ale dopiero po teście równoważności.
+
+Powrót: radar znajdzie konkretną parę obecne/projektowane rozwiązanie ↔ mniejszy odpowiednik albo istniejący komponent wykaże mierzalny koszt złożoności, wydajności, bezpieczeństwa lub utrzymania.
+
+### IDEA-2026-011 — Evidence Package: small stable core + extensible facets — `PARKING`
+
+Źródło pomysłu: kandydat z `ECOSYSTEM CAPABILITY RADAR 001`, zainspirowany wzorcem małego stabilnego rdzenia i rozszerzalnych facetów spotykanym m.in. w OpenLineage.
+
+Hipoteza: przyszły Evidence Package może być łatwiejszy do utrzymania jako minimalny stabilny envelope (tożsamość działania, wejścia/wyjścia, hashe, provenance, czas, verifier) plus opcjonalne typowane rozszerzenia, zamiast jednego stale rosnącego gigantycznego schema-object.
+
+Potencjalne korzyści: kompatybilność, mniejszy blast radius zmian schematu, możliwość domenowych rozszerzeń bez przebudowy rdzenia oraz progressive disclosure także na poziomie evidence.
+
+Nie teraz: brak dowodu, że obecny Evidence Package cierpi z powodu monolitycznego schematu. Nie zmieniać kontraktu Executora ani Verifiera na podstawie samej analogii.
+
+Powrót: pierwszy realny przypadek, w którym trzeba dodać domenowy rodzaj evidence bez naruszania istniejącego rdzenia, albo deep dive wykaże dojrzały wzorzec możliwy do adaptacji bez nowej warstwy runtime.
+
+Źródłowy snapshot: `governance/ECOSYSTEM_CAPABILITY_RADAR_001_2026-08-17.md`.
 
 ---
 
