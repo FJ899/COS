@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "decision_id": "GINSENG_TEST003_DECISION_A",
+  "decision_type": "TEST_ONLY_DECISION",
+  "status": "PREPARED_NOT_EXECUTED",
+  "variant": "VARIANT_A_KEEP_DEC002",
+  "scenario_id": "S001",
+  "baseline_version": "BASELINE_2026_07",
+  "subject": ["DEC002", "R003", "P002"],
+  "decision": "Preserve DEC002 and preserve the complaints-process owner in a distinct Customer Service function inside the proposed Customer Operations structure.",
+  "authority": {
+    "type": "TEST_CONTRACT_ONLY",
+    "source": "tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md",
+    "production_decision": false,
+    "baseline_change_authorized": false,
+    "other_gate_decisions_authorized": false
+  },
+  "expected_scope": {
+    "resolve_exactly_one_gate": "complaints_ownership",
+    "resolve_overlay_gate": "PROCESS_OWNER_GATE",
+    "remaining_blocking_gate_count": 6,
+    "implementation_readiness": "BLOCKED",
+    "baseline_mutated": false
+  }
+}
