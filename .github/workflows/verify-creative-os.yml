@@ -28,3 +28,6 @@ jobs:
 
       - name: Verify Ginseng D-09 final D0 closure
         run: python scripts/verify_ginseng_d09_d0_closure.py
+
+      - name: Verify Ginseng D0 Human acceptance
+        run: python scripts/verify_ginseng_d0_human_acceptance.py
