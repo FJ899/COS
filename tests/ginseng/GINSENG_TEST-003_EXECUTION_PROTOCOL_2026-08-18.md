@@ -1,13 +1,15 @@
 ---
 document: GINSENG_TEST-003_EXECUTION_PROTOCOL
-version: 1
+version: 1.1
 status: PREPARATION_ONLY / NOT_EXECUTED
 owner: USER
 prepared_at: 2026-08-18
+amended_at: 2026-08-18
 candidate: GINSENG_CANDIDATE_R0
 candidate_freeze_source: governance/GINSENG_CANDIDATE_R0_FREEZE_2026-08-18.md
 runtime_authorized: false
 test_execution_authorized: false
+evidence_integrity_revision: DETACHED_AFTER_ARTIFACT_MANIFEST
 ---
 
 # GINSENG TEST-003 — bounded execution protocol
@@ -89,10 +91,14 @@ The controller must:
 - unpack all inputs into a fresh temporary workspace;
 - mark Test-2 v1.1 artifacts as immutable `BEFORE` evidence;
 - materialize exactly one test decision fixture;
-- create a new empty output directory;
+- create a new empty candidate output directory;
+- create a separate controller-owned evidence directory that the candidate worker cannot write;
 - record environment, timestamps, model/tool identity and all input hashes;
 - prevent writes to the original input directories;
-- pass only the allowed candidate inputs to the candidate worker.
+- pass only the allowed candidate inputs to the candidate worker;
+- after candidate generation is complete, compute SHA-256 over the raw bytes of all six required AFTER artifacts and write `after_artifact_manifest.json` in the controller-owned evidence directory.
+
+`after_artifact_manifest.json` is a detached integrity record. It hashes the six candidate AFTER artifacts and does **not** hash itself. Its own integrity is established by independent replay/recomputation from the saved raw bundle, not by an impossible self-referential hash.
 
 The controller must never manufacture PASS.
 
@@ -118,6 +124,10 @@ Required candidate outputs:
 - `S001_gate_closure_evidence.json`;
 - `S001_gate_closure_source_index.json`;
 - `S001_gate_closure_delta.json`.
+
+`S001_gate_closure_evidence.json` may record SHA-256 values for the other five peer candidate artifacts, but it must not be required to contain a SHA-256 of its own final bytes. Integrity of all six candidate outputs, including the evidence file itself, is bound by the detached controller-owned `after_artifact_manifest.json`.
+
+The worker may not create, edit or overwrite the controller-owned `after_artifact_manifest.json`.
 
 The worker may not edit the Test-2 source package or the blind-input package.
 
@@ -242,6 +252,8 @@ before/
   exact Test-2 v1.1 artifacts
 after/
   six required candidate artifacts
+controller/
+  after_artifact_manifest.json
 verifier/
   recomputed_metrics.json
   semantic_diff.json
@@ -251,7 +263,9 @@ replay/
   replay_report.json
 ```
 
-No file produced by the candidate worker may be treated as authoritative verifier evidence merely because of its filename.
+The detached `controller/after_artifact_manifest.json` must list filename and SHA-256 for exactly the six required candidate AFTER artifacts. It must be created only after candidate generation has ended and must be outside the candidate-writable output directory.
+
+No file produced by the candidate worker may be treated as authoritative verifier evidence merely because of its filename. A candidate-supplied copy of `after_artifact_manifest.json` has no authority and must be ignored.
 
 ## 11. Replay requirement
 
@@ -279,6 +293,7 @@ The verifier must actively attack at least these paths:
 - candidate creates `READY` while six blockers remain;
 - candidate promotes its own relation/hypothesis to authoritative truth;
 - candidate-provided PASS is trusted without independent recomputation;
+- candidate attempts to supply or overwrite the detached controller-owned AFTER-artifact manifest;
 - verifier relies on hidden session memory instead of the evidence bundle.
 
 Any confirmed path is Test-003 FAIL or BLOCKED, depending on whether the failure is candidate behavior or missing evidence.
