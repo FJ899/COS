@@ -1,0 +1,120 @@
+{
+  "schema_version": "ginseng-d05-decision-lineage-proof/1.0",
+  "record_status": "D05_SATISFIED_IF_VERIFIED_AND_ACCEPTED",
+  "candidate": "GINSENG_CANDIDATE_R0",
+  "done_scope": "GINSENG_DONE_D0",
+  "gate": "D-05 DECISION LINEAGE",
+  "proof_method": "SOURCE_BOUND_RECONSTRUCTION_ONLY",
+  "new_behavioral_test": false,
+  "new_runtime_capability": false,
+  "decision_lineage": {
+    "DECISION_ID": "GINSENG_TEST003_DECISION_A",
+    "PROBLEM": {
+      "conflict": "ACT002 <-> DEC002",
+      "action_meaning": "przeniesienie wlasciciela reklamacji",
+      "baseline_decision_meaning": "wlasciciel procesu reklamacji pozostaje w Obsludze Klienta"
+    },
+    "PREMISES": [
+      "DEC002 is the approved baseline decision used by Test-003 and Variant A preserves it.",
+      "GINSENG_TEST003_DECISION_A is TEST_ONLY_DECISION with no production effect and no authority to mutate the baseline.",
+      "The bounded decision subject is DEC002 / R003 / P002."
+    ],
+    "CONSIDERED_OPTIONS": [
+      {
+        "id": "VARIANT_A_KEEP_DEC002",
+        "meaning": "Preserve DEC002 and preserve the complaints-process owner in a distinct Customer Service function inside the proposed Customer Operations structure."
+      },
+      {
+        "id": "VARIANT_B_SUPERSEDE_DEC002",
+        "meaning": "Add a formal decision superseding DEC002 and move responsibility to a new role."
+      }
+    ],
+    "SELECTED_OPTION": "VARIANT_A_KEEP_DEC002",
+    "SELECTION_REASON": "Variant A is the default first-run variant because it does not require changing the approved baseline decision.",
+    "REJECTED_OPTIONS": [
+      "VARIANT_B_SUPERSEDE_DEC002"
+    ],
+    "REJECTION_REASONS": {
+      "VARIANT_B_SUPERSEDE_DEC002": "Not selected for the first run: Variant B requires a formal decision superseding DEC002, while the contract selects Variant A specifically to avoid changing the approved baseline decision."
+    },
+    "EXPECTED_CONSEQUENCES": {
+      "resolve_active_gate": "complaints_ownership",
+      "resolve_overlay_gate": "PROCESS_OWNER_GATE",
+      "remaining_blocking_gate_count": 6,
+      "remaining_gates_semantically_preserved": true,
+      "implementation_readiness": "BLOCKED",
+      "baseline_mutated": false,
+      "no_impact_controls_preserved_unless_new_causal_path_is_proved": true,
+      "source_traceability_complete": true
+    },
+    "DECISION_OWNER": "HUMAN_TEST_CONTRACT",
+    "DECIDED_AT": "2026-08-18",
+    "SOURCE_REFERENCES": [
+      "test_contract_current",
+      "test_decision_fixture",
+      "input_manifest",
+      "execution_protocol",
+      "result_record",
+      "d0_done_freeze",
+      "d0_evidence_audit"
+    ],
+    "SUPERSEDES": [],
+    "SUPERSEDED_BY": [],
+    "STATUS": "APPLIED_IN_GINSENG_TEST003 / TEST_ONLY_DECISION / NO_PRODUCTION_EFFECT"
+  },
+  "field_provenance": {
+    "DECISION_ID": {"mode": "DIRECT", "sources": ["test_decision_fixture", "result_record"]},
+    "PROBLEM": {"mode": "DIRECT", "sources": ["test_contract_current"]},
+    "PREMISES": {"mode": "DIRECT_COMPOSITION", "sources": ["test_contract_current", "test_decision_fixture", "execution_protocol"]},
+    "CONSIDERED_OPTIONS": {"mode": "DIRECT", "sources": ["test_contract_current"]},
+    "SELECTED_OPTION": {"mode": "DIRECT", "sources": ["test_contract_current", "result_record"]},
+    "SELECTION_REASON": {"mode": "DIRECT", "sources": ["test_contract_current"]},
+    "REJECTED_OPTIONS": {"mode": "DETERMINISTIC_FROM_TWO_OPTION_SELECTION", "sources": ["test_contract_current", "result_record"]},
+    "REJECTION_REASONS": {"mode": "DETERMINISTIC_SOURCE_COMPOSITION", "sources": ["test_contract_current"]},
+    "EXPECTED_CONSEQUENCES": {"mode": "DIRECT_COMPOSITION", "sources": ["test_contract_current", "test_decision_fixture", "input_manifest"]},
+    "DECISION_OWNER": {"mode": "DIRECT", "sources": ["execution_protocol"]},
+    "DECIDED_AT": {"mode": "BOUND_TO_AUTHORIZED_EXECUTION_DATE", "sources": ["test_contract_current", "result_record"]},
+    "SOURCE_REFERENCES": {"mode": "DIRECT", "sources": ["d0_done_freeze", "d0_evidence_audit"]},
+    "SUPERSEDES": {"mode": "DIRECT_NEGATIVE", "sources": ["test_contract_current", "execution_protocol", "result_record"]},
+    "SUPERSEDED_BY": {"mode": "CURRENT_ACCEPTED_EVIDENCE_NEGATIVE_SCAN", "sources": ["result_record", "d0_evidence_audit"]},
+    "STATUS": {"mode": "DIRECT_COMPOSITION", "sources": ["test_decision_fixture", "execution_protocol", "result_record"]}
+  },
+  "source_bindings": {
+    "test_contract_current": {
+      "path": "tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md",
+      "git_blob_sha": "b901fde1601d21acf04513971f39a8e977e6f96f"
+    },
+    "test_decision_fixture": {
+      "path": "tests/ginseng/GINSENG_TEST-003_DECISION_A_2026-08-18.json",
+      "git_blob_sha": "93c648ee9e9f69b60a62f00b7d5b007d84ec32a3"
+    },
+    "input_manifest": {
+      "path": "tests/ginseng/GINSENG_TEST-003_INPUT_MANIFEST_2026-08-18.json",
+      "git_blob_sha": "e3eb9cdee59cfd248892435cc6b130992a7160c7"
+    },
+    "execution_protocol": {
+      "path": "tests/ginseng/GINSENG_TEST-003_EXECUTION_PROTOCOL_2026-08-18.md",
+      "git_blob_sha": "d94cf828c42ac52ab875c729eccede06cbb795df"
+    },
+    "result_record": {
+      "path": "tests/ginseng/GINSENG_TEST-003_RESULT_RECORD_2026-08-18.md",
+      "git_blob_sha": "4ca0bb2065d3914e73b5ec8f3283894b681f9d54"
+    },
+    "d0_done_freeze": {
+      "path": "governance/GINSENG_DONE_D0_FREEZE_2026-08-18.md",
+      "git_blob_sha": "eafc5d21729c393801ee3f1c7e3d57e7da883ee3"
+    },
+    "d0_evidence_audit": {
+      "path": "governance/GINSENG_D0_EVIDENCE_AUDIT_2026-08-18.md",
+      "git_blob_sha": "48065e555c338ba68f309d879080dfcdf81ba3c2"
+    }
+  },
+  "negative_assertions": {
+    "production_decision_created": false,
+    "baseline_change_claimed": false,
+    "runtime_required": false,
+    "new_normative_meaning_added": false,
+    "known_superseder_in_current_accepted_d0_evidence": false
+  },
+  "closure_condition": "D-05 is SATISFIED only if this exact record passes the fail-closed repository verifier against the bound source bytes and later enters accepted COS history. This record alone does not claim Ginseng D0 completion."
+}

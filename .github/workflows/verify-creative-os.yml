@@ -22,3 +22,12 @@ jobs:
 
       - name: Verify Creative OS continuity
         run: python scripts/verify_creative_os.py
+
+      - name: Verify Ginseng D-05 Decision Lineage
+        run: python scripts/verify_ginseng_d05_lineage.py
+
+      - name: Verify Ginseng D-09 final D0 closure
+        run: python scripts/verify_ginseng_d09_d0_closure.py
+
+      - name: Verify Ginseng D0 Human acceptance
+        run: python scripts/verify_ginseng_d0_human_acceptance.py
