@@ -182,6 +182,23 @@ Następny krok globalny: niezależny test minimalnego klucza stacyjki. Następny
 
 ---
 
+
+### Ginseng D-08 durable evidence custody — 2026-08-19
+
+Human selected Option B: preserve the exact `GINSENG_TEST-003` evidence bytes in durable repository custody and bind them to SHA-256.
+
+```text
+artifact: tests/ginseng/evidence/GINSENG_TEST003_EXECUTION_EVIDENCE_2026-08-18.zip
+manifest: tests/ginseng/evidence/GINSENG_TEST003_EXECUTION_EVIDENCE_2026-08-18.manifest.json
+SHA-256: d9077d08012667a8a2a91e93912ee752bf991b50b5b01e4d2f80914cde315fdf
+byte size: 95846
+ZIP entries: 39
+D-08: SATISFIED — DURABLE REPOSITORY CUSTODY / EXACT BYTES / SHA-256 BOUND
+GINSENG D0: BLOCKED — D-05 DECISION LINEAGE remains open; D-09 requires final recheck after closure.
+```
+
+This custody record does not prove D-05, claim Ginseng D0 completion, activate runtime, or activate Ginseng as a formal project. Earlier current-state statements that D-08 custody is open are superseded when this commit enters accepted COS history.
+
 ## 6. Ewolucja systemu — append-only
 
 - **EVOLUTION-2026-001 — BPM:160:** lokalny system posiadał WIP, parking, Decision Log, handover, QA i testy empiryczne. Status: `LOCAL SYSTEM`.

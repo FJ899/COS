@@ -1,0 +1,30 @@
+{
+  "schema_version": "ginseng-evidence-custody/1.0",
+  "recorded_at": "2026-08-19",
+  "artifact": {
+    "filename": "GINSENG_TEST003_EXECUTION_EVIDENCE_2026-08-18.zip",
+    "repository_path": "tests/ginseng/evidence/GINSENG_TEST003_EXECUTION_EVIDENCE_2026-08-18.zip",
+    "sha256": "d9077d08012667a8a2a91e93912ee752bf991b50b5b01e4d2f80914cde315fdf",
+    "byte_size": 95846,
+    "zip_entry_count": 39
+  },
+  "source_provenance": "Exact evidence bytes produced by the Human-authorized GINSENG_TEST-003 execution on 2026-08-18 and independently verified plus replayed before repository custody.",
+  "verification": {
+    "independent_verifier": "PASS",
+    "evidence_replay": "PASS",
+    "false_success_paths": 0,
+    "archive_integrity": "PASS"
+  },
+  "custody": {
+    "human_decision": "B — zachować exact evidence bytes w trwałym, repozytoryjnym custody i związać je hashem.",
+    "status": "DURABLE_REPOSITORY_CUSTODY / EXACT_BYTES / SHA256_BOUND",
+    "pre_custody_cos_main": "0f16a9d06fd453f33e19868f5e333ab05f0b0f08",
+    "future_replay_contract": "Checkout an accepted COS state containing this artifact and manifest; recompute SHA-256 and byte size; test ZIP integrity; replay without chat, /mnt/data, external attachment, or model-memory dependency."
+  },
+  "non_claims": [
+    "Does not prove D-05 Decision Lineage",
+    "Does not claim Ginseng D0 completion",
+    "Does not activate or implement Ginseng runtime",
+    "Does not activate Ginseng as a formal project"
+  ]
+}
