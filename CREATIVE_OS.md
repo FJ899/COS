@@ -2,7 +2,7 @@
 system: creative-os-lean
 version: 1.0
 status: ACTIVE_LEAN_PILOT
-updated_at: 2026-08-17
+updated_at: 2026-08-18
 history: git
 ---
 
@@ -212,6 +212,106 @@ Nie teraz: brak dowodu, że obecny Evidence Package cierpi z powodu monolityczne
 Powrót: pierwszy realny przypadek, w którym trzeba dodać domenowy rodzaj evidence bez naruszania istniejącego rdzenia, albo deep dive wykaże dojrzały wzorzec możliwy do adaptacji bez nowej warstwy runtime.
 
 Źródłowy snapshot: `governance/ECOSYSTEM_CAPABILITY_RADAR_001_2026-08-17.md`.
+
+### IDEA-2026-012 — Verified Cross-Domain Transfer — `PARKING`
+
+**Cel:** rozszerzyć przyszły `ECOSYSTEM CAPABILITY RADAR` z wyszukiwania podobnych technologii o wyszukiwanie **sprawdzonych mechanizmów z innych domen**, które rozwiązują problem o tej samej strukturze i mogą zostać zaadaptowane do COS / Ginseng / Executor.
+
+Nie szukamy wyłącznie `AI tools`. Źródłami mogą być m.in. lotnictwo, automotive, F1, space, wojsko, energetyka jądrowa, bankowość, medtech, przemysł, distributed systems, databases, compilers, build systems, supply-chain security i inne dziedziny z dojrzałymi mechanizmami kontroli, redundancji, weryfikacji, propagacji zmian lub odtwarzania stanu.
+
+**Zasada podstawowa:** nie przenosić powierzchownego rozwiązania ani nazwy technologii. Najpierw odtworzyć abstrakcyjny problem i mechanizm, który faktycznie odpowiada za wynik.
+
+```text
+SOURCE DOMAIN
+      ↓
+ABSTRACT PROBLEM
+      ↓
+PROVEN MECHANISM
+      ↓
+BOUNDARIES + ASSUMPTIONS
+      ↓
+TRANSFER HYPOTHESIS
+      ↓
+LOCAL CANDIDATE
+      ↓
+LOCAL TEST + INDEPENDENT PROOF
+```
+
+Przykładowe transfery strukturalne:
+
+- build-system dependency invalidation → Ginseng `STALE / REVALIDATION_REQUIRED`;
+- software supply-chain attestations → Executor action-result evidence;
+- four-eyes / separation-of-duties → Human Decision Gate / independent verifier;
+- event sourcing / crash recovery → COS/Reconstructor state reconstruction;
+- safety-critical change impact analysis → Component Impact & Integration Testing.
+
+**Poziomy dojrzałości znaleziska:**
+
+```text
+INTERESTING_IDEA
+→ PROVEN_MECHANISM
+→ TRANSFER_CANDIDATE
+→ LOCAL_CANDIDATE
+→ LOCALLY_VERIFIED
+```
+
+`PROVEN_MECHANISM` oznacza wyłącznie, że mechanizm ma wiarygodny dowód działania w domenie źródłowej. Nie wolno utożsamiać tego z `LOCALLY_VERIFIED`.
+
+`TRANSFER_CANDIDATE` oznacza: mechanizm jest wystarczająco dobrze udokumentowany i zweryfikowany u źródła, a istnieje rozsądna hipoteza, że kluczowe założenia mogą przetrwać zmianę domeny. Nadal **nie jest to decyzja o adopcji**.
+
+**Minimalny TRANSFER EVIDENCE PACKAGE:**
+
+- `SOURCE / ORIGINAL_DOMAIN` — skąd pochodzi mechanizm i w jakim środowisku działa;
+- `PROBLEM_SOLVED` — jaki konkretny problem rzeczywiście rozwiązuje;
+- `MECHANISM` — jaka przyczynowa zasada / konstrukcja daje wynik;
+- `IMPLEMENTATION_EVIDENCE` — czy istnieje rzeczywista implementacja, nie tylko koncepcja;
+- `TEST_EVIDENCE` — jak i przez kogo została przetestowana;
+- `OPERATING_HISTORY` — jeżeli dostępne: rzeczywiste użycie, skala, czas działania;
+- `FAILURE_MODES` — znane sposoby awarii i błędnego użycia;
+- `BOUNDARIES` — czego rozwiązanie świadomie nie rozwiązuje;
+- `CONSTRAINTS` — wymagania środowiskowe, organizacyjne, fizyczne lub techniczne;
+- `TRADE_OFFS` — co zyskuje się kosztem czego;
+- `SECURITY / SAFETY MODEL` — jakie zagrożenia uwzględnia i jakich nie uwzględnia;
+- `MAINTENANCE COST` — koszt operacyjny, aktualizacje, zależności i kompetencje;
+- `TRANSFER_HYPOTHESIS` — co dokładnie chcemy przenieść do naszej domeny;
+- `TRANSFER_DISTANCE` — jak daleka jest domena źródłowa od docelowej i które różnice są istotne;
+- `ASSUMPTIONS_THAT_MUST_HOLD` — jakie warunki odpowiedzialne za skuteczność muszą pozostać prawdziwe po transferze;
+- `WHAT_COULD_REPLACE` — własny komponent, mechanizm lub przyszłą pracę, którą kandydat może ograniczyć albo usunąć;
+- `LOCAL_PROOF_REQUIRED` — jaki test odróżni udany transfer od atrakcyjnej analogii.
+
+**Kryterium transferowalności:** nie wystarczy udowodnić `TO DZIAŁA`. Trzeba wykazać, że **powód, dla którego działa w źródle, ma nadal zastosowanie w naszej domenie**. Jeżeli kluczowe założenie znika po transferze, kandydat wraca do `INTERESTING_IDEA` albo jest odrzucany.
+
+**Powiązanie z Same Capability, Smaller Footprint:** kandydaci cross-domain otrzymują dodatkowy priorytet, jeżeli pozwalają zachować tę samą wymaganą capability przy mniejszym runtime, mniejszej liczbie komponentów, zależności, stanie, attack surface lub koszcie utrzymania. Najlepszym wynikiem transferu może być nie nowa funkcja, lecz `REPLACE_WITH_SMALLER_EQUIVALENT` albo `DELETE_CUSTOM_COMPONENT`.
+
+**Anti-patterns:**
+
+- kopiowanie technologii zamiast mechanizmu;
+- traktowanie popularności albo prestiżu branży jako dowodu;
+- przenoszenie wyniku bez warunków brzegowych;
+- utożsamianie testów źródłowych z naszymi testami;
+- ignorowanie skali, fizyki, threat modelu lub modelu organizacyjnego źródła;
+- używanie analogii jako uzasadnienia `ACCEPT`;
+- automatyczna adopcja przez radar bez Human Decision Gate;
+- zwiększanie architektury tylko dlatego, że rozwiązanie źródłowe jest rozbudowane.
+
+**Docelowy werdykt badawczy:**
+
+```text
+NOT_TRANSFERABLE
+INTERESTING_IDEA
+PROVEN_MECHANISM
+TRANSFER_CANDIDATE
+DEEP_DIVE_REQUIRED
+LOCAL_TEST_REQUIRED
+```
+
+Dopiero lokalny test zgodny z architekturą może później prowadzić do istniejących decyzji `ADOPT_NOW / ADAPT_EXISTING / DEFER_UNTIL_GATE / REJECT_DUPLICATE / REJECT_SCOPE`.
+
+**Granice:** to jest przyszły tryb badawczy radaru, nie nowy komponent architektury. Nie zmienia Ginseng semantics, kontraktu Executora, Verifiera, P0–P4 ani priorytetów. Radar zbiera evidence i hipotezy; nie tworzy samodzielnie kanonu ani decyzji adopcyjnych.
+
+**Nie teraz:** nie budować osobnego `technology-transfer engine`, bazy wiedzy ani runtime. Pierwszy etap może być realizowany jako metoda research + ustandaryzowany rekord evidence.
+
+**Powrót:** pierwszy kandydat znaleziony poza bezpośrednią domeną AI/software, który ma wiarygodne implementation/test evidence, pasuje strukturalnie do realnego problemu COS / Ginseng / Executor i daje możliwość usunięcia pracy własnej, zmniejszenia footprintu albo wzmocnienia trust boundary. Taki przypadek powinien uruchomić `IDEA-2026-008 — Radar Deep Dive Escalation` i zakończyć się jawnie `TRANSFER_CANDIDATE` albo `NOT_TRANSFERABLE`, bez automatycznej adopcji.
 
 ---
 
