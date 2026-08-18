@@ -79,6 +79,28 @@ WHOLE-PROJECT COMPLETION BEYOND FROZEN D0: NOT CLAIMED
 
 Semantic status: `ALIGNED`.
 
+### ScriptOps local current state
+
+Location status: `JTJ07/scriptops MAIN`.
+
+Observed exact main:
+
+`daa6e5dc210e09171a530eeffe5601e0e74ae041`
+
+Local state owner:
+
+`PROJECT_STATE.md`
+
+Observed status:
+
+```text
+PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM / SADDLE LIVE MODEL EVIDENCE NEXT
+```
+
+This is local ScriptOps truth. COS may carry the high-level status and locator, but it must not replace the local state owner or convert the mechanism PASS into a maturity/product-completion claim.
+
+Semantic status: `ALIGNED` in the local source; stale in pre-reconciliation COS pointers.
+
 ## 4. Current contradictions / gaps
 
 ### COS-C01 — state-owner drift
@@ -104,9 +126,9 @@ Minimum repair must preserve the historical proof while validating the new accep
 
 ### COS-C03 — open draft authority ambiguity
 
-PR #18, PR #19 and PR #20 remain open drafts in a historical branch chain.
+PR #18, PR #19 and PR #20 remain open drafts in a historical branch chain at the audit baseline.
 
-Observed location/authority classification:
+Observed baseline location/authority classification:
 
 ```text
 PR #18: LOCATION = OPEN PR / AUTHORITY = SUPERSEDED DRAFT CANDIDATE
@@ -120,7 +142,47 @@ Semantic status: `GAP` in authority hygiene, not a license to reinterpret or mer
 
 Closing these PRs as superseded must not be read as blanket semantic rejection of every historical idea they contain.
 
-## 5. Minimum closure path
+### COS-C04 — local source locator / ScriptOps state drift
+
+At the audit continuation, current ScriptOps repository evidence was independently rechecked:
+
+```text
+repo: JTJ07/scriptops
+main: daa6e5dc210e09171a530eeffe5601e0e74ae041
+state_owner: PROJECT_STATE.md
+status: PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM / SADDLE LIVE MODEL EVIDENCE NEXT
+```
+
+The COS state owner and `START_HERE.md` still carried the older cross-project pointer:
+
+```text
+litrgratis-pixel/scriptops
+ACCESS CHECK REQUIRED
+```
+
+and other startup locators still used historical `litrgratis-pixel/...` repository ownership even though the current accessible repositories are under `JTJ07/...`.
+
+Semantic status: `CONTRADICTION` in cross-project continuity metadata; the local ScriptOps state itself is not contradicted.
+
+Minimum repair is to update only high-level ScriptOps status and repository locators in COS while retaining local ScriptOps semantic ownership and explicit no-maturity boundary.
+
+## 5. Memory-gap recovery boundary
+
+A separate design/audit session returned six potentially valuable memory/repo-gap items. They are preserved in:
+
+`governance/MEMORY_REPO_GAP_RECOVERY_RECORD_2026-08-19.md`
+
+That file is deliberately:
+
+```text
+RECOVERY_RECORD / NON_CANONICAL / NO_AUTHORITY_PROMOTION
+```
+
+Its existence prevents data loss but does not make a reported prior Human decision, AI recommendation, ownership refinement, open question, or test hypothesis canonical.
+
+This is continuity preservation, not semantic promotion.
+
+## 6. Minimum closure path
 
 No new component or framework is required.
 
@@ -130,19 +192,24 @@ No new component or framework is required.
 3. Adjust validators so historical proof remains checked but current accepted integration is reported truthfully.
 4. Record the separate PR #29 merge authority/integration as current accepted state rather than rewriting the earlier acceptance record that correctly said merge was still pending at that moment.
 5. Close PR #18/#19/#20 as superseded drafts with explicit provenance comments; do not merge them.
-6. Run the normal repository verification on the exact closure candidate head.
+6. Reconcile ScriptOps high-level state and current `JTJ07/...` repository locators against independently observed local sources without copying local canon into COS.
+7. Preserve memory-only findings only as non-canonical recovery material unless later source-bound or explicitly promoted by Human.
+8. Run the normal repository verification on the exact closure candidate head.
 ```
 
-## 6. Closure condition
+## 7. Closure condition
 
 COS ownership/state/continuity closure may be claimed only when:
 
 - `CREATIVE_OS.md` returns the current accepted cross-project state without requiring a hidden override;
 - local/project truth remains referenced, not copied into COS as a second canon;
+- current startup locators resolve to the current repositories rather than historical owner paths;
+- ScriptOps cross-project state does not regress to the superseded access-check pointer and does not overclaim maturity;
 - COS does not claim operational HOW, Human intent, consequence authority, or independent-verifier ownership;
 - historical Ginseng proof remains reproducible;
 - post-merge current-state verification is truthful;
 - stale open draft candidates cannot reasonably masquerade as current authority;
+- memory recovery does not silently become normative authority;
 - no new architecture/runtime/capability is introduced to achieve the repair.
 
 Until then:
