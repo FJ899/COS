@@ -16,6 +16,9 @@ REQUIRED = [
     "continuity/COLD_START_AUDIT-002.md",
     "tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md",
     "tests/ginseng/GINSENG_TEST-003_RESULT_RECORD_2026-08-18.md",
+    "governance/GINSENG_D0_HUMAN_ACCEPTANCE_2026-08-19.md",
+    "governance/GINSENG_D0_INTEGRATION_RECORD_2026-08-19.md",
+    "governance/COS_OWNERSHIP_STATE_CONTINUITY_AUDIT_2026-08-19.md",
     "archives/Archiwum09.md", "projects/bpm160/README.md",
     "projects/bpm160/PROJECT_STATE.md", "projects/bpm160/HANDOFF.md",
     "projects/bpm160/SOURCE_SUMMARY_2026-07-31.md",
@@ -29,6 +32,11 @@ EXPECTED = {
     "Creative OS": "ACTIVE / LEAN PILOT / START_HERE ACTIVE",
     "Creative OS Project Reconstructor": "ACTIVE / V1.0 STABILIZATION",
 }
+
+STALE_CURRENT_STATE = [
+    "Ginseng D0: BLOCKED — D-05 DECISION LINEAGE PROOF GAP + D-08 EVIDENCE CUSTODY HUMAN DECISION",
+    "GINSENG D0: BLOCKED — D-05 DECISION LINEAGE remains open; D-09 requires final recheck after closure.",
+]
 
 
 def fail(message: str) -> None:
@@ -80,14 +88,22 @@ def main() -> None:
         "system: creative-os-lean", "status: ACTIVE_LEAN_PILOT",
         "Rozmowa prowadzi proces; repozytorium zachowuje stan.",
         "Każda informacja ma jednego właściciela.",
+        "COS posiada wyłącznie trwały stan wysokiego poziomu i przekrojowy",
+        "Umiejscowienie informacji w repo nie tworzy semantic ownership ani authority.",
         "STARTED / OK / PARTIAL / BLOCKED / FAILED",
         "Navigation Protocol jest mechanizmem globalnego COS",
+        "Nie jest właścicielem operacyjnego wyboru HOW",
         "GINSENG_TEST-003 — zamknięcie pojedynczej bramki",
+        "GINSENG_DONE_D0: HUMAN ACCEPTED / CLOSED",
         "IDEA-2026-007 — zewnętrzne skille jako warstwa pomocnicza",
-        "DEC-2026-006 — kolejny test Ginseng i korekta BPM:160",
-        "EVOLUTION-2026-013 — korekta BPM i test Ginseng",
+        "DEC-2026-007 — Ginseng D0 closed; COS continuity closure",
+        "COS ownership/state/continuity: CLOSURE IN PROGRESS",
+        "EVOLUTION-2026-014 — Ginseng D0 closure i COS continuity reconciliation",
         "archives/Archiwum09.md",
     ], "CREATIVE_OS.md")
+    for stale in STALE_CURRENT_STATE:
+        if stale in cos:
+            fail(f"CREATIVE_OS.md nadal zawiera stale current-state marker: {stale}")
 
     project_rows = parse_rows(cos)
     if set(project_rows) != set(EXPECTED):
@@ -102,11 +118,12 @@ def main() -> None:
         fail("karta BPM:160 nie zawiera Spike, parkingu testów widzów i reconciliation")
     if len(re.findall(r"^### IDEA-", cos, re.MULTILINE)) < 7:
         fail("Idea Inbox nie zawiera siedmiu wpisów")
-    print("[PASS] CREATIVE_OS.md jest spójny")
+    print("[PASS] CREATIVE_OS.md ma aktualny cross-project state bez stale Ginseng override")
 
     start = load("START_HERE.md")
     require(start, [
         'role: "single-entrypoint"', "BOOT | WORK | AUDIT | PORTFOLIO",
+        'state_owner: "CREATIVE_OS.md"',
         "repo: litrgratis-pixel/scriptops", "critical_scope: sources/RC1_SCOPE_LOCK.md",
         "root: projects/bpm160", "source_summary: projects/bpm160/SOURCE_SUMMARY_2026-07-31.md",
         "SPIKE 001 IN PROGRESS", "ORIGINAL SOURCE FILES REQUIRED FOR SAFE RESUME",
@@ -119,7 +136,7 @@ def main() -> None:
     for mode in ["### BOOT", "### WORK", "### AUDIT", "### PORTFOLIO"]:
         if mode not in start:
             fail(f"brak trybu {mode}")
-    print("[PASS] START_HERE.md jest spójny")
+    print("[PASS] START_HERE.md wskazuje jeden cross-project state owner i lokalne źródła prawdy")
 
     bpm = "\n".join(load(p) for p in [
         "projects/bpm160/README.md", "projects/bpm160/PROJECT_STATE.md",
@@ -162,7 +179,39 @@ def main() -> None:
         "byte_identical_verdict_report: true",
         "FUNCTIONAL COMPLETION OF GINSENG: NOT CLAIMED",
     ], "GINSENG_TEST-003 result")
-    print("[PASS] GINSENG_TEST-003 jest wykonany i niezależnie zweryfikowany")
+    print("[PASS] GINSENG_TEST-003 pozostaje niezależnie zweryfikowany")
+
+    acceptance = load("governance/GINSENG_D0_HUMAN_ACCEPTANCE_2026-08-19.md")
+    require(acceptance, [
+        "status: HUMAN_ACCEPTED_TECHNICAL_CLOSURE / MERGE_PENDING",
+        "`AKCEPTUJĘ GINSENG D0 TECHNICAL CLOSURE`",
+        "merge_authorized: false",
+    ], "Ginseng D0 Human acceptance history")
+
+    integration = load("governance/GINSENG_D0_INTEGRATION_RECORD_2026-08-19.md")
+    require(integration, [
+        "status: INTEGRATED / HUMAN_ACCEPTED_D0_CLOSED",
+        "`AKCEPTUJĘ MERGE PR #29`",
+        "accepted_technical_head: 05d6f48730b80052bdeab55b52f4a67de5828130",
+        "merge_commit: a43a94c246112b72a54e952b52af1eacedaaeb3b",
+        "merge_tree: ce7c542095ae243ce07be1e2ee9642cb8c7ea69e",
+        "GINSENG_DONE_D0: HUMAN ACCEPTED / CLOSED",
+        "runtime_authorized: false",
+        "formal_project_activation: false",
+    ], "Ginseng D0 integration record")
+    print("[PASS] Ginseng D0 current accepted integration is explicit without rewriting prior authority")
+
+    cos_audit = load("governance/COS_OWNERSHIP_STATE_CONTINUITY_AUDIT_2026-08-19.md")
+    require(cos_audit, [
+        "status: AUDIT / NOT CLOSURE",
+        "SEMANTIC OWNERSHIP: durable high-level and cross-project state, continuity, provenance, and accepted cross-project state",
+        "MUST NOT: own local project canon",
+        "COS-C01 — state-owner drift",
+        "COS-C02 — post-merge validator drift",
+        "COS-C03 — open draft authority ambiguity",
+        "COS OWNERSHIP / STATE / CONTINUITY: OPEN",
+    ], "COS ownership/state/continuity audit")
+    print("[PASS] COS ownership audit preserves local truth and rejects operational HOW ownership")
 
     index = load("ARCHIVE_INDEX.md")
     archive = load("archives/Archiwum09.md")
@@ -175,12 +224,16 @@ def main() -> None:
     ], "Archiwum09.md")
     print("[PASS] Archiwum09 jest kompletne")
 
-    require(load("README.md"), ["Creative OS — instrukcja operacyjna", "Hierarchia źródeł"], "README.md")
+    require(load("README.md"), [
+        "Creative OS — instrukcja operacyjna", "Hierarchia źródeł",
+        "Aktywnym źródłem stanu przekrojowego jest jeden plik: [`CREATIVE_OS.md`](CREATIVE_OS.md).",
+        "Lokalne systemy projektowe odpowiadają za",
+    ], "README.md")
     require(load(".github/pull_request_template.md"), ["Problem / porażka", "Obserwowalny dowód zaliczenia", "Dodany koszt utrzymania"], "PR template")
     require(load("continuity/COLD_START_AUDIT-001.md"), ["PASS WITH FIXES", "ScriptOps"], "cold start 001")
     require(load("continuity/COLD_START_AUDIT-002.md"), ["PASS WITH FIXES", "START_HERE"], "cold start 002")
     print("[PASS] wcześniejsze kontrakty są zachowane")
-    print("[PASS] Creative OS Lean jest spójny po korekcie BPM:160 i wykonanym Test-003")
+    print("[PASS] Creative OS Lean jest spójny po Ginseng D0 integration i COS state-owner reconciliation")
 
 
 if __name__ == "__main__":
