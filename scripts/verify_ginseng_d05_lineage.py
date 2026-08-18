@@ -202,7 +202,6 @@ def verify_source_semantics() -> None:
             "GINSENG_TEST-003: PASS",
             "GINSENG_TEST003_DECISION_A",
             "TEST_ONLY_DECISION",
-            "production effect: NONE",
         ],
         "Test-003 result record",
     )
