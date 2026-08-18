@@ -73,7 +73,7 @@
     "REJECTION_REASONS": {"mode": "DETERMINISTIC_SOURCE_COMPOSITION", "sources": ["test_contract_current"]},
     "EXPECTED_CONSEQUENCES": {"mode": "DIRECT_COMPOSITION", "sources": ["test_contract_current", "test_decision_fixture", "input_manifest"]},
     "DECISION_OWNER": {"mode": "DIRECT", "sources": ["execution_protocol"]},
-    "DECIDED_AT": {"mode": "BOUND_TO_AUTHORIZED_EXECUTION_DATE", "sources": ["result_record"]},
+    "DECIDED_AT": {"mode": "BOUND_TO_AUTHORIZED_EXECUTION_DATE", "sources": ["test_contract_current", "result_record"]},
     "SOURCE_REFERENCES": {"mode": "DIRECT", "sources": ["d0_done_freeze", "d0_evidence_audit"]},
     "SUPERSEDES": {"mode": "DIRECT_NEGATIVE", "sources": ["test_contract_current", "execution_protocol", "result_record"]},
     "SUPERSEDED_BY": {"mode": "CURRENT_ACCEPTED_EVIDENCE_NEGATIVE_SCAN", "sources": ["result_record", "d0_evidence_audit"]},
