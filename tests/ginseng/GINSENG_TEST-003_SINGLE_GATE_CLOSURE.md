@@ -1,11 +1,13 @@
 ---
 test_id: "GINSENG_TEST-003"
-status: "QUEUED / NOT EXECUTED"
+status: "EXECUTED / INDEPENDENTLY_VERIFIED_PASS"
 project: "Ginseng — scenario impact engine"
 test_type: "SINGLE_GATE_CLOSURE / REGRESSION"
 baseline: "BASELINE_2026_07"
 source_result: "GINSENG_TEST_2_S001_RESULT_v1_1.zip"
 method_pilot: "selected Superpowers patterns"
+executed_at: "2026-08-18"
+result_record: "tests/ginseng/GINSENG_TEST-003_RESULT_RECORD_2026-08-18.md"
 ---
 
 # GINSENG TEST-003 — zamknięcie jednej bramki bez efektów ubocznych
