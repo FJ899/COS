@@ -99,7 +99,6 @@ def main() -> None:
         "DEC-2026-007 — Ginseng D0 closed; COS continuity closure",
         "COS ownership/state/continuity: CLOSURE IN PROGRESS",
         "EVOLUTION-2026-014 — Ginseng D0 closure i COS continuity reconciliation",
-        "archives/Archiwum09.md",
     ], "CREATIVE_OS.md")
     for stale in STALE_CURRENT_STATE:
         if stale in cos:
