@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "status": "PREPARATION_ONLY_NOT_EXECUTED",
+  "candidate": "GINSENG_CANDIDATE_R0",
+  "candidate_freeze": {
+    "repository": "JTJ07/COS",
+    "main_at_preparation": "5409b17914370c4c4d3b0cbbc72acb3e7a785855",
+    "path": "governance/GINSENG_CANDIDATE_R0_FREEZE_2026-08-18.md",
+    "blob_sha": "f313bd866d00593aab434a5e5f0667ea6257b575"
+  },
+  "authoritative_test_contract": {
+    "path": "tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md",
+    "blob_sha": "bddbfadbab36e45b73b2be3dd507e3134bb7e20e",
+    "status_at_preparation": "QUEUED / NOT EXECUTED",
+    "first_run_variant": "VARIANT_A_KEEP_DEC002"
+  },
+  "blind_input_archive": {
+    "name": "GINSENG_TEST_2_BLIND_INPUT(1).zip",
+    "sha256": "b0cccb8fc9be9049faaaca90f50e3983fce2540a7d449dbb2c6e99c4814ee7cf",
+    "files": {
+      "MANIFEST.json": "da3058480bbc8e2306a382c4cf31a1f0f0e9350e821de48202c8a1108c20eee4",
+      "RUN_TEST_2.md": "7f01a6663614b1c598027886dc9b0caeb0a05e5654a21bc456ddb187b460b602",
+      "canonical_graph_blind.json": "8c882cbcde005d5ec4658aaf543ea61a204ee2f979823d6a981d53a5aa7d261b",
+      "nodes.csv": "3d749e50eaf7081e8ab84d2447c6c6a95fee623a6c5f6ede52e7a003c3732278",
+      "relations.csv": "2fc4177de0db91c0db89d3c4ef8940c1992f4766df3a5afa9b2027268862e571",
+      "scenario_actions.csv": "3dfd919c1ba0fea60111baf54c5d19fe4ab454d7ce87a5c9888ff8b7030276c9",
+      "scenarios.csv": "49729351b357619a45b218acd1110d3061a4543da7f58788bb192f9e053ca2c4"
+    },
+    "answer_key_included": false
+  },
+  "test2_before_archive": {
+    "name": "GINSENG_TEST_2_S001_RESULT_v1_1.zip",
+    "sha256": "4abaf4696d4c7f832c99ccd3e7586e8618c45e893f5d0e2e3ce66c97206a36be",
+    "files": {
+      "S001_impact_report_test2.md": "682d7ed5483dbbbcbaba73324b3ce6bf3b0875cfa1728ba4c0c2f022993b5e5b",
+      "S001_scenario_branch_test2.json": "31f444924958a851d0a2407672a9fe9e27f899bbb1956198f4c9c98948c80ed3",
+      "S001_test2_evidence.json": "0793f2d842126feba1163da05f8d75700eeb76f547a2241d1101c00820dbcf00",
+      "S001_test2_result.json": "d79cf7809aa6cfa0fd923bbb8c9a5c9fa30c2ba50e175f3d290b24c733c69940",
+      "S001_test2_source_index.json": "076b9bb1fc0d9bab6e1f2320b9db96e02315a312778adc24cc15027a287c7e17"
+    }
+  },
+  "frozen_before_state": {
+    "scenario_id": "S001",
+    "baseline_version": "BASELINE_2026_07",
+    "impact_count": 36,
+    "blocking_gate_count": 7,
+    "no_impact_control_count": 5,
+    "baseline_mutated": false,
+    "analysis_verdict": "CONDITIONAL_GO",
+    "implementation_readiness": "BLOCKED",
+    "blocking_gates": [
+      "reporting_model",
+      "complaints_ownership",
+      "sod_and_privacy",
+      "service_quality_capacity",
+      "customer_data_ownership",
+      "crm_knowledge_continuity",
+      "shared_kpi_catalog"
+    ],
+    "overlay_gate_names": [
+      "PROCESS_OWNER_GATE",
+      "REPORTING_LINE_GATE",
+      "SOD_RODO_GATE",
+      "SERVICE_QUALITY_GATE",
+      "DATA_OWNERSHIP_GATE",
+      "CRM_KNOWLEDGE_GATE",
+      "KPI_BASELINE_GATE"
+    ],
+    "no_impact_nodes": ["P003", "I002", "C001", "A003", "G003"],
+    "source_count": 17
+  },
+  "test_decision": {
+    "decision_id": "GINSENG_TEST003_DECISION_A",
+    "decision_type": "TEST_ONLY_DECISION",
+    "variant": "VARIANT_A_KEEP_DEC002",
+    "subject": ["DEC002", "R003", "P002"],
+    "meaning": "Preserve DEC002 and preserve the complaints-process owner in a distinct Customer Service function inside the proposed Customer Operations structure.",
+    "production_effect": "NONE"
+  },
+  "expected_after_constraints": {
+    "blocking_gate_count": 6,
+    "removed_active_gate_exactly": "complaints_ownership",
+    "resolved_overlay_gate_exactly": "PROCESS_OWNER_GATE",
+    "remaining_gates_semantically_preserved": true,
+    "implementation_readiness": "BLOCKED",
+    "baseline_mutated": false,
+    "no_impact_controls_preserved_unless_new_causal_path_is_proved": true,
+    "source_traceability_complete": true
+  },
+  "required_output_files": [
+    "S001_gate_closure_report.md",
+    "S001_gate_closure_result.json",
+    "S001_gate_closure_overlay.json",
+    "S001_gate_closure_evidence.json",
+    "S001_gate_closure_source_index.json",
+    "S001_gate_closure_delta.json"
+  ]
+}
