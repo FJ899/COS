@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed final D-09 recheck for the frozen Ginseng D0 candidate."""
+"""Fail-closed final D-09 recheck for the frozen Ginseng D0 candidate and accepted integration."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ DONE_FREEZE = "governance/GINSENG_DONE_D0_FREEZE_2026-08-18.md"
 D0_AUDIT = "governance/GINSENG_D0_EVIDENCE_AUDIT_2026-08-18.md"
 D05_PROOF = "governance/GINSENG_D05_DECISION_LINEAGE_PROOF_2026-08-19.json"
 CLOSURE = "governance/GINSENG_D0_TECHNICAL_CLOSURE_CANDIDATE_2026-08-19.md"
+INTEGRATION = "governance/GINSENG_D0_INTEGRATION_RECORD_2026-08-19.md"
 RESULT = "tests/ginseng/GINSENG_TEST-003_RESULT_RECORD_2026-08-18.md"
 CUSTODY_MANIFEST = "tests/ginseng/evidence/GINSENG_TEST003_EXECUTION_EVIDENCE_2026-08-18.manifest.json"
 CUSTODY_ZIP = "tests/ginseng/evidence/GINSENG_TEST003_EXECUTION_EVIDENCE_2026-08-18.zip"
@@ -34,6 +35,11 @@ EXPECTED_EVIDENCE_SHA256 = "d9077d08012667a8a2a91e93912ee752bf991b50b5b01e4d2f80
 EXPECTED_EVIDENCE_GIT_BLOB = "b82e442678766ca3fa0d0dd8180cb1b0ae9f162d"
 EXPECTED_EVIDENCE_SIZE = 95846
 EXPECTED_EVIDENCE_ENTRIES = 39
+
+STALE_CURRENT_STATE = [
+    "Ginseng D0: BLOCKED — D-05 DECISION LINEAGE PROOF GAP + D-08 EVIDENCE CUSTODY HUMAN DECISION",
+    "GINSENG D0: BLOCKED — D-05 DECISION LINEAGE remains open; D-09 requires final recheck after closure.",
+]
 
 
 def fail(message: str) -> None:
@@ -89,10 +95,15 @@ def verify_d01() -> None:
         [
             "Status: `EXECUTED / INDEPENDENTLY_VERIFIED_PASS`.",
             "D-08: SATISFIED — DURABLE REPOSITORY CUSTODY / EXACT BYTES / SHA-256 BOUND",
-            "Ginseng D0: BLOCKED — D-05 DECISION LINEAGE PROOF GAP + D-08 EVIDENCE CUSTODY HUMAN DECISION",
+            "DEC-2026-007 — Ginseng D0 closed; COS continuity closure",
+            "Ginseng D0: HUMAN ACCEPTED / CLOSED",
+            "Current integrated state after PR #29: `GINSENG_DONE_D0: HUMAN ACCEPTED / CLOSED`.",
         ],
         COS,
     )
+    for stale in STALE_CURRENT_STATE:
+        if stale in cos:
+            fail(f"current COS state still contains stale D0 marker: {stale}")
     require(
         closure,
         [
@@ -103,7 +114,7 @@ def verify_d01() -> None:
         ],
         CLOSURE,
     )
-    print("[PASS] D-01 current-state conflict is explicitly superseded, not hidden")
+    print("[PASS] D-01 current-state reconciliation is materialized in the COS state owner without rewriting history")
 
 
 def require_gate_satisfied(audit: str, gate: str, next_gate: str) -> None:
@@ -243,7 +254,7 @@ def verify_d09_no_false_success() -> None:
     ]
     for marker in forbidden:
         if marker in closure:
-            fail(f"false-success terminal escalation present in closure candidate: {marker}")
+            fail(f"false-success terminal escalation present in historical closure candidate: {marker}")
 
     gate_lines = {
         "D-01": "SATISFIED IF THIS VERIFIED CANDIDATE ENTERS ACCEPTED HISTORY",
@@ -260,7 +271,36 @@ def verify_d09_no_false_success() -> None:
         if not re.search(rf"^{re.escape(gate)}[^\n]*{re.escape(state)}", closure, re.MULTILINE):
             fail(f"closure map missing fail-closed state for {gate}")
 
-    print("[PASS] D-09 found no unresolved-gate bypass or authority escalation")
+    print("[PASS] historical D-09 proof still contains no unresolved-gate bypass or authority escalation")
+
+
+def verify_integrated_state() -> None:
+    integration = load_text(INTEGRATION)
+    require(
+        integration,
+        [
+            "status: INTEGRATED / HUMAN_ACCEPTED_D0_CLOSED",
+            "`AKCEPTUJĘ GINSENG D0 TECHNICAL CLOSURE`",
+            "`AKCEPTUJĘ MERGE PR #29`",
+            "accepted_technical_head: 05d6f48730b80052bdeab55b52f4a67de5828130",
+            "merge_commit: a43a94c246112b72a54e952b52af1eacedaaeb3b",
+            "merge_tree: ce7c542095ae243ce07be1e2ee9642cb8c7ea69e",
+            "GINSENG_DONE_D0: HUMAN ACCEPTED / CLOSED",
+            "runtime_authorized: false",
+            "formal_project_activation: false",
+            "whole_project_completion_claim: false",
+        ],
+        INTEGRATION,
+    )
+    forbidden = [
+        "runtime_authorized: true",
+        "formal_project_activation: true",
+        "whole_project_completion_claim: true",
+    ]
+    for marker in forbidden:
+        if marker in integration:
+            fail(f"unauthorized escalation in accepted integration record: {marker}")
+    print("[PASS] separate Human acceptance and merge authorities are preserved in current integrated state")
 
 
 def main() -> None:
@@ -269,6 +309,7 @@ def main() -> None:
         D0_AUDIT,
         D05_PROOF,
         CLOSURE,
+        INTEGRATION,
         RESULT,
         CUSTODY_MANIFEST,
         CUSTODY_ZIP,
@@ -285,10 +326,12 @@ def main() -> None:
     verify_d05()
     verify_d08()
     verify_d09_no_false_success()
+    verify_integrated_state()
 
     print("GINSENG_D09_FINAL_RECHECK: PASS")
-    print("GINSENG_D0_TECHNICAL_CLOSURE: PASS_IF_MERGED")
-    print("HUMAN_D0_ACCEPTANCE: PENDING")
+    print("GINSENG_D0_TECHNICAL_CLOSURE_PROOF: PASS")
+    print("CURRENT_GINSENG_D0_STATE: HUMAN_ACCEPTED / CLOSED")
+    print("PR_29_INTEGRATION: MERGED")
 
 
 if __name__ == "__main__":
