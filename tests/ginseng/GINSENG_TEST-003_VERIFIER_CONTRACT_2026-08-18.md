@@ -1,10 +1,12 @@
 ---
 document: GINSENG_TEST-003_VERIFIER_CONTRACT
-version: 1
+version: 1.1
 status: PREPARATION_ONLY / NOT_EXECUTED
 prepared_at: 2026-08-18
+amended_at: 2026-08-18
 candidate: GINSENG_CANDIDATE_R0
 verifier_independence_required: true
+evidence_integrity_revision: DETACHED_AFTER_ARTIFACT_MANIFEST
 ---
 
 # GINSENG TEST-003 — independent verifier contract
@@ -25,6 +27,7 @@ A valid verifier run must start in a fresh context and be given:
 - immutable Test-2 v1.1 BEFORE artifacts;
 - exact Test-003 decision fixture;
 - raw candidate AFTER artifacts;
+- controller-owned detached `after_artifact_manifest.json`;
 - this verifier contract;
 - the authoritative Test-003 contract and R0 freeze record.
 
@@ -174,9 +177,12 @@ At minimum, test these adversarial cases against the raw AFTER artifacts:
 4. delete one blocking decision but leave all related impact semantics untouched when the decision requires a semantic change;
 5. rewrite unrelated impacts to make the output look newly generated;
 6. modify source index or evidence to hide provenance loss;
-7. report `baseline_mutated = false` while input bytes differ.
+7. report `baseline_mutated = false` while input bytes differ;
+8. supply a candidate-authored `after_artifact_manifest.json` or attempt to overwrite the controller-owned detached manifest.
 
 If the candidate artifacts can pass solely through such a superficial edit, FAIL.
+
+A candidate-authored detached manifest has no authority and must be ignored. If the candidate could write the controller-owned manifest location, artifact-integrity verification is BLOCKED because the trust boundary was not established.
 
 ## 13. Delta completeness gate
 
@@ -194,11 +200,37 @@ format-only undeclared change -> allowed only when proven non-semantic
 
 ## 14. Artifact integrity gate
 
-The six required AFTER artifacts must all exist and parse where applicable.
+The six required candidate AFTER artifacts must all exist and parse where applicable:
 
-The evidence record must include SHA-256 values for all AFTER artifacts and those values must match raw bytes.
+```text
+S001_gate_closure_report.md
+S001_gate_closure_result.json
+S001_gate_closure_overlay.json
+S001_gate_closure_evidence.json
+S001_gate_closure_source_index.json
+S001_gate_closure_delta.json
+```
 
-Missing or mismatched evidence is BLOCKED unless the mismatch proves candidate tampering, in which case FAIL.
+The candidate evidence record may include SHA-256 values for the other five peer candidate artifacts, but it must **not** be required to include a SHA-256 of its own final bytes. Requiring a file to contain the hash of its own final bytes is self-referential and is not an admissible integrity requirement.
+
+After candidate generation is complete, the Trusted Controller must create a detached `controller/after_artifact_manifest.json` outside the candidate-writable output directory. That manifest must list filename and SHA-256 for exactly all six required candidate AFTER artifacts, including `S001_gate_closure_evidence.json`.
+
+The detached manifest does not hash itself. Its authority comes from the controller-owned write boundary and independent verifier recomputation, not from self-reference.
+
+The verifier must independently recompute SHA-256 over the raw bytes of all six candidate AFTER artifacts and compare each value with the detached controller-owned manifest. Candidate-declared hashes are secondary observations only.
+
+Required integrity result:
+
+```text
+six AFTER artifacts present
++ six verifier-recomputed SHA-256 values
++ exact match to controller-owned detached manifest
+= ARTIFACT INTEGRITY eligible for PASS
+```
+
+Missing detached manifest, an incomplete six-file manifest, inability to prove that the candidate could not write it, or an unexplained hash mismatch is `BLOCKED`. If the mismatch or manifest manipulation proves candidate tampering, the result is `FAIL`.
+
+No semantic analysis may convert missing or unverifiable artifact integrity into PASS.
 
 ## 15. Evidence replay
 
@@ -210,6 +242,8 @@ Replay must not require:
 - process memory;
 - manually remembered reasoning;
 - unpublished corrections.
+
+Replay must recompute all six candidate AFTER hashes from raw bytes and verify them against the saved detached controller manifest. The manifest itself need not contain a hash of itself; any outer bundle digest is optional and is not a Test-003 PASS requirement.
 
 If replay cannot determine the same verdict, Test-003 cannot PASS.
 
@@ -224,6 +258,7 @@ If replay cannot determine the same verdict, Test-003 cannot PASS.
 - NO_IMPACT regression PASS;
 - readiness remains BLOCKED;
 - provenance/truth-type integrity PASS;
+- artifact integrity PASS;
 - no false-success path exists;
 
 and the remaining defect is only naming, formatting or report completeness as permitted by the authoritative Test-003 contract.
