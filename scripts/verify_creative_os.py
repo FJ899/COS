@@ -15,6 +15,7 @@ REQUIRED = [
     "continuity/COLD_START_AUDIT-001.md", "continuity/COLD_START_TEST-002.md",
     "continuity/COLD_START_AUDIT-002.md",
     "tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md",
+    "tests/ginseng/GINSENG_TEST-003_RESULT_RECORD_2026-08-18.md",
     "archives/Archiwum09.md", "projects/bpm160/README.md",
     "projects/bpm160/PROJECT_STATE.md", "projects/bpm160/HANDOFF.md",
     "projects/bpm160/SOURCE_SUMMARY_2026-07-31.md",
@@ -141,7 +142,9 @@ def main() -> None:
 
     test = load("tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md")
     require(test, [
-        'status: "QUEUED / NOT EXECUTED"', "SINGLE_GATE_CLOSURE",
+        'status: "EXECUTED / INDEPENDENTLY_VERIFIED_PASS"',
+        'result_record: "tests/ginseng/GINSENG_TEST-003_RESULT_RECORD_2026-08-18.md"',
+        "SINGLE_GATE_CLOSURE",
         "VARIANT_A_KEEP_DEC002", "VARIANT_B_SUPERSEDE_DEC002",
         "blocking_gate_count_after = 6", "implementation_readiness_after = BLOCKED",
         "baseline_mutated_after = false", "systematic-debugging",
@@ -150,7 +153,16 @@ def main() -> None:
     ], "GINSENG_TEST-003")
     if "Ten test nie:" not in test:
         fail("GINSENG_TEST-003 nie zapisuje granicy poza zakresem")
-    print("[PASS] GINSENG_TEST-003 jest zakolejkowany")
+
+    result = load("tests/ginseng/GINSENG_TEST-003_RESULT_RECORD_2026-08-18.md")
+    require(result, [
+        "status: EXECUTED / INDEPENDENTLY_VERIFIED_PASS",
+        "GINSENG_TEST-003: PASS",
+        "FALSE SUCCESS PATHS: 0",
+        "byte_identical_verdict_report: true",
+        "FUNCTIONAL COMPLETION OF GINSENG: NOT CLAIMED",
+    ], "GINSENG_TEST-003 result")
+    print("[PASS] GINSENG_TEST-003 jest wykonany i niezależnie zweryfikowany")
 
     index = load("ARCHIVE_INDEX.md")
     archive = load("archives/Archiwum09.md")
@@ -168,7 +180,7 @@ def main() -> None:
     require(load("continuity/COLD_START_AUDIT-001.md"), ["PASS WITH FIXES", "ScriptOps"], "cold start 001")
     require(load("continuity/COLD_START_AUDIT-002.md"), ["PASS WITH FIXES", "START_HERE"], "cold start 002")
     print("[PASS] wcześniejsze kontrakty są zachowane")
-    print("[PASS] Creative OS Lean jest spójny po korekcie BPM:160 i kolejce Ginseng")
+    print("[PASS] Creative OS Lean jest spójny po korekcie BPM:160 i wykonanym Test-003")
 
 
 if __name__ == "__main__":
