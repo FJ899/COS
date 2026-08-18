@@ -2,7 +2,7 @@
 system: creative-os-lean
 version: 1.0
 status: ACTIVE_LEAN_PILOT
-updated_at: 2026-07-31
+updated_at: 2026-08-18
 history: git
 ---
 
@@ -67,7 +67,7 @@ AI pyta użytkownika, gdy zmienia się cel, priorytet, kanon, status końcowy, a
 |---|---|---|---|---|---|
 | Narzędzie pisarskie / ScriptOps | `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH ACTIVE / ACCESS CHECK REQUIRED` | Zrekonstruowano historię, zabezpieczono zakres RC1 i pełny prototyp `legacy/scriptops-v2-single.py`. Brak dowodu implementacji v5 RC1. | Ustalić, czy istnieje późniejszy kod lub wynik Codex; gdy nie istnieje, porównać prototyp z `sources/RC1_SCOPE_LOCK.md`. | Przeprowadzić `ACCESS CHECK`. | repo `litrgratis-pixel/scriptops`, przede wszystkim `PROJECT_STATE.md` |
 | BPM:160 | `QUEUED #2 / LOCAL SPIKE 001 IN PROGRESS / SOURCE SUMMARY CONFIRMED / ORIGINAL FILES REQUIRED` | Skorygowano nadmierną rekonstrukcję. BPM:160 to projekt krótkich filmów i reklam opartych na ekstremalnych światach, rytmie i Peak Event. Bieżącą lokalną bramką jest Spike 001: World → Signal → Peak Event → Aftermath, montaż audio i Evidence Package. Testy widzów oraz pozostałe rozszerzenia są na PARKING. | Canon v1.2, LIVE TODO, handover, Decision Log, parking i materiały Spike 001 nie zostały jeszcze zaimportowane. | Wykonać import źródeł i `READ_ONLY RECONCILIATION`, a następnie wznowić pierwszy brakujący element Spike 001. | `projects/bpm160/PROJECT_STATE.md` |
-| Creative OS | `ACTIVE / LEAN PILOT / START_HERE ACTIVE` | Cold start 002 przeszedł `PASS WITH FIXES`; pojedyncza stacyjka jest aktywna. Zakolejkowano test Ginseng zamknięcia jednej bramki oraz zapisano Archiwum09. | Nadal brakuje niezależnego testu minimalnego klucza `START_HERE.md`. | Uruchomić minimalny klucz w nowej sesji dla jednego projektu bez dodatkowego promptu. | ten plik |
+| Creative OS | `ACTIVE / LEAN PILOT / START_HERE ACTIVE` | Cold start 002 przeszedł `PASS WITH FIXES`; pojedyncza stacyjka jest aktywna. Ginseng Test-003 został wykonany i niezależnie zweryfikowany jako `PASS`; wynik oraz D0 audit są utrwalane w governance/evidence records. | Nadal brakuje niezależnego testu minimalnego klucza `START_HERE.md`. | Uruchomić minimalny klucz w nowej sesji dla jednego projektu bez dodatkowego promptu. | ten plik |
 | Creative OS Project Reconstructor | `ACTIVE / V1.0 STABILIZATION` | Prompt v1.0, stan, ewolucja, parking, pięć testów regresji i walidator znajdują się w repo. | Brak długoterminowej walidacji na kolejnych projektach. | Użyć v1.0 na następnym rzeczywistym projekcie i zapisać tylko konkretną porażkę. | repo `litrgratis-pixel/creative-os-project-reconstructor`, przede wszystkim `PROJECT_STATE.md` |
 
 Kilka projektów może istnieć jednocześnie, ale każdy ma najwyżej jeden aktualny rezultat. Lokalny stan pracy może istnieć przy projekcie pozostającym w kolejce; zmiana aktywacji wymaga jawnej decyzji użytkownika.
@@ -78,26 +78,27 @@ Kilka projektów może istnieć jednocześnie, ale każdy ma najwyżej jeden akt
 
 ### GINSENG_TEST-003 — zamknięcie pojedynczej bramki
 
-Status: `QUEUED / NOT EXECUTED`.
+Status: `EXECUTED / INDEPENDENTLY_VERIFIED_PASS`.
 
-Plik:
+Pliki aktualnego wyniku:
 
 ```text
 tests/ginseng/GINSENG_TEST-003_SINGLE_GATE_CLOSURE.md
+tests/ginseng/GINSENG_TEST-003_RESULT_RECORD_2026-08-18.md
 ```
 
-Sprawdzamy, czy formalne rozstrzygnięcie `ACT002 ↔ DEC002`:
+Wynik zaakceptowany do dalszej oceny D0:
 
-- zamknie dokładnie jedną bramkę;
-- zmniejszy liczbę blokad z 7 do 6;
-- pozostawi pozostałe bramki bez zmian;
-- nie zmieni baseline;
-- nie podniesie gotowości wdrożeniowej powyżej `BLOCKED`;
-- zachowa źródła i `NO_IMPACT`.
+- zamknięto dokładnie jedną bramkę;
+- liczba blokad spadła z 7 do 6;
+- pozostałe bramki pozostały semantycznie bez zmian;
+- baseline pozostał niezmieniony;
+- `implementation_readiness` pozostało `BLOCKED`;
+- źródła i pięć kontroli `NO_IMPACT` zostały zachowane;
+- independent replay: `PASS`;
+- `FALSE SUCCESS PATHS: 0` dla Test-003.
 
-Po co: to najkrótszy test, czy Ginseng wykonuje lokalną propagację zmiany zamiast ręcznie poprawiać raport albo przebudowywać cały scenariusz.
-
-Metoda pilotażowa: wybrane wzorce Superpowers — plan, test przed zmianą, systematyczne debugowanie i weryfikacja przed ogłoszeniem sukcesu. Pełny framework nie jest instalowany globalnie.
+Test-003 nie stanowi sam w sobie claimu ukończenia Ginseng D0. Bieżąca ocena D0 jest zapisana w `governance/GINSENG_D0_EVIDENCE_AUDIT_2026-08-18.md`.
 
 ---
 
@@ -160,6 +161,8 @@ Wybrano:
 7. Zapisać `SOURCE_SUMMARY_2026-07-31.md` jako jawne sprostowanie, ale nadal wymagać plików pierwotnych.
 8. Zachować rozmowę w `archives/Archiwum09.md`.
 
+Reconciliation 2026-08-18: punkt 1 został wykonany. `GINSENG_TEST-003` ma aktualny status `EXECUTED / INDEPENDENTLY_VERIFIED_PASS`; jego result record oraz D0 audit zastępują wcześniejszy operacyjny status `QUEUED / NOT EXECUTED`. Nie zmienia to historycznej treści decyzji ani pozostałego zakresu BPM:160.
+
 Nie wybrano: aktywacji Ginseng jako projektu, globalnej instalacji Superpowers, automatycznej pamięci Claude-Mem, frontendu Ginseng, testu widza BPM ani zmiany kolejności portfela.
 
 Powód: najkrótszym dowodem wartości Ginseng jest kontrolowana lokalna propagacja jednej decyzji. W BPM wcześniejsza rekonstrukcja pomyliła fragment projektu z całością i otworzyła zły następny krok.
@@ -168,13 +171,14 @@ Stan:
 
 ```text
 Creative OS: ACTIVE / LEAN PILOT / START_HERE ACTIVE
-Ginseng Test 003: QUEUED / NOT EXECUTED
+Ginseng Test 003: EXECUTED / INDEPENDENTLY_VERIFIED_PASS
+Ginseng D0: BLOCKED — D-05 DECISION LINEAGE PROOF GAP + D-08 EVIDENCE CUSTODY HUMAN DECISION
 ScriptOps: QUEUED #1 / ACCESS CHECK REQUIRED
 BPM:160: QUEUED #2 / LOCAL SPIKE 001 IN PROGRESS / ORIGINAL FILES REQUIRED
 Project Reconstructor: ACTIVE / V1.0 STABILIZATION
 ```
 
-Następny krok globalny: niezależny test minimalnego klucza stacyjki. Następny krok testowy: wykonać GINSENG_TEST-003 po przygotowaniu jednego kontrolowanego wariantu decyzji.
+Następny krok globalny: niezależny test minimalnego klucza stacyjki. Następny krok Ginseng nie jest automatycznie kolejnym testem: najpierw rozstrzygnąć D-08 evidence custody i wybrać najmniejszą ścieżkę dowodu dla D-05 Decision Lineage.
 
 ---
 
