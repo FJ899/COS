@@ -69,10 +69,10 @@ AI pyta użytkownika, gdy zmienia się cel, priorytet, kanon, status końcowy, a
 
 | Projekt | Status | Gdzie stanąłem | Brak do wznowienia / zakończenia | Jeden następny krok | Źródło prawdy |
 |---|---|---|---|---|---|
-| Narzędzie pisarskie / ScriptOps | `QUEUED #1 / NOT ACTIVATED / SOURCE OF TRUTH ACTIVE / ACCESS CHECK REQUIRED` | Zrekonstruowano historię, zabezpieczono zakres RC1 i pełny prototyp `legacy/scriptops-v2-single.py`. Brak dowodu implementacji v5 RC1. | Ustalić, czy istnieje późniejszy kod lub wynik Codex; gdy nie istnieje, porównać prototyp z `sources/RC1_SCOPE_LOCK.md`. | Przeprowadzić `ACCESS CHECK`. | repo `litrgratis-pixel/scriptops`, przede wszystkim `PROJECT_STATE.md` |
+| Narzędzie pisarskie / ScriptOps | `QUEUED #1 / LOCAL PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM / SADDLE LIVE MODEL EVIDENCE NEXT` | Lokalny `main@daa6e5dc210e09171a530eeffe5601e0e74ae041` udowadnia kontrolowany workflow oparty na v2: task → context → candidate → validation → impact → human decision with why → accepted identity → decision log → Git. To nie jest pełny ScriptOps v5 RC1 ani maturity claim. | Lokalny stan nadal nie dowodzi live Saddle ModelGateway → Executor, production identity/request-origin ani `FUNCTIONAL_SADDLE_ACCEPTED`. | Gdy ScriptOps zostanie aktywowany, wejść przez aktualny `PROJECT_STATE.md` i kontynuować od `SADDLE LIVE MODEL EVIDENCE NEXT`; nie wracać do historycznego access-checku. | repo `JTJ07/scriptops`, przede wszystkim `PROJECT_STATE.md` |
 | BPM:160 | `QUEUED #2 / LOCAL SPIKE 001 IN PROGRESS / SOURCE SUMMARY CONFIRMED / ORIGINAL FILES REQUIRED` | Skorygowano nadmierną rekonstrukcję. BPM:160 to projekt krótkich filmów i reklam opartych na ekstremalnych światach, rytmie i Peak Event. Bieżącą lokalną bramką jest Spike 001: World → Signal → Peak Event → Aftermath, montaż audio i Evidence Package. Testy widzów oraz pozostałe rozszerzenia są na PARKING. | Canon v1.2, LIVE TODO, handover, Decision Log, parking i materiały Spike 001 nie zostały jeszcze zaimportowane. | Wykonać import źródeł i `READ_ONLY RECONCILIATION`, a następnie wznowić pierwszy brakujący element Spike 001. | `projects/bpm160/PROJECT_STATE.md` |
-| Creative OS | `ACTIVE / LEAN PILOT / START_HERE ACTIVE` | Cold start 002 przeszedł `PASS WITH FIXES`; pojedyncza stacyjka jest aktywna. Ginseng D0 technical closure jest `HUMAN ACCEPTED / CLOSED`. Bieżący checkpoint to COS ownership/state/continuity reconciliation. | Trzeba domknąć zgodność state-owner/validatorów po merge Ginseng D0 oraz potwierdzić, że stare drafty nie maskują authority. | Dokończyć minimalny COS ownership/state/continuity closure bez nowej architektury. | ten plik |
-| Creative OS Project Reconstructor | `ACTIVE / V1.0 STABILIZATION` | Prompt v1.0, stan, ewolucja, parking, pięć testów regresji i walidator znajdują się w repo. | Brak długoterminowej walidacji na kolejnych projektach. | Użyć v1.0 na następnym rzeczywistym projekcie i zapisać tylko konkretną porażkę. | repo `litrgratis-pixel/creative-os-project-reconstructor`, przede wszystkim `PROJECT_STATE.md` |
+| Creative OS | `ACTIVE / LEAN PILOT / START_HERE ACTIVE` | Cold start 002 przeszedł `PASS WITH FIXES`; pojedyncza stacyjka jest aktywna. Ginseng D0 technical closure jest `HUMAN ACCEPTED / CLOSED`. Bieżący checkpoint to COS ownership/state/continuity reconciliation. | Trzeba domknąć zgodność state-owner/validatorów po merge Ginseng D0, potwierdzić aktualne local-source locators i upewnić się, że stare drafty nie maskują authority. | Dokończyć minimalny COS ownership/state/continuity closure bez nowej architektury. | ten plik |
+| Creative OS Project Reconstructor | `ACTIVE / V1.0 STABILIZATION` | Prompt v1.0, stan, ewolucja, parking, pięć testów regresji i walidator znajdują się w repo. | Brak długoterminowej walidacji na kolejnych projektach. | Użyć v1.0 na następnym rzeczywistym projekcie i zapisać tylko konkretną porażkę. | repo `JTJ07/creative-os-project-reconstructor`, przede wszystkim `PROJECT_STATE.md` |
 
 Kilka projektów może istnieć jednocześnie, ale każdy ma najwyżej jeden aktualny rezultat. Lokalny stan pracy może istnieć przy projekcie pozostającym w kolejce; zmiana aktywacji wymaga jawnej decyzji użytkownika.
 
@@ -163,6 +163,7 @@ Aktualnie zatwierdzone:
 5. COS portfolio/project-state navigation nie jest operational HOW selection i nie przejmuje cognitive routingu od Intelligence.
 6. Draft PR #18, #19 i #20 zostały zamknięte jako superseded historical/supporting candidates bez merge; ich Git provenance pozostaje zachowane.
 7. Executor 1.0 pozostaje poza aktywnym developmentem bez nowego mierzalnego blockera.
+8. ScriptOps pozostaje `QUEUED #1`, ale jego lokalny current state jest już `PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM / SADDLE LIVE MODEL EVIDENCE NEXT` na `JTJ07/scriptops@daa6e5dc210e09171a530eeffe5601e0e74ae041`; historyczny `ACCESS CHECK REQUIRED` jest superseded jako current-state pointer.
 
 Stan:
 
@@ -172,12 +173,12 @@ COS ownership/state/continuity: CLOSURE IN PROGRESS
 Ginseng Test 003: EXECUTED / INDEPENDENTLY_VERIFIED_PASS
 Ginseng D0: HUMAN ACCEPTED / CLOSED
 Ginseng runtime: NOT AUTHORIZED
-ScriptOps: QUEUED #1 / ACCESS CHECK REQUIRED
+ScriptOps: QUEUED #1 / LOCAL PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM / SADDLE LIVE MODEL EVIDENCE NEXT
 BPM:160: QUEUED #2 / LOCAL SPIKE 001 IN PROGRESS / ORIGINAL FILES REQUIRED
 Project Reconstructor: ACTIVE / V1.0 STABILIZATION
 ```
 
-Następny krok globalny: domknąć COS ownership/state/continuity przez bezpośrednie pogodzenie state ownera i validatorów z accepted history, bez tworzenia nowej warstwy. Po tym przejść do pełnego real-value runu Project Reconstructor.
+Następny krok globalny: domknąć COS ownership/state/continuity przez bezpośrednie pogodzenie state ownera, locatorów i validatorów z accepted history, bez tworzenia nowej warstwy. Po tym przejść do pełnego real-value runu Project Reconstructor.
 
 ---
 
@@ -217,5 +218,6 @@ This custody record does not itself prove D-05, activate runtime, or activate Gi
 - **EVOLUTION-2026-012 — pojedyncza stacyjka:** `START_HERE.md` aktywny; test minimalnego klucza pozostaje wymagany.
 - **EVOLUTION-2026-013 — korekta BPM i test Ginseng:** problemem było uznanie fragmentu BPM za całość oraz brak dowodu lokalnej propagacji decyzji w Ginseng. Decyzja: przywrócić Spike 001 jako bieżącą bramkę, zachować testy widza na parkingu, rozdzielić lokalne klasyfikacje od Navigation Protocol i zakolejkować test zamknięcia jednej bramki. Dowód: jawne sprostowanie użytkownika oraz wynik S001 z siedmioma blokadami. Zachowujemy kolejność portfela, źródłowość i baseline. Parkujemy globalne skille, frontend i dalsze rozszerzenia. Warunek powrotu: pliki pierwotne BPM oraz wykonany GINSENG_TEST-003. Supersedes: operacyjną część `EVOLUTION-2026-007` i błędny następny krok BPM zapisany w `EVOLUTION-2026-011`. Status: `SUPERSEDED OPERATIONALLY BY EVOLUTION-2026-014 / HISTORICAL EVIDENCE PRESERVED`.
 - **EVOLUTION-2026-014 — Ginseng D0 closure i COS continuity reconciliation:** Ginseng D0 przeszedł source-bound D-05 proof, durable D-08 custody i finalny D-09 recheck; Human zaakceptował technical closure, a następnie osobno autoryzował merge PR #29. Problemem po integracji był stale cross-project handoff oraz pre-merge terminal state w validatorach COS. Decyzja: materializować aktualny accepted state bez przepisywania historycznych proof records, zamknąć stare drafty #18–#20 jako superseded i domknąć COS state/continuity najmniejszą korektą. Runtime i nowe capability pozostają poza zakresem. Status: `ACTIVE RECONCILIATION`.
+- **EVOLUTION-2026-015 — ScriptOps current-state/locator reconciliation:** repo-level evidence potwierdziło `JTJ07/scriptops@daa6e5dc210e09171a530eeffe5601e0e74ae041` z lokalnym statusem `PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM / SADDLE LIVE MODEL EVIDENCE NEXT`. Problemem był stale cross-project pointer `ACCESS CHECK REQUIRED` i stare `litrgratis-pixel/...` locatory w COS. Korekta aktualizuje wyłącznie high-level state i locatory; nie kopiuje lokalnego backlogu, nie aktywuje ScriptOps i nie tworzy maturity claim. Status: `ACTIVE RECONCILIATION`.
 
 Nowy wpis ewolucji musi podać problem, wcześniejszą postać, decyzję, dowód, co zachowujemy, co parkujemy, warunek powrotu i `SUPERSEDES`, gdy dotyczy.
