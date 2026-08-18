@@ -119,6 +119,7 @@ def verify_source_semantics() -> None:
     require_markers(
         contract,
         [
+            'executed_at: "2026-08-18"',
             "ACT002",
             "DEC002",
             "VARIANT_A_KEEP_DEC002",
@@ -197,7 +198,6 @@ def verify_source_semantics() -> None:
         result,
         [
             "recorded_at: 2026-08-18",
-            "executed_at: 2026-08-18",
             "variant: VARIANT_A_KEEP_DEC002",
             "GINSENG_TEST-003: PASS",
             "GINSENG_TEST003_DECISION_A",
