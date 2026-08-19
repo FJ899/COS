@@ -68,7 +68,7 @@ repo: JTJ07/scriptops
 entrypoint: README.md
 state_owner: PROJECT_STATE.md
 handoff: HANDOFF.md
-current_main: daa6e5dc210e09171a530eeffe5601e0e74ae041
+current_main: 5af0cd8ac65e72ae534827c677fe4bd12b23e4ca
 phase6_evidence: evidence/PHASE6_CONTROLLED_WORKFLOW_PROOF_2026-08-10.md
 ```
 
@@ -77,10 +77,10 @@ Aktualny lokalny state owner raportuje:
 ```text
 PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS
 NO MATURITY CLAIM
-SADDLE LIVE MODEL EVIDENCE NEXT
+POST-SADDLE STATE RECONCILED
 ```
 
-Nie cofaj ScriptOps do historycznego `ACCESS CHECK REQUIRED`. Przed pracą odczytaj aktualny `PROJECT_STATE.md`; COS przechowuje tylko przekrojowy status i locator, nie lokalny backlog ani kanon.
+Historyczne `ACCESS CHECK REQUIRED`, `SADDLE LIVE MODEL EVIDENCE NEXT` i `FUNCTIONAL_SADDLE_ACCEPTED: NOT YET` nie są już current ScriptOps blockers. Przed pracą odczytaj aktualny `PROJECT_STATE.md`; COS przechowuje tylko przekrojowy status i locator, nie lokalny backlog ani kanon. Materially-different workload jest evaluation work, nie automatyczną aktywacją ScriptOps ani maturity promotion.
 
 ### BPM:160
 
@@ -138,7 +138,7 @@ state_owner: PROJECT_STATE.md
 canonical_prompt: PROMPT_STARTOWY.md
 ```
 
-Prompt v1.0 można zmienić tylko po konkretnej porażce i z testem regresji.
+Prompt v1.0 można zmienić tylko po konkretnej porażce i z testem regresji. Technically verified Run 001 w otwartym PR nie staje się local accepted state przed osobną Human merge authority.
 
 ## 4. Reguły zatrzymania
 
