@@ -175,7 +175,7 @@ Historical verified facts at that checkpoint:
 
 1. COS ownership/state/continuity closure jest `HUMAN ACCEPTED / CLOSED`; PR #30 został scalony jako `main@23152cb1bf5443574da9ff44600a5a8c8c136025`.
 2. ScriptOps Phase 6 pozostawał `CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM`; lokalny snapshot `main@5af0cd8ac65e72ae534827c677fe4bd12b23e4ca` miał pogodzone post-Saddle startup/current-state po merge PR #9.
-3. Saddle P0 security hardening i P1 durable-state reconciliation były zintegrowane; post-merge work-state correction PR #34 był na `main@a4d2721f3882a17438a36b0ee318ee213852`.
+3. Saddle P0 security hardening i P1 durable-state reconciliation były zintegrowane; post-merge work-state correction PR #34 był na `main@a4d2721f3882a17438a36b8c9fc386b266376dc5`.
 4. Reconstructor Real-Value Run 001 wykrył cztery realne current-state contradictions, nie wykazał potrzeby zmiany promptu v1.0 i był zintegrowany po Human-authorized merge PR #5 na lokalnym checkpoint `main@eb21b04e7d04caf777d66721f86ae9e83aab1dd4`.
 5. `governance/MEMORY_REPO_GAP_RECOVERY_RECORD_2026-08-19.md` pozostawał `RECOVERY_RECORD / NON_CANONICAL / NO_AUTHORITY_PROMOTION`.
 
