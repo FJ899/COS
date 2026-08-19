@@ -70,6 +70,8 @@ def main() -> None:
             fail(f"unauthorized escalation in COS acceptance record: {marker}")
 
     # Current continuity must still pass independently after later factual maintenance.
+    # The required stdout markers track the current verifier contract; they do not rewrite
+    # the historical Human acceptance record above or create new authority.
     completed = subprocess.run(
         [sys.executable, str(COS_VERIFY)],
         cwd=ROOT,
@@ -83,8 +85,8 @@ def main() -> None:
         fail("Creative OS continuity verifier no longer passes")
 
     required_output = [
-        "[PASS] CREATIVE_OS.md ma aktualny post-closure cross-project state",
-        "[PASS] START_HERE.md wskazuje aktualny ScriptOps main",
+        "[PASS] CREATIVE_OS.md ma post-Run003 cross-project state bez local-owner override",
+        "[PASS] START_HERE.md używa local-owner live resolution i post-Run003 high-level locator state",
         "[PASS] COS ownership audit remains historical evidence",
     ]
     for marker in required_output:
@@ -96,9 +98,11 @@ def main() -> None:
         current,
         [
             "CURRENT-2026-008 — Post-COS closure evaluation state",
+            "CURRENT-2026-009 — ScriptOps post-Run003 continuity state",
             "COS ownership/state/continuity: HUMAN ACCEPTED / CLOSED",
             "PR #30 został scalony jako `main@23152cb1bf5443574da9ff44600a5a8c8c136025`",
             "RECOVERY_RECORD / NON_CANONICAL / NO_AUTHORITY_PROMOTION",
+            "WAITING_FOR_EVIDENCE / HUMAN_SEMANTIC_DECISION",
         ],
         "Creative OS current state",
     )

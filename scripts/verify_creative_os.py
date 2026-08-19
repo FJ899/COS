@@ -28,7 +28,7 @@ REQUIRED = [
 ]
 
 EXPECTED = {
-    "Narzędzie pisarskie / ScriptOps": "QUEUED #1 / LOCAL PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM / POST-SADDLE STATE RECONCILED",
+    "Narzędzie pisarskie / ScriptOps": "QUEUED #1 / PHASE 6 PASS / BOUNDED PROPOSAL VIEW INTEGRATED / P3 RUN003 OBSERVED PASS / GOAL DONE NO / NO MATURITY CLAIM",
     "BPM:160": "QUEUED #2 / LOCAL SPIKE 001 IN PROGRESS / SOURCE SUMMARY CONFIRMED / ORIGINAL FILES REQUIRED",
     "Creative OS": "ACTIVE / LEAN PILOT / START_HERE ACTIVE",
     "Creative OS Project Reconstructor": "ACTIVE / V1.0 STABILIZATION",
@@ -105,15 +105,21 @@ def main() -> None:
         "IDEA-2026-007 — zewnętrzne skille jako warstwa pomocnicza",
         "DEC-2026-007 — Ginseng D0 closed; COS continuity closure",
         "CURRENT-2026-008 — Post-COS closure evaluation state",
+        "CURRENT-2026-009 — ScriptOps post-Run003 continuity state",
         "COS ownership/state/continuity: HUMAN ACCEPTED / CLOSED",
         "JTJ07/scriptops",
         "5af0cd8ac65e72ae534827c677fe4bd12b23e4ca",
         "LOCAL PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM / POST-SADDLE STATE RECONCILED",
+        "43ab980d4e0af33bc9a628f3d8b70617a14fb9db",
+        "BOUNDED PROPOSAL VIEW INTEGRATED",
+        "P3 RUN003 OBSERVED PASS",
+        "WAITING_FOR_EVIDENCE / HUMAN_SEMANTIC_DECISION",
         "Project Reconstructor Run 001: INTEGRATED OBSERVED EVIDENCE / PROMPT CHANGE NOT TRIGGERED",
         "eb21b04e7d04caf777d66721f86ae9e83aab1dd4",
         "EVOLUTION-2026-014 — Ginseng D0 closure i COS continuity reconciliation",
         "EVOLUTION-2026-015 — ScriptOps current-state/locator reconciliation",
         "EVOLUTION-2026-016 — post-closure continuity maintenance po Reconstructor Run 001",
+        "EVOLUTION-2026-017 — ScriptOps bounded proposal + Run 003 state/plan reconciliation",
     ], "CREATIVE_OS.md")
     for stale in STALE_CURRENT_STATE + STALE_CURRENT_POINTERS:
         if stale in cos:
@@ -127,53 +133,75 @@ def main() -> None:
             fail(f"niespójny status {project}: {project_rows[project][1]}")
         if not project_rows[project][4] or not project_rows[project][5]:
             fail(f"brak kroku lub źródła: {project}")
+
     scriptops_row = " ".join(project_rows["Narzędzie pisarskie / ScriptOps"])
     require(scriptops_row, [
         "JTJ07/scriptops",
         "NO MATURITY CLAIM",
-        "POST-SADDLE STATE RECONCILED",
-        "5af0cd8ac65e72ae534827c677fe4bd12b23e4ca",
+        "BOUNDED PROPOSAL VIEW INTEGRATED",
+        "P3 RUN003 OBSERVED PASS",
+        "GOAL DONE NO",
+        "WAITING_FOR_EVIDENCE / HUMAN_SEMANTIC_DECISION",
+        "43ab980d4e0af33bc9a628f3d8b70617a14fb9db",
     ], "karta ScriptOps")
-    if "SADDLE LIVE MODEL EVIDENCE NEXT" in scriptops_row:
-        fail("karta ScriptOps nadal przedstawia historyczny Saddle gate jako current")
+    for stale in ["SADDLE LIVE MODEL EVIDENCE NEXT", "materially-different workload"]:
+        if stale in scriptops_row:
+            fail(f"karta ScriptOps nadal przedstawia historyczny item jako current: {stale}")
+
     creative_os_row = " ".join(project_rows["Creative OS"])
-    if "ownership/state/continuity closure jest `HUMAN ACCEPTED / CLOSED`" not in creative_os_row:
+    if "ownership/state/continuity closure pozostaje `HUMAN ACCEPTED / CLOSED`" not in creative_os_row:
         fail("karta Creative OS nie odzwierciedla accepted COS closure")
+    if "Nie produkować zastępczego globalnego tasku" not in creative_os_row:
+        fail("karta Creative OS nie zachowuje granicy przeciw automatycznemu zastępowaniu waiting state")
+
     reconstructor_row = " ".join(project_rows["Creative OS Project Reconstructor"])
     require(reconstructor_row, [
-        "eb21b04e7d04caf777d66721f86ae9e83aab1dd4",
-        "Real-Value Run 001",
-        "bez zmiany zamrożonego promptu v1.0",
+        "Run 001",
+        "P0 root-containment hardening",
+        "nie wykazał potrzeby zmiany promptu",
+        "resolve'ować z repo",
     ], "karta Project Reconstructor")
-    if "PR #5" in reconstructor_row and "Human-authorized merge PR #5" not in reconstructor_row:
-        fail("karta Project Reconstructor nadal przedstawia PR #5 jako otwarty kandydat")
+
     bpm_row = " ".join(project_rows["BPM:160"]).lower()
     if "spike 001" not in bpm_row or "testy widzów" not in bpm_row or "read_only reconciliation" not in bpm_row:
         fail("karta BPM:160 nie zawiera Spike, parkingu testów widzów i reconciliation")
     if len(re.findall(r"^### IDEA-", cos, re.MULTILINE)) < 7:
         fail("Idea Inbox nie zawiera siedmiu wpisów")
-    print("[PASS] CREATIVE_OS.md ma aktualny post-closure cross-project state bez local-owner override")
+    print("[PASS] CREATIVE_OS.md ma post-Run003 cross-project state bez local-owner override")
 
     start = load("START_HERE.md")
     require(start, [
         'role: "single-entrypoint"', "BOOT | WORK | AUDIT | PORTFOLIO",
         'state_owner: "CREATIVE_OS.md"',
         "repo: JTJ07/COS",
-        "repo: JTJ07/scriptops", "current_main: 5af0cd8ac65e72ae534827c677fe4bd12b23e4ca",
+        "repo: JTJ07/scriptops",
+        "live_main: RESOLVE_FROM_LOCAL_REPO_AT_READ_TIME",
+        "last_observed_integration_checkpoint: 43ab980d4e0af33bc9a628f3d8b70617a14fb9db",
         "phase6_evidence: evidence/PHASE6_CONTROLLED_WORKFLOW_PROOF_2026-08-10.md",
-        "PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS", "NO MATURITY CLAIM", "POST-SADDLE STATE RECONCILED",
+        "latest_bounded_evidence: evidence/P3_REAL_WORKLOAD_003_SCENE12_27_2026-08-19.md",
+        "PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS",
+        "BOUNDED PROPOSAL VIEW INTEGRATED",
+        "P3 RUN003 CROSS-SCENE PROPOSAL COHERENCE: OBSERVED PASS",
+        "CANONICAL EFFECT: NOT APPLIED",
+        "HUMAN-OWNED NO-CARRIER GOAL DONE: NO",
+        "NO MATURITY CLAIM",
+        "WAITING_FOR_EVIDENCE / HUMAN_SEMANTIC_DECISION",
         "root: projects/bpm160", "source_summary: projects/bpm160/SOURCE_SUMMARY_2026-07-31.md",
         "SPIKE 001 IN PROGRESS", "ORIGINAL SOURCE FILES REQUIRED FOR SAFE RESUME",
         "READ_ONLY RECONCILIATION", "testów widzów",
         "CORE / SUPPORT / EDITORIAL / REJECT",
         "DOING NOW / NEXT / BACKLOG / PARKED / DONE", "active / superseded / unresolved",
         "repo: JTJ07/creative-os-project-reconstructor",
+        "Run 001 jest zintegrowanym observed evidence",
+        "P0 root-containment hardening",
         "ACCESS BLOCKED", "SOURCE REQUIRED", "START SESSION", "continuity/COLD_START_*",
     ], "START_HERE.md")
     if "litrgratis-pixel/" in start:
         fail("START_HERE.md nadal zawiera historyczny repo locator litrgratis-pixel/")
     if "current_main: daa6e5dc210e09171a530eeffe5601e0e74ae041" in start:
         fail("START_HERE.md nadal wskazuje pre-reconciliation ScriptOps main")
+    if "current_main: 5af0cd8ac65e72ae534827c677fe4bd12b23e4ca" in start:
+        fail("START_HERE.md nadal przedstawia last-observed ScriptOps snapshot jako current_main")
     for stale_start in ["\nSADDLE LIVE MODEL EVIDENCE NEXT\n", "\nFUNCTIONAL_SADDLE_ACCEPTED: NOT YET\n"]:
         if stale_start in start:
             fail(f"START_HERE.md nadal przedstawia historyczny ScriptOps/Saddle gate jako current: {stale_start.strip()}")
@@ -182,7 +210,7 @@ def main() -> None:
     for mode in ["### BOOT", "### WORK", "### AUDIT", "### PORTFOLIO"]:
         if mode not in start:
             fail(f"brak trybu {mode}")
-    print("[PASS] START_HERE.md wskazuje aktualny ScriptOps main i lokalne źródła prawdy")
+    print("[PASS] START_HERE.md używa local-owner live resolution i post-Run003 high-level locator state")
 
     bpm = "\n".join(load(p) for p in [
         "projects/bpm160/README.md", "projects/bpm160/PROJECT_STATE.md",
@@ -310,7 +338,7 @@ def main() -> None:
     require(load("continuity/COLD_START_AUDIT-001.md"), ["PASS WITH FIXES", "ScriptOps"], "cold start 001")
     require(load("continuity/COLD_START_AUDIT-002.md"), ["PASS WITH FIXES", "START_HERE"], "cold start 002")
     print("[PASS] wcześniejsze kontrakty są zachowane")
-    print("[PASS] Creative OS Lean jest spójny po accepted COS closure, ScriptOps reconciliation i integrated Reconstructor Run 001")
+    print("[PASS] Creative OS Lean jest spójny po post-Run003 ScriptOps reconciliation bez local-owner override")
 
 
 if __name__ == "__main__":
