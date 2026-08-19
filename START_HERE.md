@@ -54,7 +54,7 @@ Nie czytaj automatycznie branchy archiwalnych, pełnej dokumentacji innych proje
 ### Creative OS
 
 ```text
-repo: litrgratis-pixel/COS
+repo: JTJ07/COS
 entrypoint: START_HERE.md
 state_owner: CREATIVE_OS.md
 ```
@@ -64,19 +64,28 @@ state_owner: CREATIVE_OS.md
 Alias: `Narzędzie pisarskie / ScriptOps`
 
 ```text
-repo: litrgratis-pixel/scriptops
+repo: JTJ07/scriptops
 entrypoint: README.md
 state_owner: PROJECT_STATE.md
 handoff: HANDOFF.md
-critical_scope: sources/RC1_SCOPE_LOCK.md
+current_main: daa6e5dc210e09171a530eeffe5601e0e74ae041
+phase6_evidence: evidence/PHASE6_CONTROLLED_WORKFLOW_PROOF_2026-08-10.md
 ```
 
-Aktywna blokada `ACCESS CHECK REQUIRED` zatrzymuje implementację RC1.
+Aktualny lokalny state owner raportuje:
+
+```text
+PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS
+NO MATURITY CLAIM
+SADDLE LIVE MODEL EVIDENCE NEXT
+```
+
+Nie cofaj ScriptOps do historycznego `ACCESS CHECK REQUIRED`. Przed pracą odczytaj aktualny `PROJECT_STATE.md`; COS przechowuje tylko przekrojowy status i locator, nie lokalny backlog ani kanon.
 
 ### BPM:160
 
 ```text
-repo: litrgratis-pixel/COS
+repo: JTJ07/COS
 root: projects/bpm160
 entrypoint: projects/bpm160/README.md
 state_owner: projects/bpm160/PROJECT_STATE.md
@@ -123,7 +132,7 @@ active / superseded / unresolved
 Alias: `Project Reconstructor`
 
 ```text
-repo: litrgratis-pixel/creative-os-project-reconstructor
+repo: JTJ07/creative-os-project-reconstructor
 entrypoint: README.md
 state_owner: PROJECT_STATE.md
 canonical_prompt: PROMPT_STARTOWY.md
@@ -194,7 +203,7 @@ PYTANIE KIERUNKOWE: BRAK | JEDNO PYTANIE
 ### BPM:160
 
 ```text
-Uruchom Creative OS z repozytorium litrgratis-pixel/COS.
+Uruchom Creative OS z repozytorium JTJ07/COS.
 Wykonaj START_HERE.md.
 
 PROJEKT: BPM:160
@@ -204,7 +213,7 @@ TRYB: BOOT
 ### ScriptOps
 
 ```text
-Uruchom Creative OS z repozytorium litrgratis-pixel/COS.
+Uruchom Creative OS z repozytorium JTJ07/COS.
 Wykonaj START_HERE.md.
 
 PROJEKT: ScriptOps
@@ -215,7 +224,7 @@ ZADANIE: wykonaj aktualny zatwierdzony następny krok, ale zatrzymaj się na ka�
 ### Portfel
 
 ```text
-Uruchom Creative OS z repozytorium litrgratis-pixel/COS.
+Uruchom Creative OS z repozytorium JTJ07/COS.
 Wykonaj START_HERE.md.
 
 PROJEKT: ALL

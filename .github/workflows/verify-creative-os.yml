@@ -31,3 +31,6 @@ jobs:
 
       - name: Verify Ginseng D0 Human acceptance
         run: python scripts/verify_ginseng_d0_human_acceptance.py
+
+      - name: Verify COS ownership/state/continuity Human acceptance
+        run: python scripts/verify_cos_ownership_state_continuity_acceptance.py
