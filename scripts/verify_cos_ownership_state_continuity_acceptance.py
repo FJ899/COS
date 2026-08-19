@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed verification of Human acceptance for COS ownership/state/continuity closure."""
+"""Fail-closed verification of historical Human acceptance and current integrated COS closure."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ACCEPTANCE = ROOT / "governance/COS_OWNERSHIP_STATE_CONTINUITY_HUMAN_ACCEPTANCE_2026-08-19.md"
 COS_VERIFY = ROOT / "scripts/verify_creative_os.py"
+COS_STATE = ROOT / "CREATIVE_OS.md"
 
 
 def fail(message: str) -> None:
@@ -17,10 +18,10 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 
-def require(content: str, markers: list[str]) -> None:
+def require(content: str, markers: list[str], owner: str = "COS acceptance record") -> None:
     for marker in markers:
         if marker not in content:
-            fail(f"COS acceptance record missing marker: {marker}")
+            fail(f"{owner} missing marker: {marker}")
 
 
 def main() -> None:
@@ -28,7 +29,10 @@ def main() -> None:
         fail("COS Human acceptance record missing")
     if not COS_VERIFY.is_file():
         fail("Creative OS continuity verifier missing")
+    if not COS_STATE.is_file():
+        fail("Creative OS current state owner missing")
 
+    # Historical Human acceptance is immutable evidence of what was authorized at that time.
     content = ACCEPTANCE.read_text(encoding="utf-8")
     require(
         content,
@@ -65,6 +69,7 @@ def main() -> None:
         if marker in content:
             fail(f"unauthorized escalation in COS acceptance record: {marker}")
 
+    # Current continuity must still pass independently after later factual maintenance.
     completed = subprocess.run(
         [sys.executable, str(COS_VERIFY)],
         cwd=ROOT,
@@ -78,19 +83,34 @@ def main() -> None:
         fail("Creative OS continuity verifier no longer passes")
 
     required_output = [
-        "[PASS] CREATIVE_OS.md ma aktualny cross-project state",
-        "[PASS] START_HERE.md wskazuje aktualne repo locators",
-        "[PASS] COS ownership audit preserves local truth",
+        "[PASS] CREATIVE_OS.md ma aktualny post-closure cross-project state",
+        "[PASS] START_HERE.md wskazuje aktualny ScriptOps main",
+        "[PASS] COS ownership audit remains historical evidence",
     ]
     for marker in required_output:
         if marker not in completed.stdout:
-            fail(f"Creative OS verifier missing expected closure marker: {marker}")
+            fail(f"Creative OS verifier missing expected current-state marker: {marker}")
 
-    print("[PASS] COS closure Human acceptance is explicit and source-bound")
-    print("[PASS] accepted technical candidate remains independently fail-closed")
-    print("[PASS] no merge/runtime/project-activation/memory-promotion authority was inferred")
-    print("COS_OWNERSHIP_STATE_CONTINUITY_ACCEPTANCE: PASS")
-    print("MERGE_PR_30_AUTHORITY: PENDING")
+    current = COS_STATE.read_text(encoding="utf-8")
+    require(
+        current,
+        [
+            "CURRENT-2026-008 — Post-COS closure evaluation state",
+            "COS ownership/state/continuity: HUMAN ACCEPTED / CLOSED",
+            "PR #30 został scalony jako `main@23152cb1bf5443574da9ff44600a5a8c8c136025`",
+            "RECOVERY_RECORD / NON_CANONICAL / NO_AUTHORITY_PROMOTION",
+        ],
+        "Creative OS current state",
+    )
+    if "COS ownership/state/continuity: CLOSURE IN PROGRESS" in current:
+        fail("Creative OS current state regressed to pre-merge COS closure")
+
+    print("[PASS] historical COS Human acceptance remains immutable and correctly scoped")
+    print("[PASS] current post-closure continuity remains independently fail-closed")
+    print("[PASS] no runtime/project-activation/memory-promotion authority was inferred")
+    print("COS_OWNERSHIP_STATE_CONTINUITY_ACCEPTANCE_HISTORY: PASS")
+    print("CURRENT_COS_CLOSURE_STATE: HUMAN_ACCEPTED / CLOSED")
+    print("PR_30_INTEGRATION: MERGED")
 
 
 if __name__ == "__main__":
