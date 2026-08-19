@@ -37,6 +37,7 @@ EXPECTED = {
 STALE_CURRENT_STATE = [
     "Ginseng D0: BLOCKED — D-05 DECISION LINEAGE PROOF GAP + D-08 EVIDENCE CUSTODY HUMAN DECISION",
     "GINSENG D0: BLOCKED — D-05 DECISION LINEAGE remains open; D-09 requires final recheck after closure.",
+    "Project Reconstructor Run 001: TECHNICALLY VERIFIED EVIDENCE CANDIDATE / MERGE AUTHORITY PENDING",
 ]
 
 STALE_CURRENT_POINTERS = [
@@ -108,7 +109,8 @@ def main() -> None:
         "JTJ07/scriptops",
         "5af0cd8ac65e72ae534827c677fe4bd12b23e4ca",
         "LOCAL PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM / POST-SADDLE STATE RECONCILED",
-        "Project Reconstructor Run 001: TECHNICALLY VERIFIED EVIDENCE CANDIDATE / MERGE AUTHORITY PENDING",
+        "Project Reconstructor Run 001: INTEGRATED OBSERVED EVIDENCE / PROMPT CHANGE NOT TRIGGERED",
+        "eb21b04e7d04caf777d66721f86ae9e83aab1dd4",
         "EVOLUTION-2026-014 — Ginseng D0 closure i COS continuity reconciliation",
         "EVOLUTION-2026-015 — ScriptOps current-state/locator reconciliation",
         "EVOLUTION-2026-016 — post-closure continuity maintenance po Reconstructor Run 001",
@@ -137,6 +139,14 @@ def main() -> None:
     creative_os_row = " ".join(project_rows["Creative OS"])
     if "ownership/state/continuity closure jest `HUMAN ACCEPTED / CLOSED`" not in creative_os_row:
         fail("karta Creative OS nie odzwierciedla accepted COS closure")
+    reconstructor_row = " ".join(project_rows["Creative OS Project Reconstructor"])
+    require(reconstructor_row, [
+        "eb21b04e7d04caf777d66721f86ae9e83aab1dd4",
+        "Real-Value Run 001",
+        "bez zmiany zamrożonego promptu v1.0",
+    ], "karta Project Reconstructor")
+    if "PR #5" in reconstructor_row and "Human-authorized merge PR #5" not in reconstructor_row:
+        fail("karta Project Reconstructor nadal przedstawia PR #5 jako otwarty kandydat")
     bpm_row = " ".join(project_rows["BPM:160"]).lower()
     if "spike 001" not in bpm_row or "testy widzów" not in bpm_row or "read_only reconciliation" not in bpm_row:
         fail("karta BPM:160 nie zawiera Spike, parkingu testów widzów i reconciliation")
@@ -300,7 +310,7 @@ def main() -> None:
     require(load("continuity/COLD_START_AUDIT-001.md"), ["PASS WITH FIXES", "ScriptOps"], "cold start 001")
     require(load("continuity/COLD_START_AUDIT-002.md"), ["PASS WITH FIXES", "START_HERE"], "cold start 002")
     print("[PASS] wcześniejsze kontrakty są zachowane")
-    print("[PASS] Creative OS Lean jest spójny po accepted COS closure, ScriptOps reconciliation i Run-001 continuity update")
+    print("[PASS] Creative OS Lean jest spójny po accepted COS closure, ScriptOps reconciliation i integrated Reconstructor Run 001")
 
 
 if __name__ == "__main__":
