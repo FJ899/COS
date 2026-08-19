@@ -1,0 +1,21 @@
+{
+  "schema_version": "m05-r1-independent-verifier/1.0",
+  "chain_id": "M05-R1-SCRIPTOPS-ISSUE-65",
+  "status": "PASS",
+  "executor_result_status": "ACTION_COMPLETED_REVIEW_REQUIRED",
+  "request_issue": 65,
+  "human_comment_id": 5345450496,
+  "target_commit": "daa6e5dc210e09171a530eeffe5601e0e74ae041",
+  "changed_paths": [
+    "phase6/scriptops-v2-hardening.py"
+  ],
+  "patch_sha256": "c9c355db350382ab98b3edaf4d0794c50905816b45ec077f8fdc675b0b856007",
+  "execution_environment_workflow_sha256": "0cc14b53c42576ff202d6ad3674293b4da71b614606a04e7095a01f91e1e2262",
+  "canonical_external_repository_effect": "NONE",
+  "review_required": true,
+  "source_workflow_run": 32280682838,
+  "source_artifact_id": 9375699326,
+  "source_artifact_digest": "sha256:ad2f02a734338e80a78dd650392ce0bf60aeaf64321cfb9d7f9e2a0f99ed80c6",
+  "copied_to_cos_for_durability": true,
+  "human_acceptance": "NOT_CLAIMED"
+}
