@@ -68,19 +68,26 @@ repo: JTJ07/scriptops
 entrypoint: README.md
 state_owner: PROJECT_STATE.md
 handoff: HANDOFF.md
-current_main: 5af0cd8ac65e72ae534827c677fe4bd12b23e4ca
+live_main: RESOLVE_FROM_LOCAL_REPO_AT_READ_TIME
+last_observed_integration_checkpoint: 43ab980d4e0af33bc9a628f3d8b70617a14fb9db
 phase6_evidence: evidence/PHASE6_CONTROLLED_WORKFLOW_PROOF_2026-08-10.md
+latest_bounded_evidence: evidence/P3_REAL_WORKLOAD_003_SCENE12_27_2026-08-19.md
 ```
 
-Aktualny lokalny state owner raportuje:
+Aktualny lokalny state owner po zaakceptowanych merge'ach PR #14 i PR #16 raportuje na poziomie high-level:
 
 ```text
 PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS
+BOUNDED PROPOSAL VIEW INTEGRATED
+P3 RUN003 CROSS-SCENE PROPOSAL COHERENCE: OBSERVED PASS
+CANONICAL EFFECT: NOT APPLIED
+HUMAN-OWNED NO-CARRIER GOAL DONE: NO
 NO MATURITY CLAIM
-POST-SADDLE STATE RECONCILED
 ```
 
-Historyczne `ACCESS CHECK REQUIRED`, `SADDLE LIVE MODEL EVIDENCE NEXT` i `FUNCTIONAL_SADDLE_ACCEPTED: NOT YET` nie są już current ScriptOps blockers. Przed pracą odczytaj aktualny `PROJECT_STATE.md`; COS przechowuje tylko przekrojowy status i locator, nie lokalny backlog ani kanon. Materially-different workload jest evaluation work, nie automatyczną aktywacją ScriptOps ani maturity promotion.
+Zapisany SHA jest last-observed integration checkpoint, nie perpetual `CURRENT LIVE` pointer. Przed consequential work resolve'uj live `main` z lokalnego repo i czytaj aktualny `PROJECT_STATE.md` + `HANDOFF.md`.
+
+Historyczne `ACCESS CHECK REQUIRED`, `SADDLE LIVE MODEL EVIDENCE NEXT`, `FUNCTIONAL_SADDLE_ACCEPTED: NOT YET` oraz `materially-different workload next` nie są już current ScriptOps blockers/next steps. Obecny lokalny stan jest `WAITING_FOR_EVIDENCE / HUMAN_SEMANTIC_DECISION`: potrzebny jest authoritative downstream material albo jawna Human semantic decision dotycząca proposal state SCN-012 + SCN-027. COS zachowuje tylko ten high-level stan; nie wybiera ścieżki i nie przejmuje lokalnego backlogu ani kanonu.
 
 ### BPM:160
 
@@ -138,7 +145,7 @@ state_owner: PROJECT_STATE.md
 canonical_prompt: PROMPT_STARTOWY.md
 ```
 
-Prompt v1.0 można zmienić tylko po konkretnej porażce i z testem regresji. Technically verified Run 001 w otwartym PR nie staje się local accepted state przed osobną Human merge authority.
+Run 001 jest zintegrowanym observed evidence; późniejszy P0 root-containment hardening również został Human-authorized i scalony. Prompt v1.0 można zmienić tylko po konkretnej porażce i z testem regresji. Przed consequential work resolve'uj live stan z lokalnego repo; COS nie traktuje zapisanych historycznych SHA jako perpetual current truth.
 
 ## 4. Reguły zatrzymania
 
