@@ -27,6 +27,16 @@ Aktywny `main` ma pozostać mały. Pełna historia poprzednich rozwiązań jest 
 - Status: `ARCHIVE / NON-CANONICAL WHEN CURRENT STATE IS AVAILABLE`.
 - Zasada użycia: służy do rekonstrukcji po utracie rozmowy lub repo; przy sprzeczności przegrywa z aktualnym `PROJECT_STATE.md`, handoffem i najnowszą decyzją użytkownika.
 
+## Zaparkowane idee
+
+### Mata Hari — Adaptive Human–AI Collaboration Layer
+
+- Plik: `archives/MATA_HARI_ADAPTIVE_COLLABORATION_LAYER_2026-08-21.md`
+- Data: `2026-08-21`
+- Rdzeń: dynamiczne dopasowanie sposobu współpracy Intelligence do aktualnej potrzeby Human zamiast stałej persony/profilu.
+- Status: `PARKED IDEA / NOT ACTIVE ROADMAP / NOT IMPLEMENTATION AUTHORITY`.
+- Warunek powrotu: realna praca pokaże powtarzalny blocker wynikający z niedopasowania sposobu współpracy, którego nie da się usunąć prostą instrukcją lub lokalną korektą.
+
 ## Co zostało wchłonięte do Creative OS
 
 - rozmowa jest procesorem, repo zachowuje stan;
