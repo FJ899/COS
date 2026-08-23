@@ -85,8 +85,9 @@ def main() -> None:
         fail("Creative OS continuity verifier no longer passes")
 
     required_output = [
-        "[PASS] CREATIVE_OS.md ma post-Run003 cross-project state bez local-owner override",
-        "[PASS] START_HERE.md używa local-owner live resolution i post-Run003 high-level locator state",
+        "[PASS] CREATIVE_OS.md ma post-Run003 cross-project state i current FJ899 locators bez local-owner override",
+        "[PASS] START_HERE.md używa FJ899 locators, local-owner live resolution i current post-Run003 state",
+        "[PASS] MASTER_TODO.md source-of-truth locators są związane z FJ899",
         "[PASS] COS ownership audit remains historical evidence",
     ]
     for marker in required_output:
