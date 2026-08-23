@@ -69,7 +69,7 @@ The ownership network is a map of responsibility, **not a mandatory pipeline**.
 Restore one durable global compass so local `next step` records, attractive findings and test follow-ups cannot silently take over the direction of work.
 
 **DONE WHEN**  
-This exact artifact is Human-accepted and canonically integrated in `JTJ07/COS`. Once that happens, P0 is satisfied by definition and **P1 becomes CURRENT PRIORITY without requiring a new product decision**.
+This exact artifact is Human-accepted and canonically integrated in `FJ899/COS`. Once that happens, P0 is satisfied by definition and **P1 becomes CURRENT PRIORITY without requiring a new product decision**.
 
 **RETURN CONDITION**  
 Only if this artifact later proves insufficient to prevent priority drift or becomes materially inconsistent with an explicit newer Human decision.
@@ -79,7 +79,7 @@ Human — North Star and priority order.
 COS — durable preservation only.
 
 **SOURCE OF TRUTH**  
-`JTJ07/COS/MASTER_TODO.md` after Human acceptance + merge.
+`FJ899/COS/MASTER_TODO.md` after Human acceptance + merge.
 
 ---
 
@@ -141,7 +141,7 @@ Human — target selection and consequential authority.
 ScriptOps — detailed local workflow state.
 
 **SOURCE OF TRUTH**  
-`JTJ07/scriptops/PROJECT_STATE.md` and `HANDOFF.md`.
+`FJ899/scriptops/PROJECT_STATE.md` and `HANDOFF.md`.
 
 ---
 
@@ -163,7 +163,7 @@ Human — global priority and product decisions.
 BPM:160 local project state — detailed execution state.
 
 **SOURCE OF TRUTH**  
-`JTJ07/COS/projects/bpm160/PROJECT_STATE.md`.
+`FJ899/COS/projects/bpm160/PROJECT_STATE.md`.
 
 ---
 
@@ -185,7 +185,7 @@ Human — project selection and acceptance.
 Reconstructor — detailed local state.
 
 **SOURCE OF TRUTH**  
-`JTJ07/creative-os-project-reconstructor/PROJECT_STATE.md`.
+`FJ899/creative-os-project-reconstructor/PROJECT_STATE.md`.
 
 ---
 
@@ -209,7 +209,7 @@ Human — product/implementation decision.
 Saddle preserves the accepted C0 decision record; it does not own priority.
 
 **SOURCE OF TRUTH**  
-`JTJ07/Saddle/decisions/DEC-SAD-020.md`.
+`FJ899/Saddle/decisions/DEC-SAD-020.md`.
 
 ---
 
