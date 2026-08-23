@@ -65,7 +65,7 @@ ECOSYSTEM NEXT STEP
 ### Creative OS
 
 ```text
-repo: JTJ07/COS
+repo: FJ899/COS
 entrypoint: START_HERE.md
 state_owner: CREATIVE_OS.md
 global_priority_memory: MASTER_TODO.md
@@ -77,7 +77,7 @@ priority_semantic_owner: HUMAN
 Alias: `Narzędzie pisarskie / ScriptOps`
 
 ```text
-repo: JTJ07/scriptops
+repo: FJ899/scriptops
 entrypoint: README.md
 state_owner: PROJECT_STATE.md
 handoff: HANDOFF.md
@@ -106,7 +106,7 @@ Before consequential work resolve live `main` from the local repo and read curre
 ### BPM:160
 
 ```text
-repo: JTJ07/COS
+repo: FJ899/COS
 root: projects/bpm160
 entrypoint: projects/bpm160/README.md
 state_owner: projects/bpm160/PROJECT_STATE.md
@@ -153,7 +153,7 @@ active / superseded / unresolved
 Alias: `Project Reconstructor`
 
 ```text
-repo: JTJ07/creative-os-project-reconstructor
+repo: FJ899/creative-os-project-reconstructor
 entrypoint: README.md
 state_owner: PROJECT_STATE.md
 canonical_prompt: PROMPT_STARTOWY.md
@@ -233,7 +233,7 @@ PYTANIE KIERUNKOWE: BRAK | JEDNO PYTANIE
 ### BPM:160
 
 ```text
-Uruchom Creative OS z repozytorium JTJ07/COS.
+Uruchom Creative OS z repozytorium FJ899/COS.
 Wykonaj START_HERE.md.
 
 PROJEKT: BPM:160
@@ -243,7 +243,7 @@ TRYB: BOOT
 ### ScriptOps
 
 ```text
-Uruchom Creative OS z repozytorium JTJ07/COS.
+Uruchom Creative OS z repozytorium FJ899/COS.
 Wykonaj START_HERE.md.
 
 PROJEKT: ScriptOps
@@ -253,7 +253,7 @@ TRYB: BOOT
 ### Portfel
 
 ```text
-Uruchom Creative OS z repozytorium JTJ07/COS.
+Uruchom Creative OS z repozytorium FJ899/COS.
 Wykonaj START_HERE.md.
 
 PROJEKT: ALL
