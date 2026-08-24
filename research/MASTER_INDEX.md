@@ -10,7 +10,7 @@ Repository records are authoritative. Library copies are mirrors only.
 
 ```text
 CURRENT HISTORICAL COVERAGE = PARTIAL
-HISTORICAL RADAR / PROJECTOR BACKFILL = PENDING
+HISTORICAL RADAR / PROJECTOR BACKFILL = EXACT-BYTE IMPORT COMPLETE / FINAL REVIEW GATE
 ABSENCE FROM INDEX != ABSENCE FROM HISTORY
 ```
 
@@ -63,3 +63,47 @@ NEW DEVELOPMENT TASK = NO
 NEW PRODUCT DECISION = NO
 FINDING != TASK
 ```
+
+## Historical backfill
+
+### Projector / Real World Need Radar — 2026-08-21 → 2026-08-23
+
+Backfill contract:
+`research/history/projector-radar-2026-08-21_23/README.md`
+
+Provenance manifest:
+`research/history/projector-radar-2026-08-21_23/PROVENANCE_MANIFEST.md`
+
+Decision/status provenance index:
+`research/history/projector-radar-2026-08-21_23/DECISION_PROVENANCE_INDEX.md`
+
+Imported source-artifact root:
+`research/history/projector-radar-2026-08-21_23/source_artifacts/`
+
+Historical Library source root:
+`/Projektor/Test Archive/2026-08-21_22/`
+
+Imported inventory covers:
+- Projector real-work observations 001–011;
+- frozen test campaign archive + checksum/navigation metadata;
+- post-test reconciliation;
+- parked benchmark proposal;
+- Real World Need Radar discovery RAW runs 001–002;
+- run evaluations and five-run comparison;
+- final Projector candidate scan;
+- methodology evolution v1.0–v1.6.
+
+Current status:
+
+```text
+SOURCE INVENTORY = COMPLETE
+PROVENANCE HASHES = RECORDED
+SOURCE ARTIFACT EXACT-BYTE IMPORT = COMPLETE / 31 OF 31
+FROZEN RAW ZIP EXACT-BYTE IMPORT = COMPLETE / VERIFIED
+REPOSITORY OBJECT SIZE / IDENTITY VERIFICATION = PASS
+HISTORICAL COVERAGE = PARTIAL BY DOCUMENTED CHAT-ONLY LIMITATION
+MERGE READINESS = CONDITIONAL ON FRESH EXACT-HEAD READ-ONLY REVIEW
+HUMAN MERGE AUTHORITY = NO
+```
+
+An earlier manual chunk transport failed an expected Git blob identity check and was stopped fail-closed. No artifact from that failed attempt is claimed as migrated. The completed import used exact source bytes independently verified against the provenance package and manifest.
