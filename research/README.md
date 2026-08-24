@@ -6,9 +6,19 @@ Created: 2026-08-24
 
 ## Purpose
 
-This subtree is the authoritative repository record for cross-project research, Radar runs, Projector candidate scans, evaluations, and valuable methodological observations until a dedicated research repository exists.
+This subtree is the authoritative repository record for cross-project research, Radar runs, Projector candidate scans, evaluations, and valuable methodological observations that have been archived here, until a dedicated research repository exists.
 
 It is deliberately isolated from project canon. It must not silently change COS product semantics or any project-local authority.
+
+## Historical coverage
+
+```text
+CURRENT HISTORICAL COVERAGE = PARTIAL
+HISTORICAL RADAR / PROJECTOR BACKFILL = PENDING
+ABSENCE FROM INDEX != ABSENCE FROM HISTORY
+```
+
+This bootstrap is authoritative for records already archived in this subtree, but it is not yet a complete historical record. Older Radar / Projector artifacts remain pending a separate provenance-preserving backfill.
 
 ## Authority
 
