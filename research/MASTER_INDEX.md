@@ -10,7 +10,7 @@ Repository records are authoritative. Library copies are mirrors only.
 
 ```text
 CURRENT HISTORICAL COVERAGE = PARTIAL
-HISTORICAL RADAR / PROJECTOR BACKFILL = PENDING
+HISTORICAL RADAR / PROJECTOR BACKFILL = PREPARED / IMPORT PENDING
 ABSENCE FROM INDEX != ABSENCE FROM HISTORY
 ```
 
@@ -63,3 +63,41 @@ NEW DEVELOPMENT TASK = NO
 NEW PRODUCT DECISION = NO
 FINDING != TASK
 ```
+
+## Historical backfill preparation
+
+### Projector / Real World Need Radar — 2026-08-21 → 2026-08-23
+
+Backfill contract:
+`research/history/projector-radar-2026-08-21_23/README.md`
+
+Provenance manifest:
+`research/history/projector-radar-2026-08-21_23/PROVENANCE_MANIFEST.md`
+
+Decision/status provenance index:
+`research/history/projector-radar-2026-08-21_23/DECISION_PROVENANCE_INDEX.md`
+
+Source Library root:
+`/Projektor/Test Archive/2026-08-21_22/`
+
+Prepared inventory covers:
+- Projector real-work observations 001–011;
+- frozen test campaign archive metadata;
+- post-test reconciliation;
+- parked benchmark proposal;
+- Real World Need Radar discovery RAW runs 001–002;
+- run evaluations and five-run comparison;
+- final Projector candidate scan;
+- methodology evolution v1.0–v1.6.
+
+Current status:
+
+```text
+SOURCE INVENTORY = PREPARED
+PROVENANCE HASHES = RECORDED
+SOURCE ARTIFACT EXACT-BYTE IMPORT = PENDING
+FROZEN RAW ZIP EXACT-BYTE IMPORT = PENDING
+BACKFILL READY TO MERGE = NO
+```
+
+A failed transport attempt was stopped because one manually transported chunk did not reproduce the expected Git blob SHA. No source artifact from that failed transport is claimed as migrated.
