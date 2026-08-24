@@ -1,8 +1,9 @@
 # PROJECTOR / RADAR HISTORICAL BACKFILL — 2026-08-21 → 2026-08-23
 
-Status: `HISTORICAL / PROVENANCE-PRESERVING BACKFILL / EXACT-BYTE IMPORT COMPLETE`
+Status: `HISTORICAL / PROVENANCE-PRESERVING BACKFILL / EXACT-BYTE IMPORT COMPLETE / MERGED`
 Source Library path: `/Projektor/Test Archive/2026-08-21_22/`
 Prepared: 2026-08-24
+Post-merge reconciliation: 2026-08-24
 
 ## Purpose
 
@@ -48,20 +49,24 @@ TEXTUAL EXACT-BYTE IMPORT = COMPLETE
 FROZEN RAW ZIP EXACT-BYTE IMPORT = COMPLETE / VERIFIED
 REPOSITORY OBJECT SIZE / IDENTITY VERIFICATION = PASS
 HISTORICAL COVERAGE = PARTIAL BY DOCUMENTED CHAT-ONLY LIMITATION
-MERGE READINESS = CONDITIONAL ON FRESH EXACT-HEAD READ-ONLY REVIEW
-HUMAN MERGE AUTHORITY = NO
+EXACT-HEAD REVIEW = PASS ON 9943d3caeb19f56d7547cdfc032cf3ce8432bffa
+HUMAN MERGE AUTHORITY = GRANTED + CONSUMED FOR EXACT HEAD 9943d3caeb19f56d7547cdfc032cf3ce8432bffa
+PR #42 = MERGED
+MERGE COMMIT = 632eb5f86f0356820ab165bcf1c7df70e466e0d8
 ```
 
 ## Privacy preflight
 
 Before preparing this public-repository backfill, the frozen ZIP was inspected for obvious credentials/secrets and its screenshots were reviewed for visible identity data. No credentials or actual government-ID/address/PESEL values were identified. The workbook identifies its data as synthetic. This is a best-effort publication-safety preflight, not a guarantee that every byte has been independently classified.
 
-## Merge gate
+## Satisfied merge gate
 
-This backfill MUST NOT be merged until:
+The backfill was merged only after all five pre-merge conditions were satisfied:
 
-1. each selected historical source artifact is present at the manifest-defined repository path with the expected byte identity;
-2. repository object sizes/identities are checked against the independently SHA-256-verified source package and provenance manifest;
-3. the frozen raw ZIP remains byte-exact;
-4. a fresh exact-head read-only review returns `ACCEPT + MERGE`;
-5. separate Human merge authority is given for that exact reviewed head.
+1. each selected historical source artifact was present at the manifest-defined repository path with the expected byte identity;
+2. repository object sizes/identities were checked against the independently SHA-256-verified source package and provenance manifest;
+3. the frozen raw ZIP remained byte-exact;
+4. a fresh exact-head read-only review returned `ACCEPT + MERGE` for `9943d3caeb19f56d7547cdfc032cf3ce8432bffa`;
+5. separate Human merge authority was explicitly given for that exact reviewed head.
+
+The authorized merge produced canonical `main` merge commit `632eb5f86f0356820ab165bcf1c7df70e466e0d8`. No release, deploy, or tag was part of that authority.
