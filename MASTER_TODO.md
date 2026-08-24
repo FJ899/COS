@@ -1,9 +1,9 @@
 ---
 artifact: "MASTER TODO / NORTH STAR"
-status: "CANDIDATE UNTIL HUMAN ACCEPTANCE + MERGE"
+status: "CANONICAL / HUMAN-ACCEPTED + MERGED"
 semantic_owner: "HUMAN"
 durable_continuity_owner: "COS"
-updated_at: "2026-08-21"
+updated_at: "2026-08-24"
 ---
 
 # MASTER TODO / NORTH STAR
@@ -18,7 +18,7 @@ COS
 = DURABLY PRESERVES NORTH STAR + PRIORITY ORDER
 ```
 
-This file is the canonical durable memory of the Human-owned global priority order **only after Human acceptance and canonical merge**.
+This file is the canonical durable memory of the Human-owned global priority order after Human acceptance and canonical merge.
 
 It is **not** a scheduler, router, autonomous backlog manager, command pipeline or source of local project truth.
 
@@ -63,13 +63,13 @@ The ownership network is a map of responsibility, **not a mandatory pipeline**.
 
 ### P0 — Restore Human-owned MASTER TODO / North Star in COS
 
-**STATUS:** `SATISFIED ONLY BY HUMAN ACCEPTANCE + CANONICAL MERGE OF THIS ARTIFACT`
+**STATUS:** `SATISFIED / CANONICAL MERGE COMPLETE`
 
 **WHY**  
 Restore one durable global compass so local `next step` records, attractive findings and test follow-ups cannot silently take over the direction of work.
 
-**DONE WHEN**  
-This exact artifact is Human-accepted and canonically integrated in `FJ899/COS`. Once that happens, P0 is satisfied by definition and **P1 becomes CURRENT PRIORITY without requiring a new product decision**.
+**SATISFIED BY**  
+Human acceptance and canonical merge of this artifact via PR #38. Under the already-accepted transition rule, satisfying P0 made **P1 CURRENT PRIORITY without requiring a new product decision**.
 
 **RETURN CONDITION**  
 Only if this artifact later proves insufficient to prevent priority drift or becomes materially inconsistent with an explicit newer Human decision.
@@ -79,13 +79,13 @@ Human — North Star and priority order.
 COS — durable preservation only.
 
 **SOURCE OF TRUTH**  
-`FJ899/COS/MASTER_TODO.md` after Human acceptance + merge.
+`FJ899/COS/MASTER_TODO.md` on canonical `main`.
 
 ---
 
 ### P1 — One real Human job with the ecosystem AS-IS
 
-**STATUS:** `NEXT / BECOMES CURRENT AFTER P0 CANONICAL INTEGRATION`
+**STATUS:** `CURRENT PRIORITY`
 
 **WHY**  
 Measure usefulness through real work that the Human wanted to do independently of ecosystem development.
