@@ -2,7 +2,7 @@
 
 Historical Library source root: `/Projektor/Test Archive/2026-08-21_22/`
 
-This manifest records the intended repository path, source byte size, and SHA-256 observed from the materialized Library artifact. A manifest entry is NOT a claim that the source has already been imported into the repository.
+This manifest records the intended repository path, source byte size, and SHA-256 observed from the materialized Library artifact. The table preserves source identity; repository-import status is recorded separately below.
 
 | Intended repository path | Bytes | Source SHA-256 |
 |---|---:|---|
@@ -37,13 +37,28 @@ This manifest records the intended repository path, source byte size, and SHA-25
 | `radars/real-world-need/methodology/REAL_WORLD_NEED_RADAR_METHODOLOGY_v1.6_CANDIDATE_ATTRITION_ACTIVATION_READINESS_2026-08-23.md` | 5199 | `536faa7545fd4e99bf0f265378794e42dbd329d328073e4e9cf5fe89819fdb47` |
 | `raw/PROJECTOR_TEST_CAMPAIGN_RAW_2026-08-21_22.zip.sha256` | 122 | `996e67a4c8a7dcbc0b8dc148afd0107e59bc46c670ac10aca485e3d0eac6fff0` |
 
+## Repository import verification
+
+The selected historical set is now present under `source_artifacts/` at the class-specific paths above.
+
+```text
+LISTED SOURCE ARTIFACTS = 31 / 31
+PATH VERIFICATION = PASS
+BYTE-SIZE VERIFICATION = PASS
+SOURCE SHA-256 VERIFICATION BEFORE IMPORT = PASS
+GITHUB OBJECT IDENTITY AGAINST EXACT SOURCE BYTES = PASS
+```
+
+The SHA-256 values in this manifest remain the source-side identities. Repository byte identity was independently checked by matching each imported object's byte size and Git blob identity to the exact source bytes used to compute those SHA-256 values.
+
 ## Frozen binary source
 
-`PROJECTOR_TEST_CAMPAIGN_RAW_2026-08-21_22.zip`
+`raw/PROJECTOR_TEST_CAMPAIGN_RAW_2026-08-21_22.zip`
 
 - source bytes: `564807`
 - source SHA-256: `43492be1f56d2db3e45c9cd49ff73bf45980c33b13b087e69a88ee64a349ff7c`
-- exact-byte repository import: `PENDING`
+- repository Git blob SHA: `83a2da003538ba4798981db076221d8d011544c0`
+- exact-byte repository import: `VERIFIED`
 
 ## Coverage limitation
 
