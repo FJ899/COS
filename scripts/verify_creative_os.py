@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 REQUIRED = [
-    "START_HERE.md", "README.md", "CREATIVE_OS.md", "ARCHIVE_INDEX.md",
+    "START_HERE.md", "MASTER_TODO.md", "README.md", "CREATIVE_OS.md", "ARCHIVE_INDEX.md",
     ".gitignore", ".github/pull_request_template.md", "scripts/README.md",
     "continuity/COLD_START_AUDIT-001.md", "continuity/COLD_START_TEST-002.md",
     "continuity/COLD_START_AUDIT-002.md",
@@ -107,7 +107,7 @@ def main() -> None:
         "CURRENT-2026-008 — Post-COS closure evaluation state",
         "CURRENT-2026-009 — ScriptOps post-Run003 continuity state",
         "COS ownership/state/continuity: HUMAN ACCEPTED / CLOSED",
-        "JTJ07/scriptops",
+        "FJ899/scriptops",
         "5af0cd8ac65e72ae534827c677fe4bd12b23e4ca",
         "LOCAL PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS / NO MATURITY CLAIM / POST-SADDLE STATE RECONCILED",
         "43ab980d4e0af33bc9a628f3d8b70617a14fb9db",
@@ -136,7 +136,7 @@ def main() -> None:
 
     scriptops_row = " ".join(project_rows["Narzędzie pisarskie / ScriptOps"])
     require(scriptops_row, [
-        "JTJ07/scriptops",
+        "FJ899/scriptops",
         "NO MATURITY CLAIM",
         "BOUNDED PROPOSAL VIEW INTEGRATED",
         "P3 RUN003 OBSERVED PASS",
@@ -160,6 +160,7 @@ def main() -> None:
         "P0 root-containment hardening",
         "nie wykazał potrzeby zmiany promptu",
         "resolve'ować z repo",
+        "FJ899/creative-os-project-reconstructor",
     ], "karta Project Reconstructor")
 
     bpm_row = " ".join(project_rows["BPM:160"]).lower()
@@ -167,37 +168,40 @@ def main() -> None:
         fail("karta BPM:160 nie zawiera Spike, parkingu testów widzów i reconciliation")
     if len(re.findall(r"^### IDEA-", cos, re.MULTILINE)) < 7:
         fail("Idea Inbox nie zawiera siedmiu wpisów")
-    print("[PASS] CREATIVE_OS.md ma post-Run003 cross-project state bez local-owner override")
+    print("[PASS] CREATIVE_OS.md ma post-Run003 cross-project state i current FJ899 locators bez local-owner override")
 
     start = load("START_HERE.md")
     require(start, [
         'role: "single-entrypoint"', "BOOT | WORK | AUDIT | PORTFOLIO",
         'state_owner: "CREATIVE_OS.md"',
-        "repo: JTJ07/COS",
-        "repo: JTJ07/scriptops",
+        "repo: FJ899/COS",
+        "repo: FJ899/scriptops",
         "live_main: RESOLVE_FROM_LOCAL_REPO_AT_READ_TIME",
-        "last_observed_integration_checkpoint: 43ab980d4e0af33bc9a628f3d8b70617a14fb9db",
+        "last_observed_run003_integration_checkpoint: 43ab980d4e0af33bc9a628f3d8b70617a14fb9db",
         "phase6_evidence: evidence/PHASE6_CONTROLLED_WORKFLOW_PROOF_2026-08-10.md",
         "latest_bounded_evidence: evidence/P3_REAL_WORKLOAD_003_SCENE12_27_2026-08-19.md",
         "PHASE 6 CONTROLLED WORKFLOW MECHANISM PASS",
         "BOUNDED PROPOSAL VIEW INTEGRATED",
         "P3 RUN003 CROSS-SCENE PROPOSAL COHERENCE: OBSERVED PASS",
-        "CANONICAL EFFECT: NOT APPLIED",
-        "HUMAN-OWNED NO-CARRIER GOAL DONE: NO",
+        "SCN-012 + SCN-027 HUMAN SEMANTIC ACCEPTED",
+        "NO-CARRIER GOAL FOR BOUNDED SCOPE: SEMANTICALLY SATISFIED",
+        "CANONICAL EFFECT: PREPARED / NOT APPLIED",
         "NO MATURITY CLAIM",
-        "WAITING_FOR_EVIDENCE / HUMAN_SEMANTIC_DECISION",
         "root: projects/bpm160", "source_summary: projects/bpm160/SOURCE_SUMMARY_2026-07-31.md",
         "SPIKE 001 IN PROGRESS", "ORIGINAL SOURCE FILES REQUIRED FOR SAFE RESUME",
         "READ_ONLY RECONCILIATION", "testów widzów",
         "CORE / SUPPORT / EDITORIAL / REJECT",
         "DOING NOW / NEXT / BACKLOG / PARKED / DONE", "active / superseded / unresolved",
-        "repo: JTJ07/creative-os-project-reconstructor",
+        "repo: FJ899/creative-os-project-reconstructor",
         "Run 001 jest zintegrowanym observed evidence",
         "P0 root-containment hardening",
         "ACCESS BLOCKED", "SOURCE REQUIRED", "START SESSION", "continuity/COLD_START_*",
     ], "START_HERE.md")
     if "litrgratis-pixel/" in start:
         fail("START_HERE.md nadal zawiera historyczny repo locator litrgratis-pixel/")
+    for stale_locator in ["repo: JTJ07/COS", "repo: JTJ07/scriptops", "repo: JTJ07/creative-os-project-reconstructor"]:
+        if stale_locator in start:
+            fail(f"START_HERE.md nadal zawiera pre-transfer current locator: {stale_locator}")
     if "current_main: daa6e5dc210e09171a530eeffe5601e0e74ae041" in start:
         fail("START_HERE.md nadal wskazuje pre-reconciliation ScriptOps main")
     if "current_main: 5af0cd8ac65e72ae534827c677fe4bd12b23e4ca" in start:
@@ -210,7 +214,26 @@ def main() -> None:
     for mode in ["### BOOT", "### WORK", "### AUDIT", "### PORTFOLIO"]:
         if mode not in start:
             fail(f"brak trybu {mode}")
-    print("[PASS] START_HERE.md używa local-owner live resolution i post-Run003 high-level locator state")
+    print("[PASS] START_HERE.md używa FJ899 locators, local-owner live resolution i current post-Run003 state")
+
+    master = load("MASTER_TODO.md")
+    require(master, [
+        "FJ899/COS/MASTER_TODO.md",
+        "FJ899/scriptops/PROJECT_STATE.md",
+        "FJ899/COS/projects/bpm160/PROJECT_STATE.md",
+        "FJ899/creative-os-project-reconstructor/PROJECT_STATE.md",
+        "FJ899/Saddle/decisions/DEC-SAD-020.md",
+    ], "MASTER_TODO.md")
+    for stale_locator in [
+        "JTJ07/COS/MASTER_TODO.md",
+        "JTJ07/scriptops/PROJECT_STATE.md",
+        "JTJ07/COS/projects/bpm160/PROJECT_STATE.md",
+        "JTJ07/creative-os-project-reconstructor/PROJECT_STATE.md",
+        "JTJ07/Saddle/decisions/DEC-SAD-020.md",
+    ]:
+        if stale_locator in master:
+            fail(f"MASTER_TODO.md nadal zawiera pre-transfer current locator: {stale_locator}")
+    print("[PASS] MASTER_TODO.md source-of-truth locators są związane z FJ899")
 
     bpm = "\n".join(load(p) for p in [
         "projects/bpm160/README.md", "projects/bpm160/PROJECT_STATE.md",
@@ -338,7 +361,7 @@ def main() -> None:
     require(load("continuity/COLD_START_AUDIT-001.md"), ["PASS WITH FIXES", "ScriptOps"], "cold start 001")
     require(load("continuity/COLD_START_AUDIT-002.md"), ["PASS WITH FIXES", "START_HERE"], "cold start 002")
     print("[PASS] wcześniejsze kontrakty są zachowane")
-    print("[PASS] Creative OS Lean jest spójny po post-Run003 ScriptOps reconciliation bez local-owner override")
+    print("[PASS] Creative OS Lean jest spójny po FJ899 namespace reconciliation bez historical provenance rewrite")
 
 
 if __name__ == "__main__":
