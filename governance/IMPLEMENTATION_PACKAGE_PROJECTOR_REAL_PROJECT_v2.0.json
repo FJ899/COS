@@ -1,0 +1,166 @@
+{
+  "schema_version": "1.0",
+  "package_version": "v2.0",
+  "package_status": "CORE_IMPLEMENTATION_COMPLETE_REAL_WORK_EVIDENCE_NOT_YET_CREATED",
+  "task_contract": {
+    "name": "PROJECTOR / INTENT-TO-OUTCOME REAL PROJECT",
+    "version": "v1.0",
+    "commit": "ef128a0885310524475fba1cd291d1f34400b0cc",
+    "path": "governance/TASK_CONTRACT_PROJECTOR_REAL_PROJECT_v1.0.md",
+    "owner": "P1 SPECIFICATION under Human-owned intent"
+  },
+  "architecture_contract": {
+    "name": "PROJECTOR / INTENT-TO-OUTCOME REAL PROJECT",
+    "version": "v2.0",
+    "commit": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+    "path": "governance/ARCHITECTURE_CONTRACT_PROJECTOR_REAL_PROJECT_v2.0.md",
+    "blob_sha": "e2e2158440939ba96cddffe9c0ac158ad07510f4",
+    "owner": "P2 ARCHITECTURE"
+  },
+  "working_identity": {
+    "repository": "FJ899/COS",
+    "base_branch": "arch/projector-real-project-v2",
+    "base_sha": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+    "implementation_branch": "impl/projector-real-project-v2",
+    "implementation_sha": "590c6203a567117af3c52cdaff11a5ccfe4eee97",
+    "implementation_owner": "P3 IMPLEMENTATION",
+    "package_commit": "RECORDED_EXTERNALLY_IN_P3_HANDOFF_BECAUSE_A_GIT_COMMIT_CANNOT_SELF_EMBED_ITS_OWN_SHA"
+  },
+  "files_changed_in_implementation_sha": [
+    {
+      "path": "scripts/projector_run.py",
+      "blob_sha": "e833dd2fe090fdb2edb4aa152d11b1b1dd1eef22",
+      "architecture_decisions": ["AD-V2-001", "AD-V2-002", "AD-V2-003", "AD-V2-004", "AD-V2-005", "AD-V2-006", "AD-V2-007", "AD-V2-008", "AD-V2-009"]
+    },
+    {
+      "path": "tests/projector/test_projector_run.py",
+      "blob_sha": "7ad92ef06422d6a84163bd5d65526a926602c753",
+      "architecture_decisions": ["AD-V2-004", "AD-V2-006", "AD-V2-008"]
+    },
+    {
+      "path": "tests/projector/test_projector_recovery.py",
+      "blob_sha": "e0a956a36f436baa97e95ad098ba3e15ad04fde5",
+      "architecture_decisions": ["AD-V2-003", "AD-V2-007", "AD-V2-008"]
+    },
+    {
+      "path": "tests/projector/test_projector_integration.py",
+      "blob_sha": "435278c884d942f4fcc31485d7062f01f66d76ce",
+      "architecture_decisions": ["AD-V2-005", "AD-V2-006", "AD-V2-007", "AD-V2-008"]
+    },
+    {
+      "path": ".github/workflows/verify-creative-os.yml",
+      "blob_sha": "ef84996767c5603568b21b41b9d19f21db6a56a6",
+      "architecture_decisions": ["AD-V2-001", "AD-V2-008", "AD-V2-009"]
+    }
+  ],
+  "changes_made": [
+    "Implemented the frozen four-command Projector v2.0 CLI in scripts/projector_run.py using Python standard library only.",
+    "Implemented immutable run.json plus append-only numbered state snapshots with SHA-256 chain and run-manifest binding.",
+    "Implemented exact frozen Task/Architecture/Implementation provenance validation before run creation.",
+    "Implemented explicit observed_facts, assumptions, claims, unknowns, critical blocker, evidence refs, route/evidence basis, Human intervention, route change, and goal-change records.",
+    "Implemented fail-closed Human-only goal/DONE change validation, Human gate/rescue classification, route invalidation reroute-or-BLOCK enforcement, corruption detection, cold-start recovery, and workload-external DONE gating.",
+    "Added exactly the three Projector test files required by AD-V2-008 and extended the existing Python 3.11 GitHub Actions workflow.",
+    "Did not add a planner, master router, scheduler, autonomous agent, service, database, dashboard, HOT runtime, plugin framework, or other architecture not present in Architecture Contract v2.0.",
+    "Did not modify governance/CAPABILITY_REGISTRY.json; CAP-ITO-001 remains PROPOSED."
+  ],
+  "test_evidence": [
+    {
+      "evidence_id": "E-LOCAL-001",
+      "kind": "TEST",
+      "command": "python3 -m unittest /tmp/projector-v2/tests/projector/test_projector_run.py",
+      "environment": "Python 3.13.5; Linux 6.18.35 x86_64",
+      "result": "PASS",
+      "tests_run": 8,
+      "source_blob_sha": "7ad92ef06422d6a84163bd5d65526a926602c753"
+    },
+    {
+      "evidence_id": "E-LOCAL-002",
+      "kind": "TEST",
+      "command": "python3 -m unittest /tmp/projector-v2/tests/projector/test_projector_recovery.py",
+      "environment": "Python 3.13.5; Linux 6.18.35 x86_64",
+      "result": "PASS",
+      "tests_run": 5,
+      "source_blob_sha": "e0a956a36f436baa97e95ad098ba3e15ad04fde5"
+    },
+    {
+      "evidence_id": "E-LOCAL-003",
+      "kind": "TEST",
+      "command": "python3 -m unittest /tmp/projector-v2/tests/projector/test_projector_integration.py",
+      "environment": "Python 3.13.5; Linux 6.18.35 x86_64",
+      "result": "PASS",
+      "tests_run": 5,
+      "source_blob_sha": "435278c884d942f4fcc31485d7062f01f66d76ce"
+    },
+    {
+      "evidence_id": "E-STATIC-001",
+      "kind": "STATIC",
+      "result": "PASS",
+      "checks": ["python3 -m py_compile scripts/projector_run.py", "stdlib-only import inspection", "ast.Pass count = 0"],
+      "implementation_blob_sha": "e833dd2fe090fdb2edb4aa152d11b1b1dd1eef22"
+    },
+    {
+      "evidence_id": "E-CI-001",
+      "kind": "INTEGRATION",
+      "system": "GitHub Actions",
+      "workflow": "Verify Creative OS",
+      "run_number": 127,
+      "run_id": 32908418363,
+      "job_id": 97997394500,
+      "head_sha": "590c6203a567117af3c52cdaff11a5ccfe4eee97",
+      "base_sha": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "environment": "ubuntu-latest; Python 3.11 configured by workflow",
+      "result": "PASS",
+      "projector_step": "Test Projector v2.0 run recorder",
+      "projector_step_result": "PASS",
+      "capability_gate_step": "Enforce capability evidence registry",
+      "capability_gate_step_result": "PASS"
+    },
+    {
+      "evidence_id": "E-REAL-WORK-001",
+      "kind": "WORKLOAD_EXTERNAL",
+      "status": "NOT YET CREATED",
+      "blocked_by": "P2-OQ-V2-001",
+      "owner": "HUMAN"
+    }
+  ],
+  "capability_registry": {
+    "path": "governance/CAPABILITY_REGISTRY.json",
+    "blob_sha_at_frozen_base_and_implementation": "115593751a966919c6184597aee09381fd820dcf",
+    "capability": "CAP-ITO-001",
+    "status": "PROPOSED",
+    "modified_by_p3": false,
+    "reason": "Code/tests/CI do not satisfy the required real-work effect proof or independent P4 audit."
+  },
+  "provenance_matrix": [
+    {"requirement":"R-001","architecture_decisions":["AD-V2-001","AD-V2-008"],"implementation":["scripts/projector_run.py"],"evidence":["E-LOCAL-001","E-CI-001","E-REAL-WORK-001: NOT YET CREATED"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-002","architecture_decisions":["AD-V2-002"],"implementation":["scripts/projector_run.py"],"evidence":["E-LOCAL-001","E-CI-001"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-003","architecture_decisions":["AD-V2-003","AD-V2-004"],"implementation":["scripts/projector_run.py"],"evidence":["E-LOCAL-001","E-LOCAL-002","E-CI-001"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-004","architecture_decisions":["AD-V2-003","AD-V2-005","AD-V2-007"],"implementation":["scripts/projector_run.py"],"evidence":["E-LOCAL-001","E-LOCAL-002","E-CI-001"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-005","architecture_decisions":["AD-V2-002","AD-V2-005"],"implementation":["scripts/projector_run.py"],"evidence":["E-LOCAL-003","E-CI-001"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-006","architecture_decisions":["AD-V2-002","AD-V2-006"],"implementation":["scripts/projector_run.py"],"evidence":["E-LOCAL-001","E-LOCAL-003","E-CI-001"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-007","architecture_decisions":["AD-V2-007","AD-V2-008"],"implementation":["scripts/projector_run.py"],"evidence":["E-LOCAL-001: mechanical DONE gating only","E-REAL-WORK-001: NOT YET CREATED"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-008","architecture_decisions":["AD-V2-005","AD-V2-008"],"implementation":["scripts/projector_run.py"],"evidence":["E-LOCAL-002","E-LOCAL-003","E-CI-001"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-009","architecture_decisions":["AD-V2-001","AD-V2-007","AD-V2-009"],"implementation":["scripts/projector_run.py","existing capability gate unchanged"],"evidence":["E-CI-001","CAP-ITO-001 remains PROPOSED"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-010","architecture_decisions":["AD-V2-003","AD-V2-008"],"implementation":["scripts/projector_run.py"],"evidence":["E-LOCAL-002","E-CI-001"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-011","architecture_decisions":["AD-V2-001","AD-V2-003","AD-V2-007"],"implementation":["scripts/projector_run.py","this implementation package"],"evidence":["E-LOCAL-002","E-LOCAL-003","E-CI-001"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-012","architecture_decisions":["AD-V2-007","AD-V2-008","AD-V2-009"],"implementation":["P3 evidence package only; no P4 verdict implemented"],"evidence":["P4 AUDIT: NOT YET AUDITED"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"},
+    {"requirement":"R-013","architecture_decisions":["AD-V2-004","AD-V2-006","AD-V2-009"],"implementation":["scripts/projector_run.py"],"evidence":["E-LOCAL-001","HUMAN FINAL ACCEPTANCE: NOT YET CREATED"],"p4_finding":"NOT YET AUDITED","human_acceptance":"NOT YET CREATED"}
+  ],
+  "deviations": [],
+  "known_limitations": [
+    "The Human-selected first bounded validation workload P2-OQ-V2-001 has not been supplied, so no real-work validation run or workload-external effect evidence has been produced.",
+    "Local P3 tests ran under Python 3.13.5; the repository's required Python 3.11 path is evidenced separately by GitHub Actions run #127 on the exact implementation SHA.",
+    "Deterministic tests validate state/integrity mechanisms; they do not establish semantic optimality of Intelligence-selected moves or end-to-end R-007 satisfaction."
+  ],
+  "unresolved_items": [
+    {"id":"P2-OQ-V2-001","description":"First bounded real-work validation workload","owner":"HUMAN","status":"UNRESOLVED","blocks":"REAL-WORK VALIDATION / FINAL R-007 EVIDENCE"}
+  ],
+  "claims_requiring_independent_verification": [
+    "Whether each Task Contract requirement is satisfied by the exact implementation/evidence package.",
+    "Whether any Human intervention in the eventual accepted real-work run is correctly classified rather than hidden operational rescue.",
+    "Whether eventual workload-external evidence genuinely establishes the predefined effect-based DONE.",
+    "Whether capability status may be promoted beyond PROPOSED after real-work evidence exists."
+  ],
+  "p4_audit": "NOT YET AUDITED",
+  "human_final_acceptance": "NOT YET CREATED"
+}
