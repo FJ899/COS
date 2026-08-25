@@ -35,6 +35,9 @@ jobs:
       - name: Verify COS ownership/state/continuity Human acceptance
         run: python scripts/verify_cos_ownership_state_continuity_acceptance.py
 
+      - name: Test Projector core runtime
+        run: python -m unittest discover -s tests/projector -p 'test_*.py'
+
       - name: Test capability evidence gate failure paths
         run: python -m unittest discover -s tests/capability -p 'test_*.py'
 
