@@ -1,0 +1,234 @@
+{
+  "assumptions": [],
+  "claims": [],
+  "critical_unknown_or_blocker": null,
+  "current_done": "DONE only if test_different_input_order_produces_identical_stdout PASS; test_json_output_is_sorted_stable_and_utf8_friendly PASS; full existing suite PASS; output preserves UTF-8; output has exactly one final newline; no files outside project_registry/registry.py change; result remains review-only and unmerged.",
+  "current_goal": "Przywrócić deterministyczny, kanoniczny output rejestru projektów tak, aby wynik nie zależał od kolejności wejścia.",
+  "evidence_basis": [
+    "E-FINAL-ARTIFACT-001",
+    "E-FINAL-DIFF-001",
+    "E-FINAL-TESTS-001",
+    "E-EFFECT-PROPERTIES-001",
+    "E-TARGET-CI-001",
+    "E-REVIEW-PR-FINAL-001"
+  ],
+  "goal_change": null,
+  "human_intervention": null,
+  "material_evidence_change": {
+    "evidence_refs": [
+      "E-TARGET-CI-001",
+      "E-REVIEW-PR-FINAL-001"
+    ],
+    "invalidates_current_route": false
+  },
+  "material_evidence_refs": [
+    {
+      "evidence_id": "E-HUMAN-RESOLUTION-001",
+      "immutable_identity": "sha256:de34e77a0522910f38ca20c9198c871c97676bc194ebc4c663c57f9eaacd73be",
+      "kind": "HUMAN_WORKLOAD_SELECTION",
+      "locator": "projector/evidence/E-REAL-WORK-001/human-resolution.txt",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "HUMAN",
+      "scope": "HUMAN_DECISION",
+      "supports": [
+        "P2-OQ-V2-001",
+        "R-007",
+        "AC-006"
+      ]
+    },
+    {
+      "evidence_id": "E-TARGET-ISSUE-004",
+      "immutable_identity": "sha256:bdd4ca0fcd603cae6e0380a45ec6fc807f11a1488186fc13e6af9688b89e7a62",
+      "kind": "PINNED_WORKLOAD_CONTRACT",
+      "locator": "projector/evidence/E-REAL-WORK-001/issue-4-snapshot.json",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "GitHub/FJ899-executor-pilot-target",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "R-011",
+        "AC-006",
+        "starting-sha",
+        "allowed-scope"
+      ]
+    },
+    {
+      "evidence_id": "E-BASELINE-FAIL-001",
+      "immutable_identity": "sha256:e15a8fdae3f1304727b3a40a86224d19b649fe4af19770fe2fb7ef88a1248cdb",
+      "kind": "TEST_RESULT",
+      "locator": "projector/evidence/E-REAL-WORK-001/baseline-case003.txt",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "P3 local exact-source reconstruction",
+      "scope": "TEST",
+      "supports": [
+        "R-005",
+        "R-007",
+        "R-008",
+        "AC-006",
+        "baseline-failure"
+      ]
+    },
+    {
+      "evidence_id": "E-P3-DEVIATIONS-001",
+      "immutable_identity": "sha256:7fc4c796d3e8f851e13a3c83c0b5dd2ec11f8cb90315a283190b98e6acd0c09c",
+      "kind": "PROCESS_DEVIATION_RECORD",
+      "locator": "projector/evidence/E-REAL-WORK-001/p3-pre-freeze-deviations.json",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "P3 IMPLEMENTATION",
+      "scope": "PROJECTOR_INTERNAL",
+      "supports": [
+        "R-006",
+        "R-011",
+        "P3-DEV-001",
+        "P3-DEV-002"
+      ]
+    },
+    {
+      "evidence_id": "E-FINAL-ARTIFACT-001",
+      "immutable_identity": "git:FJ899/executor-pilot-target@6d013df645c85faf2823097c86d534be53bf4093",
+      "kind": "GIT_COMMIT",
+      "locator": "https://github.com/FJ899/executor-pilot-target/commit/6d013df645c85faf2823097c86d534be53bf4093",
+      "observed_at": "2026-08-25T23:11:37Z",
+      "producer": "GitHub",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "R-011",
+        "AC-006",
+        "final-implementation-sha"
+      ]
+    },
+    {
+      "evidence_id": "E-FINAL-DIFF-001",
+      "immutable_identity": "sha256:b9f54796c8ffde1da523401179ada2005928716d56dc12d7e7308cf6790755ff",
+      "kind": "DIFF_SCOPE",
+      "locator": "projector/evidence/E-REAL-WORK-001/final-diff-snapshot.json",
+      "observed_at": "2026-08-25T23:11:37Z",
+      "producer": "P3 from GitHub compare API",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "R-011",
+        "AC-006",
+        "allowed-scope"
+      ]
+    },
+    {
+      "evidence_id": "E-FINAL-TESTS-001",
+      "immutable_identity": "sha256:f34b55522934441055650f3c4d4667a345499d7f59c7851416d6925b9d1a2a81",
+      "kind": "TEST_RESULT",
+      "locator": "projector/evidence/E-REAL-WORK-001/final-tests-case003.txt",
+      "observed_at": "2026-08-25T23:11:37Z",
+      "producer": "P3 exact-final-blob reconstruction",
+      "scope": "TEST",
+      "supports": [
+        "R-007",
+        "R-008",
+        "AC-006",
+        "frozen-test-suite"
+      ]
+    },
+    {
+      "evidence_id": "E-EFFECT-PROPERTIES-001",
+      "immutable_identity": "sha256:d46ac9f1e6759ca593ee66ec755af3a3fb73116bff0a5e24217bde6faaf3661f",
+      "kind": "OBSERVABLE_OUTPUT_PROPERTIES",
+      "locator": "projector/evidence/E-REAL-WORK-001/effect-properties-case003.txt",
+      "observed_at": "2026-08-25T23:11:37Z",
+      "producer": "P3 exact-final-blob execution",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "AC-006",
+        "order-independence",
+        "UTF-8",
+        "final-newline"
+      ]
+    },
+    {
+      "evidence_id": "E-REVIEW-PR-001",
+      "immutable_identity": "sha256:b37aa87b262ec16c98186202950af329407e114b2099c798e17716fb3e81e382",
+      "kind": "REVIEW_SURFACE",
+      "locator": "projector/evidence/E-REAL-WORK-001/review-pr-13-snapshot.json",
+      "observed_at": "2026-08-25T23:11:37Z",
+      "producer": "GitHub",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "R-013",
+        "AC-006",
+        "unmerged-review-only"
+      ]
+    },
+    {
+      "evidence_id": "E-TARGET-CI-001",
+      "immutable_identity": "sha256:23c6337c849faa5e27ade37aca54935c2725f0768cc930c0ad0687760cf016e3",
+      "kind": "REPOSITORY_CI",
+      "locator": "projector/evidence/E-REAL-WORK-001/target-ci-run-40.json",
+      "observed_at": "2026-08-25T23:13:29Z",
+      "producer": "GitHub Actions / P3 preserved snapshot",
+      "scope": "TEST",
+      "supports": [
+        "R-007",
+        "R-008",
+        "AC-006",
+        "frozen-verification",
+        "exact-final-sha"
+      ]
+    },
+    {
+      "evidence_id": "E-REVIEW-PR-FINAL-001",
+      "immutable_identity": "sha256:3d717bf4fe8a9016a337d4245cdd9d4827a7b24bd6318e99aa28b45e77db2a28",
+      "kind": "REVIEW_SURFACE_FINAL_STATE",
+      "locator": "projector/evidence/E-REAL-WORK-001/review-pr-13-final-snapshot.json",
+      "observed_at": "2026-08-25T23:13:29Z",
+      "producer": "GitHub / P3 preserved snapshot",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "R-013",
+        "AC-006",
+        "review-only",
+        "unmerged"
+      ]
+    }
+  ],
+  "observed_facts": [
+    "Official post-freeze workload started from exact pinned case-003-broken@c42bead2bbbff9c84486f17637ec80f35eeffa25 after durable Projector pre-run freeze in COS@9d7c0aa22975df882d58850738f68466dab9a7f3.",
+    "Official final workload implementation is FJ899/executor-pilot-target@6d013df645c85faf2823097c86d534be53bf4093.",
+    "GitHub compare from starting SHA to final SHA shows exactly one commit and one changed file, project_registry/registry.py, with +4/-1; no prohibited file changed.",
+    "Frozen local command python -m compileall -q project_registry tests passed against byte-identical final source/test blobs.",
+    "Frozen local command python -m unittest discover -s tests -v ran 13 tests and all 13 passed, including test_different_input_order_produces_identical_stdout and test_json_output_is_sorted_stable_and_utf8_friendly.",
+    "Direct final-output observation confirms order-independent identical output, canonical project IDs A,B, preserved UTF-8 Polish characters, and exactly one final LF newline.",
+    "GitHub Actions pilot-target-ci run #40 / id 32909611801 on exact final SHA completed successfully; both Compile and Test steps completed successfully under the unchanged Python 3.11 workflow.",
+    "Official PR #13 remains open, draft, and merged=false with exact base c42bead2bbbff9c84486f17637ec80f35eeffa25 and head 6d013df645c85faf2823097c86d534be53bf4093.",
+    "No Human operational rescue occurred during the official post-freeze execution. Earlier P3 deviations remain preserved in E-P3-DEVIATIONS-001 and are not rewritten as success evidence."
+  ],
+  "previous_state_sha256": "a6a134751efaa14ea1a1de6d64687a7c596e9b85c09758b9f56480396674d3f8",
+  "route": {
+    "description": "Freeze the exact implementation/evidence package and hand it to P4 for independent requirement-level verification; do not merge.",
+    "evidence_basis": [
+      "E-FINAL-ARTIFACT-001",
+      "E-FINAL-DIFF-001",
+      "E-FINAL-TESTS-001",
+      "E-EFFECT-PROPERTIES-001",
+      "E-TARGET-CI-001",
+      "E-REVIEW-PR-FINAL-001"
+    ],
+    "justification": "All predefined effect-based DONE conditions have direct workload-external/test evidence bound to exact starting/final identities; P4 verification and Human final acceptance remain separate downstream stages.",
+    "next_move_kind": "P4_INDEPENDENT_AUDIT",
+    "route_id": "CASE003-DONE-REVIEW-ONLY"
+  },
+  "route_change": {
+    "from_route_id": "CASE003-VERIFY-FINAL-SHA",
+    "reason": "Repository CI on the exact final SHA completed successfully and final PR state remains review-only/unmerged.",
+    "to_route_id": "CASE003-DONE-REVIEW-ONLY"
+  },
+  "run_id": "E-REAL-WORK-001-CASE003",
+  "run_manifest_sha256": "f8385483ebfd92981a4827db2a608c198fcf1137262b1bde091516da0f877f74",
+  "schema_version": "2.0",
+  "sequence": 3,
+  "state_sha256": "cedf51387357367c6c6aba97e2a8008a3a275cdd9c7876a089476c6e6a306ef3",
+  "status": "DONE",
+  "transition_reason": "All frozen workload effect criteria now have exact evidence on the official post-freeze final SHA; mark the run DONE for P3 evidence packaging without asserting a P4 verdict or Human acceptance.",
+  "unknowns": []
+}
