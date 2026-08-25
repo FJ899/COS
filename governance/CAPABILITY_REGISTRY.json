@@ -28,7 +28,7 @@
       "id": "CAP-GATE-001",
       "name": "Capability evidence promotion gate",
       "claim": "Given a formal capability registry entry, the repository verifier rejects unsupported status promotion, unregistered formal claims, missing evidence paths, missing CI execution declarations, insufficient RELIABLE evidence, and obvious Python stubs in registered implementation paths.",
-      "status": "IMPLEMENTED",
+      "status": "TESTED",
       "implementation": [
         "scripts/verify_capability_evidence.py"
       ],
@@ -46,7 +46,7 @@
         "python scripts/verify_capability_evidence.py"
       ],
       "integration_ci_commands": [],
-      "notes": "Starts at IMPLEMENTED. Promotion to TESTED is allowed only after the exact branch passes the registered executable tests and repository verifier in CI."
+      "notes": "Promoted from IMPLEMENTED only after Verify Creative OS run #122 passed on exact head 77ce387d7ca8eb080b3d6781d2d7e97ea818212a. This promotion claims tested gate behavior only; no integration, real-work or reliability claim is made."
     }
   ]
 }
