@@ -37,6 +37,15 @@ Aktywny `main` ma pozostać mały. Pełna historia poprzednich rozwiązań jest 
 - Status: `PARKED IDEA / NOT ACTIVE ROADMAP / NOT IMPLEMENTATION AUTHORITY`.
 - Warunek powrotu: realna praca pokaże powtarzalny blocker wynikający z niedopasowania sposobu współpracy, którego nie da się usunąć prostą instrukcją lub lokalną korektą.
 
+### HOT — standalone Human Orchestration Tax experiment track
+
+- Plik: `archives/HOT_SEPARATE_EXPERIMENT_TRACK_2026-08-25.md`
+- Branch: `archive/hot-separate-track-2026-08-25`
+- Baseline: `main@bfc1b5a1120e8d7d9c44228f8ddb7b264d0c4a19` po merge PR #44.
+- Rdzeń: zachować hipotezę i metryki Human orchestration tax / Human operational rescue, ale nie uruchamiać teraz osobnego programu implementacyjnego ani dedykowanej instrumentacji przed realnym P1 run.
+- Status: `PARKED ALTERNATIVE / NOT ACTIVE TASK / NOT IMPLEMENTATION AUTHORITY`.
+- Warunek powrotu: realny P1 pokaże powtarzalny materialny Human operational rescue, obecny observation record okaże się niewystarczający, potrzebne będzie A/B po mierzonej interwencji albo Human jawnie aktywuje HOT jako formalny eksperyment.
+
 ## Co zostało wchłonięte do Creative OS
 
 - rozmowa jest procesorem, repo zachowuje stan;
