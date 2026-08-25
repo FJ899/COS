@@ -1,0 +1,46 @@
+$ python -m compileall -q project_registry tests
+compile_exit=0
+$ python -m unittest discover -s tests -v
+test_different_input_order_produces_identical_stdout (test_cli.ProjectRegistryCliTests.test_different_input_order_produces_identical_stdout) ... FAIL
+test_duplicate_input_returns_error_without_output_file (test_cli.ProjectRegistryCliTests.test_duplicate_input_returns_error_without_output_file) ... ok
+test_input_file_is_not_modified (test_cli.ProjectRegistryCliTests.test_input_file_is_not_modified) ... ok
+test_output_cannot_replace_input (test_cli.ProjectRegistryCliTests.test_output_cannot_replace_input) ... ok
+test_active_project_can_be_closed (test_registry.ProjectRegistryTests.test_active_project_can_be_closed) ... ok
+test_closed_project_can_reopen_with_reason (test_registry.ProjectRegistryTests.test_closed_project_can_reopen_with_reason) ... ok
+test_closed_project_requires_reason_before_reopening (test_registry.ProjectRegistryTests.test_closed_project_requires_reason_before_reopening) ... ok
+test_duplicate_batch_does_not_partially_mutate_registry (test_registry.ProjectRegistryTests.test_duplicate_batch_does_not_partially_mutate_registry) ... ok
+test_duplicate_project_id_is_rejected (test_registry.ProjectRegistryTests.test_duplicate_project_id_is_rejected) ... ok
+test_json_output_is_sorted_stable_and_utf8_friendly (test_registry.ProjectRegistryTests.test_json_output_is_sorted_stable_and_utf8_friendly) ... FAIL
+test_single_project_is_added (test_registry.ProjectRegistryTests.test_single_project_is_added) ... ok
+test_two_distinct_projects_are_added (test_registry.ProjectRegistryTests.test_two_distinct_projects_are_added) ... ok
+test_unknown_status_is_rejected (test_registry.ProjectRegistryTests.test_unknown_status_is_rejected) ... ok
+
+======================================================================
+FAIL: test_different_input_order_produces_identical_stdout (test_cli.ProjectRegistryCliTests.test_different_input_order_produces_identical_stdout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/executor-baseline/tests/test_cli.py", line 49, in test_different_input_order_produces_identical_stdout
+    self.assertEqual(outputs[0], outputs[1])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '{"pr[13 chars]me":"Żuraw","project_id":"B","status":"ACTIVE"[52 chars]]}\n' != '{"pr[13 chars]me":"Łąka","project_id":"A","status":"ACTIVE"}[52 chars]]}\n'
+- {"projects":[{"name":"Żuraw","project_id":"B","status":"ACTIVE"},{"name":"Łąka","project_id":"A","status":"ACTIVE"}]}
++ {"projects":[{"name":"Łąka","project_id":"A","status":"ACTIVE"},{"name":"Żuraw","project_id":"B","status":"ACTIVE"}]}
+
+
+======================================================================
+FAIL: test_json_output_is_sorted_stable_and_utf8_friendly (test_registry.ProjectRegistryTests.test_json_output_is_sorted_stable_and_utf8_friendly)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/executor-baseline/tests/test_registry.py", line 67, in test_json_output_is_sorted_stable_and_utf8_friendly
+    self.assertEqual(left.to_json(), right.to_json())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '{"pr[13 chars]me":"Żuraw","project_id":"B","status":"ACTIVE"[52 chars]]}\n' != '{"pr[13 chars]me":"Łąka","project_id":"A","status":"ACTIVE"}[52 chars]]}\n'
+- {"projects":[{"name":"Żuraw","project_id":"B","status":"ACTIVE"},{"name":"Łąka","project_id":"A","status":"ACTIVE"}]}
++ {"projects":[{"name":"Łąka","project_id":"A","status":"ACTIVE"},{"name":"Żuraw","project_id":"B","status":"ACTIVE"}]}
+
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.005s
+
+FAILED (failures=2)
+test_exit=1

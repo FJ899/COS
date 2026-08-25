@@ -1,0 +1,18 @@
+{
+  "excluded_from_official_real_work_run": true,
+  "deviations": [
+    {
+      "id": "P3-DEV-001",
+      "type": "SEQUENCING",
+      "fact": "P3 created exploratory target branch projector/case-003-canonical-output-20260826 and commit 3fa985a40641d9a1f3622cb19f81827f741f0725 before Projector pre-run freeze.",
+      "containment": "Exploratory PR #12 is retained as history but excluded from E-REAL-WORK-001. Official execution restarts from pinned c42bead2bbbff9c84486f17637ec80f35eeffa25 only after durable pre-run freeze."
+    },
+    {
+      "id": "P3-DEV-002",
+      "type": "ACCIDENTAL_GITHUB_METADATA_WRITE",
+      "fact": "P3 accidentally created Issue #11 titled __noop__ while selecting the branch-creation tool.",
+      "containment": "Issue #11 was immediately closed with state_reason=not_planned at 2026-08-25T23:06:32Z. No target repository file was changed by this deviation."
+    }
+  ],
+  "human_operational_rescue": "NONE"
+}
