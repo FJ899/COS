@@ -3,7 +3,7 @@ artifact: "MASTER TODO / NORTH STAR"
 status: "CANONICAL / HUMAN-ACCEPTED + MERGED"
 semantic_owner: "HUMAN"
 durable_continuity_owner: "COS"
-updated_at: "2026-08-24"
+updated_at: "2026-08-25"
 ---
 
 # MASTER TODO / NORTH STAR
@@ -57,6 +57,14 @@ REAL HUMAN PROBLEM
 
 The ownership network is a map of responsibility, **not a mandatory pipeline**.
 
+Hard progress boundary:
+
+```text
+ARCHITECTURE != PROGRESS
+```
+
+A new architecture, component, interface, folder, schema, README claim or agent name does not count as capability progress unless a new observable behavior is demonstrated under the behavior-first policy.
+
 ---
 
 ## CURRENT PRIORITY ORDER
@@ -83,35 +91,58 @@ COS — durable preservation only.
 
 ---
 
-### P1 — One real Human job with the ecosystem AS-IS
+### P1 — Intent-to-Outcome primary run on one real Human project
 
 **STATUS:** `CURRENT PRIORITY`
 
-**WHY**  
-Measure usefulness through real work that the Human wanted to do independently of ecosystem development.
+CAPABILITY CLAIM: CAP-ITO-001
 
-Do **not** create an ecosystem test case and do **not** force the task through Ginseng → Saddle → Executor → Verifier or any other chain.
+**WHY**  
+Test the desired Snow-Ball-like product experience as a real capability target: the Human may begin with an unstructured thought, while the current ecosystem preserves intent, advances through an uncertain path, adapts to evidence and reaches a real effect-based DONE.
+
+This is a change in the direction of the current real-work run, not authorization to build a Projector runtime, master router, scheduler, multi-agent layer or other new architecture.
 
 ```text
-REAL HUMAN PROBLEM
+ROUGH HUMAN INTENT
+→ BIND THE REAL TARGET
+→ CURRENT CRITICAL UNKNOWN
 → USE ONLY WHAT NATURALLY HELPS
-→ OBSERVE FRICTION
+→ EVIDENCE / EXECUTION
+→ STATE UPDATE
+→ RE-ROUTE WHEN REALITY CHANGES
+→ REAL DONE
 ```
 
-**DONE WHEN**  
-One genuine Human task is brought to a useful real result using the current ecosystem AS-IS, with any observed friction classified rather than automatically promoted into work.
+Implementation during P1 is governed by the iron rule:
 
-No component usage quota exists. Base Intelligence alone may be the correct path.
+```text
+ARCHITECTURE != PROGRESS
+NO SUPPORTED CAPABILITY WITHOUT EXECUTABLE EVIDENCE
+```
+
+A new mechanism may enter only under observed pressure from the current real task. Do not create an ecosystem test case and do not force the task through Ginseng → Saddle → Executor → Verifier or any other chain.
+
+**DONE WHEN**  
+One genuine Human project that the Human wanted independently of ecosystem development starts from a rough Human intent and reaches its run-specific, effect-based DONE with observable verification.
+
+The run must preserve material evidence needed to evaluate continuity, including any evidence-driven route revisions, disconfirmed local hypotheses, continuity breaks and Human rescue events. A repository scaffold, architecture, interfaces, documentation or implemented-but-unproven mechanism cannot satisfy P1 DONE.
+
+No component usage quota exists. Base Intelligence alone may be the correct path for any step.
 
 **RETURN CONDITION**  
-This is the current work after P0. Any discovered friction returns to development only through the `NIE GOŃ LISKA` rule below.
+This remains current work until the primary run reaches effect-based DONE or the Human explicitly changes global priority. Any friction or proposed new component returns to development only through `NIE GOŃ LISKA` plus the behavior-first capability policy.
 
 **OWNER**  
-Human — selects the real problem, goal and DONE.  
+Human — raw intent, goal, global priority, normative decisions, consequential authority and final DONE acceptance.  
+Intelligence — continuity of work, critical-unknown selection, evidence-seeking, reversible execution and re-routing within Human-owned direction.  
 Relevant local owners retain their existing semantics if naturally invoked.
 
 **SOURCE OF TRUTH**  
-This file for global priority; the actual task/project source selected by the Human for detailed work.
+Global priority: `FJ899/COS/MASTER_TODO.md`.  
+P1 run contract: `FJ899/COS/governance/P1_INTENT_TO_OUTCOME_RUN_CONTRACT.md`.  
+Capability evidence policy: `FJ899/COS/governance/BEHAVIOR_FIRST_CAPABILITY_POLICY.md`.  
+Capability status: `FJ899/COS/governance/CAPABILITY_REGISTRY.json`.  
+Detailed project state: the actual real project source selected by the Human.
 
 ---
 

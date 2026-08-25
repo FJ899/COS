@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "allowed_statuses": [
+    "PROPOSED",
+    "IMPLEMENTED",
+    "TESTED",
+    "INTEGRATION_TESTED",
+    "OBSERVED_IN_REAL_WORK",
+    "RELIABLE"
+  ],
+  "capabilities": [
+    {
+      "id": "CAP-ITO-001",
+      "name": "Intent-to-outcome continuity across an uncertain path",
+      "claim": "Given a rough Human intent and an effect-based DONE, the system preserves the Human goal, selects evidence-driven next moves, updates state, re-routes when evidence changes the path, and reaches DONE without requiring Human operational rescue except at genuine Human-owned gates.",
+      "status": "PROPOSED",
+      "implementation": [],
+      "executable_evidence": [],
+      "failure_evidence": [],
+      "integration_evidence": [],
+      "real_work_evidence": [],
+      "reliability_evidence": [],
+      "ci_commands": [],
+      "integration_ci_commands": [],
+      "notes": "Human-selected P1 capability target. The contract and historical Snow Ball analysis do not by themselves promote this capability. No Projector runtime or new component is authorized by this entry."
+    },
+    {
+      "id": "CAP-GATE-001",
+      "name": "Capability evidence promotion gate",
+      "claim": "Given a formal capability registry entry, the repository verifier rejects unsupported status promotion, unregistered formal claims, missing evidence paths, missing CI execution declarations, insufficient RELIABLE evidence, and obvious Python stubs in registered implementation paths.",
+      "status": "IMPLEMENTED",
+      "implementation": [
+        "scripts/verify_capability_evidence.py"
+      ],
+      "executable_evidence": [
+        "tests/capability/test_capability_registry_gate.py"
+      ],
+      "failure_evidence": [
+        "tests/capability/test_capability_registry_gate.py"
+      ],
+      "integration_evidence": [],
+      "real_work_evidence": [],
+      "reliability_evidence": [],
+      "ci_commands": [
+        "python -m unittest discover -s tests/capability -p 'test_*.py'",
+        "python scripts/verify_capability_evidence.py"
+      ],
+      "integration_ci_commands": [],
+      "notes": "Starts at IMPLEMENTED. Promotion to TESTED is allowed only after the exact branch passes the registered executable tests and repository verifier in CI."
+    }
+  ]
+}
