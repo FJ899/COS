@@ -34,3 +34,9 @@ jobs:
 
       - name: Verify COS ownership/state/continuity Human acceptance
         run: python scripts/verify_cos_ownership_state_continuity_acceptance.py
+
+      - name: Test capability evidence gate failure paths
+        run: python -m unittest discover -s tests/capability -p 'test_*.py'
+
+      - name: Enforce capability evidence registry
+        run: python scripts/verify_capability_evidence.py
