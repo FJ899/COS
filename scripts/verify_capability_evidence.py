@@ -93,20 +93,22 @@ def _implementation_stub_errors(root: Path, cap_id: str, implementations: Iterab
     return issues
 
 
-def _literal_value(node: ast.AST) -> tuple[bool, object]:
+def _literal_value(node: ast.AST, constants: dict[str, object] | None = None) -> tuple[bool, object]:
+    if constants is not None and isinstance(node, ast.Name) and node.id in constants:
+        return True, constants[node.id]
     try:
         return True, ast.literal_eval(node)
     except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
         return False, None
 
 
-def _static_truthiness(node: ast.AST) -> int:
-    known, value = _literal_value(node)
+def _static_truthiness(node: ast.AST, constants: dict[str, object] | None = None) -> int:
+    known, value = _literal_value(node, constants)
     if known:
         return _TRUTH_TRUE if bool(value) else _TRUTH_FALSE
 
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
-        truth = _static_truthiness(node.operand)
+        truth = _static_truthiness(node.operand, constants)
         if truth == _TRUTH_TRUE:
             return _TRUTH_FALSE
         if truth == _TRUTH_FALSE:
@@ -114,7 +116,7 @@ def _static_truthiness(node: ast.AST) -> int:
         return _TRUTH_UNKNOWN
 
     if isinstance(node, ast.BoolOp):
-        truths = [_static_truthiness(item) for item in node.values]
+        truths = [_static_truthiness(item, constants) for item in node.values]
         if isinstance(node.op, ast.Or):
             if any(truth == _TRUTH_TRUE for truth in truths):
                 return _TRUTH_TRUE
@@ -128,11 +130,11 @@ def _static_truthiness(node: ast.AST) -> int:
         return _TRUTH_UNKNOWN
 
     if isinstance(node, ast.Compare):
-        known, left = _literal_value(node.left)
+        known, left = _literal_value(node.left, constants)
         if not known:
             return _TRUTH_UNKNOWN
         for operator, comparator in zip(node.ops, node.comparators):
-            known, right = _literal_value(comparator)
+            known, right = _literal_value(comparator, constants)
             if not known:
                 return _TRUTH_UNKNOWN
             try:
@@ -166,20 +168,20 @@ def _static_truthiness(node: ast.AST) -> int:
         return _TRUTH_TRUE
 
     if isinstance(node, ast.IfExp):
-        condition = _static_truthiness(node.test)
+        condition = _static_truthiness(node.test, constants)
         if condition == _TRUTH_TRUE:
-            return _static_truthiness(node.body)
+            return _static_truthiness(node.body, constants)
         if condition == _TRUTH_FALSE:
-            return _static_truthiness(node.orelse)
-        body = _static_truthiness(node.body)
-        orelse = _static_truthiness(node.orelse)
+            return _static_truthiness(node.orelse, constants)
+        body = _static_truthiness(node.body, constants)
+        orelse = _static_truthiness(node.orelse, constants)
         if body == orelse and body != _TRUTH_UNKNOWN:
             return body
 
     return _TRUTH_UNKNOWN
 
 
-def _expr_has_runtime_dependency(node: ast.AST) -> bool:
+def _expr_has_runtime_dependency(node: ast.AST, constants: dict[str, object] | None = None) -> bool:
     if isinstance(node, (ast.Constant, ast.Name, ast.Lambda)):
         return False
     if isinstance(node, ast.Call):
@@ -188,55 +190,116 @@ def _expr_has_runtime_dependency(node: ast.AST) -> bool:
         return True
     if isinstance(node, ast.BoolOp):
         for item in node.values:
-            if _expr_has_runtime_dependency(item):
+            if _expr_has_runtime_dependency(item, constants):
                 return True
-            truth = _static_truthiness(item)
+            truth = _static_truthiness(item, constants)
             if isinstance(node.op, ast.Or) and truth == _TRUTH_TRUE:
                 break
             if isinstance(node.op, ast.And) and truth == _TRUTH_FALSE:
                 break
         return False
     if isinstance(node, ast.IfExp):
-        if _expr_has_runtime_dependency(node.test):
+        if _expr_has_runtime_dependency(node.test, constants):
             return True
-        condition = _static_truthiness(node.test)
+        condition = _static_truthiness(node.test, constants)
         if condition == _TRUTH_TRUE:
-            return _expr_has_runtime_dependency(node.body)
+            return _expr_has_runtime_dependency(node.body, constants)
         if condition == _TRUTH_FALSE:
-            return _expr_has_runtime_dependency(node.orelse)
-        return _expr_has_runtime_dependency(node.body) or _expr_has_runtime_dependency(node.orelse)
+            return _expr_has_runtime_dependency(node.orelse, constants)
+        return _expr_has_runtime_dependency(node.body, constants) or _expr_has_runtime_dependency(
+            node.orelse, constants
+        )
     if isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
         return True
-    return any(_expr_has_runtime_dependency(child) for child in ast.iter_child_nodes(node))
+    return any(_expr_has_runtime_dependency(child, constants) for child in ast.iter_child_nodes(node))
 
 
-def _unittest_assertion_is_constant_success(call: ast.Call) -> bool:
+def _static_assignment_value(
+    node: ast.AST, constants: dict[str, object]
+) -> tuple[bool, object]:
+    known, value = _literal_value(node, constants)
+    if known:
+        return True, value
+    truth = _static_truthiness(node, constants)
+    if truth == _TRUTH_TRUE:
+        return True, True
+    if truth == _TRUTH_FALSE:
+        return True, False
+    return False, None
+
+
+def _assigned_names(target: ast.AST) -> set[str]:
+    return {node.id for node in ast.walk(target) if isinstance(node, ast.Name)}
+
+
+def _record_static_assignment(
+    target: ast.AST,
+    known: bool,
+    value: object,
+    constants: dict[str, object],
+) -> None:
+    if isinstance(target, ast.Name):
+        if known:
+            constants[target.id] = value
+        else:
+            constants.pop(target.id, None)
+        return
+
+    if isinstance(target, (ast.Tuple, ast.List)):
+        if known and isinstance(value, (tuple, list)) and len(target.elts) == len(value):
+            for element, item in zip(target.elts, value):
+                _record_static_assignment(element, True, item, constants)
+            return
+        for name in _assigned_names(target):
+            constants.pop(name, None)
+
+
+def _merge_static_constants(
+    destination: dict[str, object],
+    left: dict[str, object],
+    right: dict[str, object],
+) -> None:
+    destination.clear()
+    for name in left.keys() & right.keys():
+        left_value = left[name]
+        right_value = right[name]
+        try:
+            same = type(left_value) is type(right_value) and left_value == right_value
+        except (TypeError, ValueError):
+            same = False
+        if same:
+            destination[name] = left_value
+
+
+def _unittest_assertion_is_constant_success(
+    call: ast.Call, constants: dict[str, object]
+) -> bool:
     if not isinstance(call.func, ast.Attribute) or not call.func.attr.startswith("assert"):
         return False
     name = call.func.attr
     if name.startswith("assertRaises") or name.startswith("assertWarns"):
         return False
-    if any(_expr_has_runtime_dependency(arg) for arg in call.args):
+    if any(_expr_has_runtime_dependency(arg, constants) for arg in call.args):
         return False
-    if any(_expr_has_runtime_dependency(keyword.value) for keyword in call.keywords):
+    if any(_expr_has_runtime_dependency(keyword.value, constants) for keyword in call.keywords):
         return False
     if not call.args:
         return False
 
     if name == "assertTrue":
-        return _static_truthiness(call.args[0]) == _TRUTH_TRUE
+        return _static_truthiness(call.args[0], constants) == _TRUTH_TRUE
     if name == "assertFalse":
-        return _static_truthiness(call.args[0]) == _TRUTH_FALSE
+        return _static_truthiness(call.args[0], constants) == _TRUTH_FALSE
     if name in {"assertIsNone", "assertIsNotNone"}:
-        known, value = _literal_value(call.args[0])
+        known, value = _literal_value(call.args[0], constants)
         if not known:
             return False
         return (value is None) if name == "assertIsNone" else (value is not None)
 
     if name not in {"assertEqual", "assertNotEqual", "assertIs", "assertIsNot"} or len(call.args) < 2:
         return False
-    left_known, left = _literal_value(call.args[0])
-    right_known, right = _literal_value(call.args[1])
+    left_known, left = _literal_value(call.args[0], constants)
+    right_known, right = _literal_value(call.args[1], constants)
     if not left_known or not right_known:
         return False
     if name == "assertEqual":
@@ -326,96 +389,300 @@ def _python_evidence_execution_modes(evidence_path: str, ci_commands: Iterable[s
     return modes
 
 
-def _block_is_provably_vacuous(statements: Iterable[ast.stmt], *, main_guard_truth: int) -> bool:
+def _block_is_provably_vacuous(
+    statements: Iterable[ast.stmt],
+    *,
+    main_guard_truth: int,
+    constants: dict[str, object],
+) -> bool:
     for node in statements:
         if isinstance(node, (ast.Pass, ast.Import, ast.ImportFrom, ast.Global, ast.Nonlocal)):
             continue
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             continue
         if isinstance(node, ast.Assert):
-            if _expr_has_runtime_dependency(node.test):
+            if _expr_has_runtime_dependency(node.test, constants):
                 return False
-            if _static_truthiness(node.test) == _TRUTH_TRUE:
+            if _static_truthiness(node.test, constants) == _TRUTH_TRUE:
                 continue
             return False
         if isinstance(node, ast.Expr):
             if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
                 if node.value.func.attr.startswith("assert"):
-                    if _unittest_assertion_is_constant_success(node.value):
+                    if _unittest_assertion_is_constant_success(node.value, constants):
                         continue
                     return False
-            if _expr_has_runtime_dependency(node.value):
+            if _expr_has_runtime_dependency(node.value, constants):
                 return False
             continue
         if isinstance(node, ast.Assign):
-            if _expr_has_runtime_dependency(node.value):
+            if _expr_has_runtime_dependency(node.value, constants):
                 return False
             if any(isinstance(target, (ast.Attribute, ast.Subscript)) for target in node.targets):
                 return False
+            known, value = _static_assignment_value(node.value, constants)
+            for target in node.targets:
+                _record_static_assignment(target, known, value, constants)
             continue
         if isinstance(node, ast.AnnAssign):
-            if node.value is not None and _expr_has_runtime_dependency(node.value):
+            if node.value is not None and _expr_has_runtime_dependency(node.value, constants):
                 return False
             if isinstance(node.target, (ast.Attribute, ast.Subscript)):
                 return False
+            if node.value is None:
+                _record_static_assignment(node.target, False, None, constants)
+            else:
+                known, value = _static_assignment_value(node.value, constants)
+                _record_static_assignment(node.target, known, value, constants)
             continue
         if isinstance(node, ast.If):
             if _is_main_guard(node):
                 condition = main_guard_truth
             else:
-                if _expr_has_runtime_dependency(node.test):
+                if _expr_has_runtime_dependency(node.test, constants):
                     return False
-                condition = _static_truthiness(node.test)
+                condition = _static_truthiness(node.test, constants)
 
             if condition == _TRUTH_TRUE:
-                if not _block_is_provably_vacuous(node.body, main_guard_truth=main_guard_truth):
+                if not _block_is_provably_vacuous(
+                    node.body, main_guard_truth=main_guard_truth, constants=constants
+                ):
                     return False
                 continue
             if condition == _TRUTH_FALSE:
-                if not _block_is_provably_vacuous(node.orelse, main_guard_truth=main_guard_truth):
+                if not _block_is_provably_vacuous(
+                    node.orelse, main_guard_truth=main_guard_truth, constants=constants
+                ):
                     return False
                 continue
-            if not _block_is_provably_vacuous(node.body, main_guard_truth=main_guard_truth):
+
+            body_constants = dict(constants)
+            orelse_constants = dict(constants)
+            if not _block_is_provably_vacuous(
+                node.body, main_guard_truth=main_guard_truth, constants=body_constants
+            ):
                 return False
-            if not _block_is_provably_vacuous(node.orelse, main_guard_truth=main_guard_truth):
+            if not _block_is_provably_vacuous(
+                node.orelse, main_guard_truth=main_guard_truth, constants=orelse_constants
+            ):
                 return False
+            _merge_static_constants(constants, body_constants, orelse_constants)
             continue
         if isinstance(node, (ast.With, ast.AsyncWith)):
-            if any(_expr_has_runtime_dependency(item.context_expr) for item in node.items):
+            if any(_expr_has_runtime_dependency(item.context_expr, constants) for item in node.items):
                 return False
-            if not _block_is_provably_vacuous(node.body, main_guard_truth=main_guard_truth):
+            if not _block_is_provably_vacuous(
+                node.body, main_guard_truth=main_guard_truth, constants=constants
+            ):
                 return False
             continue
         if isinstance(node, ast.Try):
             blocks = [node.body, node.orelse, node.finalbody, *(handler.body for handler in node.handlers)]
             if any(
-                not _block_is_provably_vacuous(block, main_guard_truth=main_guard_truth)
+                not _block_is_provably_vacuous(
+                    block, main_guard_truth=main_guard_truth, constants=dict(constants)
+                )
                 for block in blocks
             ):
                 return False
+            constants.clear()
             continue
         if isinstance(node, ast.While):
-            if _expr_has_runtime_dependency(node.test):
+            if _expr_has_runtime_dependency(node.test, constants):
                 return False
-            if _static_truthiness(node.test) == _TRUTH_FALSE:
-                if not _block_is_provably_vacuous(node.orelse, main_guard_truth=main_guard_truth):
+            if _static_truthiness(node.test, constants) == _TRUTH_FALSE:
+                if not _block_is_provably_vacuous(
+                    node.orelse, main_guard_truth=main_guard_truth, constants=constants
+                ):
                     return False
                 continue
             return False
         if isinstance(node, (ast.For, ast.AsyncFor)):
-            if _expr_has_runtime_dependency(node.iter):
+            if _expr_has_runtime_dependency(node.iter, constants):
                 return False
-            known, value = _literal_value(node.iter)
+            known, value = _literal_value(node.iter, constants)
             if known and hasattr(value, "__len__") and len(value) == 0:
-                if not _block_is_provably_vacuous(node.orelse, main_guard_truth=main_guard_truth):
+                if not _block_is_provably_vacuous(
+                    node.orelse, main_guard_truth=main_guard_truth, constants=constants
+                ):
                     return False
                 continue
             return False
         if isinstance(node, ast.Return):
-            if node.value is not None and _expr_has_runtime_dependency(node.value):
+            if node.value is not None and _expr_has_runtime_dependency(node.value, constants):
                 return False
             continue
         return False
+    return True
+
+
+def _unittest_import_context(tree: ast.Module) -> dict[str, set[str]]:
+    context = {
+        "modules": set(),
+        "TestCase": set(),
+        "skip": set(),
+        "skipIf": set(),
+        "skipUnless": set(),
+    }
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "unittest":
+                    context["modules"].add(alias.asname or "unittest")
+        elif isinstance(node, ast.ImportFrom) and node.module == "unittest":
+            for alias in node.names:
+                if alias.name in {"TestCase", "skip", "skipIf", "skipUnless"}:
+                    context[alias.name].add(alias.asname or alias.name)
+    return context
+
+
+def _matches_unittest_symbol(
+    expression: ast.AST,
+    context: dict[str, set[str]],
+    symbol: str,
+) -> bool:
+    if isinstance(expression, ast.Name):
+        return expression.id in context[symbol]
+    return (
+        isinstance(expression, ast.Attribute)
+        and isinstance(expression.value, ast.Name)
+        and expression.value.id in context["modules"]
+        and expression.attr == symbol
+    )
+
+
+def _unittest_decorator_definitely_skips(
+    decorator: ast.AST,
+    context: dict[str, set[str]],
+    constants: dict[str, object],
+) -> bool:
+    if not isinstance(decorator, ast.Call):
+        return False
+    if _matches_unittest_symbol(decorator.func, context, "skip"):
+        return True
+    if _matches_unittest_symbol(decorator.func, context, "skipIf"):
+        return bool(decorator.args) and _static_truthiness(decorator.args[0], constants) == _TRUTH_TRUE
+    if _matches_unittest_symbol(decorator.func, context, "skipUnless"):
+        return bool(decorator.args) and _static_truthiness(decorator.args[0], constants) == _TRUTH_FALSE
+    return False
+
+
+def _unittest_class_is_testcase(
+    node: ast.ClassDef,
+    context: dict[str, set[str]],
+    known_testcase_names: set[str],
+) -> bool:
+    for base in node.bases:
+        if isinstance(base, ast.Name) and (
+            base.id in context["TestCase"] or base.id in known_testcase_names
+        ):
+            return True
+        if _matches_unittest_symbol(base, context, "TestCase"):
+            return True
+    return False
+
+
+def _unittest_testcase_classes(
+    tree: ast.Module, context: dict[str, set[str]]
+) -> list[ast.ClassDef]:
+    classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
+    known_names: set[str] = set()
+    discovered: list[ast.ClassDef] = []
+    changed = True
+    while changed:
+        changed = False
+        for node in classes:
+            if node.name in known_names:
+                continue
+            if _unittest_class_is_testcase(node, context, known_names):
+                known_names.add(node.name)
+                discovered.append(node)
+                changed = True
+    return discovered
+
+
+def _class_method_map(node: ast.ClassDef) -> dict[str, ast.FunctionDef | ast.AsyncFunctionDef]:
+    return {
+        child.name: child
+        for child in node.body
+        if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+
+
+def _function_body_is_provably_vacuous(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+    module_constants: dict[str, object],
+) -> bool:
+    return _block_is_provably_vacuous(
+        node.body,
+        main_guard_truth=_TRUTH_FALSE,
+        constants=dict(module_constants),
+    )
+
+
+def _unittest_discovery_is_provably_vacuous(
+    tree: ast.Module,
+    module_constants: dict[str, object],
+) -> bool:
+    context = _unittest_import_context(tree)
+    testcase_classes = _unittest_testcase_classes(tree, context)
+
+    top_level_functions = {
+        node.name: node
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    if "load_tests" in top_level_functions:
+        return False
+
+    tests_by_class: list[
+        tuple[
+            ast.ClassDef,
+            dict[str, ast.FunctionDef | ast.AsyncFunctionDef],
+            list[ast.FunctionDef | ast.AsyncFunctionDef],
+        ]
+    ] = []
+    for testcase_class in testcase_classes:
+        methods = _class_method_map(testcase_class)
+        test_methods = [method for name, method in methods.items() if name.startswith("test")]
+        if test_methods:
+            tests_by_class.append((testcase_class, methods, test_methods))
+
+    if not tests_by_class:
+        return True
+
+    for fixture_name in ("setUpModule", "tearDownModule"):
+        fixture = top_level_functions.get(fixture_name)
+        if fixture is not None and not _function_body_is_provably_vacuous(fixture, module_constants):
+            return False
+
+    for testcase_class, methods, test_methods in tests_by_class:
+        class_skipped = any(
+            _unittest_decorator_definitely_skips(decorator, context, module_constants)
+            for decorator in testcase_class.decorator_list
+        )
+        if class_skipped:
+            continue
+
+        for fixture_name in ("setUpClass", "tearDownClass"):
+            fixture = methods.get(fixture_name)
+            if fixture is not None and not _function_body_is_provably_vacuous(fixture, module_constants):
+                return False
+
+        setup = methods.get("setUp")
+        teardown = methods.get("tearDown")
+        for test_method in test_methods:
+            if any(
+                _unittest_decorator_definitely_skips(decorator, context, module_constants)
+                for decorator in test_method.decorator_list
+            ):
+                continue
+            for reachable_method in (setup, test_method, teardown):
+                if reachable_method is not None and not _function_body_is_provably_vacuous(
+                    reachable_method, module_constants
+                ):
+                    return False
+
     return True
 
 
@@ -425,15 +692,17 @@ def _python_evidence_is_vacuous(path: Path, execution_mode: str) -> bool:
     except (UnicodeDecodeError, SyntaxError):
         return False
 
+    module_constants: dict[str, object] = {}
     main_guard_truth = _TRUTH_TRUE if execution_mode == _EXEC_DIRECT else _TRUTH_FALSE
-    if not _block_is_provably_vacuous(tree.body, main_guard_truth=main_guard_truth):
+    if not _block_is_provably_vacuous(
+        tree.body,
+        main_guard_truth=main_guard_truth,
+        constants=module_constants,
+    ):
         return False
 
     if execution_mode == _EXEC_UNITTEST_DISCOVERY:
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
-                if not _block_is_provably_vacuous(node.body, main_guard_truth=_TRUTH_FALSE):
-                    return False
+        return _unittest_discovery_is_provably_vacuous(tree, module_constants)
 
     return True
 

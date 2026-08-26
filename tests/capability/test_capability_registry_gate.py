@@ -70,6 +70,21 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
         self.write_registry([entry])
         return entry
 
+    def write_unittest_fixture(self, proof: str) -> dict:
+        entry = self.base_entry("TESTED")
+        (self.root / "scripts" / "impl.py").write_text("def run():\n    return 1\n", encoding="utf-8")
+        proof_path = self.root / "tests" / "capability" / "test_proof.py"
+        proof_path.parent.mkdir(parents=True, exist_ok=True)
+        proof_path.write_text(proof, encoding="utf-8")
+        command = "python -m unittest discover -s tests/capability -p 'test_*.py'"
+        entry["implementation"] = ["scripts/impl.py"]
+        entry["executable_evidence"] = ["tests/capability/test_proof.py"]
+        entry["failure_evidence"] = ["tests/capability/test_proof.py"]
+        entry["ci_commands"] = [command]
+        (self.root / ".github" / "workflows" / "verify.yml").write_text(command + "\n", encoding="utf-8")
+        self.write_registry([entry])
+        return entry
+
     def test_proposed_requires_no_fake_implementation(self) -> None:
         self.write_registry([self.base_entry("PROPOSED")])
         errors = GATE.validate_repository(self.root)
@@ -179,26 +194,97 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
         errors = GATE.validate_repository(self.root)
         self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
 
+    def test_named_constant_and_alias_unreachable_branches_are_vacuous(self) -> None:
+        proofs = [
+            "flag = False\nif flag:\n    runtime_call()\nassert True\n",
+            "flag = False\nalias = flag\nif alias:\n    runtime_call()\nassert True\n",
+        ]
+        for proof in proofs:
+            with self.subTest(proof=proof):
+                exec(compile(proof, str(self.root / "tests" / "proof.py"), "exec"), {})
+                self.write_tested_fixture(proof)
+                errors = GATE.validate_repository(self.root)
+                self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
+
     def test_unittest_discovery_credits_reachable_test_method_body(self) -> None:
-        entry = self.base_entry("TESTED")
-        (self.root / "scripts" / "impl.py").write_text("def run():\n    return 1\n", encoding="utf-8")
-        proof_path = self.root / "tests" / "capability" / "test_proof.py"
-        proof_path.parent.mkdir(parents=True, exist_ok=True)
-        proof_path.write_text(
+        proof = (
             "import unittest\n"
             "class EvidenceTest(unittest.TestCase):\n"
             "    def test_claim(self):\n"
             "        perform_real_operation()\n"
-            "        self.assertTrue(True)\n",
-            encoding="utf-8",
+            "        self.assertTrue(True)\n"
         )
-        command = "python -m unittest discover -s tests/capability -p 'test_*.py'"
-        entry["implementation"] = ["scripts/impl.py"]
-        entry["executable_evidence"] = ["tests/capability/test_proof.py"]
-        entry["failure_evidence"] = ["tests/capability/test_proof.py"]
-        entry["ci_commands"] = [command]
-        (self.root / ".github" / "workflows" / "verify.yml").write_text(command + "\n", encoding="utf-8")
-        self.write_registry([entry])
+        self.write_unittest_fixture(proof)
+        self.assertEqual([], GATE.validate_repository(self.root))
+
+    def test_unittest_discovery_does_not_credit_module_level_test_function(self) -> None:
+        proof = "def test_claim():\n    runtime_call()\n"
+        self.write_unittest_fixture(proof)
+        errors = GATE.validate_repository(self.root)
+        self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
+
+    def test_unittest_discovery_does_not_credit_non_testcase_method(self) -> None:
+        proof = (
+            "class Something:\n"
+            "    def test_claim(self):\n"
+            "        runtime_call()\n"
+        )
+        self.write_unittest_fixture(proof)
+        errors = GATE.validate_repository(self.root)
+        self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
+
+    def test_unittest_discovery_does_not_credit_skipped_test_body(self) -> None:
+        proof = (
+            "import unittest\n"
+            "class EvidenceTest(unittest.TestCase):\n"
+            "    @unittest.skip('skip')\n"
+            "    def test_claim(self):\n"
+            "        runtime_call()\n"
+        )
+        self.write_unittest_fixture(proof)
+        errors = GATE.validate_repository(self.root)
+        self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
+
+    def test_adversarial_class_level_skip_does_not_credit_lifecycle_or_test_body(self) -> None:
+        proof = (
+            "import unittest\n"
+            "@unittest.skip('skip class')\n"
+            "class EvidenceTest(unittest.TestCase):\n"
+            "    def setUp(self):\n"
+            "        runtime_call()\n"
+            "    def test_claim(self):\n"
+            "        runtime_call()\n"
+        )
+        self.write_unittest_fixture(proof)
+        errors = GATE.validate_repository(self.root)
+        self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
+
+    def test_unittest_setup_runtime_dependency_is_not_vacuous(self) -> None:
+        proof = (
+            "import unittest\n"
+            "def perform_real_operation():\n"
+            "    return 1\n"
+            "class EvidenceTest(unittest.TestCase):\n"
+            "    def setUp(self):\n"
+            "        perform_real_operation()\n"
+            "    def test_claim(self):\n"
+            "        self.assertTrue(True)\n"
+        )
+        self.write_unittest_fixture(proof)
+        self.assertEqual([], GATE.validate_repository(self.root))
+
+    def test_adversarial_unittest_teardown_runtime_dependency_is_not_vacuous(self) -> None:
+        proof = (
+            "import unittest\n"
+            "def perform_real_operation():\n"
+            "    return 1\n"
+            "class EvidenceTest(unittest.TestCase):\n"
+            "    def test_claim(self):\n"
+            "        self.assertTrue(True)\n"
+            "    def tearDown(self):\n"
+            "        perform_real_operation()\n"
+        )
+        self.write_unittest_fixture(proof)
         self.assertEqual([], GATE.validate_repository(self.root))
 
     def test_behavior_dependent_operation_before_constant_assert_is_not_vacuous(self) -> None:
@@ -300,6 +386,7 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
                 "assert True\n",
                 "pass\n",
                 "if False:\n    runtime_call()\nassert True\n",
+                "flag = False\nif flag:\n    runtime_call()\nassert True\n",
             ]:
                 with self.subTest(proof=proof):
                     self.write_tested_fixture(proof)
