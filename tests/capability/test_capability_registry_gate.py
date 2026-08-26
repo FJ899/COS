@@ -153,6 +153,54 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
                 errors = GATE.validate_repository(self.root)
                 self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
 
+    def test_unreachable_constant_if_branches_are_vacuous(self) -> None:
+        proofs = [
+            "if False:\n    runtime_call()\nassert True\n",
+            "if True:\n    pass\nelse:\n    runtime_call()\nassert True\n",
+        ]
+        for proof in proofs:
+            with self.subTest(proof=proof):
+                exec(compile(proof, str(self.root / "tests" / "proof.py"), "exec"), {})
+                self.write_tested_fixture(proof)
+                errors = GATE.validate_repository(self.root)
+                self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
+
+    def test_direct_execution_does_not_credit_uninvoked_test_function(self) -> None:
+        proof = "def test_claim():\n    runtime_call()\nassert True\n"
+        exec(compile(proof, str(self.root / "tests" / "proof.py"), "exec"), {})
+        self.write_tested_fixture(proof)
+        errors = GATE.validate_repository(self.root)
+        self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
+
+    def test_adversarial_constant_comparison_unreachable_branch_is_vacuous(self) -> None:
+        proof = "if 1 == 2:\n    runtime_call()\nassert True\n"
+        exec(compile(proof, str(self.root / "tests" / "proof.py"), "exec"), {})
+        self.write_tested_fixture(proof)
+        errors = GATE.validate_repository(self.root)
+        self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
+
+    def test_unittest_discovery_credits_reachable_test_method_body(self) -> None:
+        entry = self.base_entry("TESTED")
+        (self.root / "scripts" / "impl.py").write_text("def run():\n    return 1\n", encoding="utf-8")
+        proof_path = self.root / "tests" / "capability" / "test_proof.py"
+        proof_path.parent.mkdir(parents=True, exist_ok=True)
+        proof_path.write_text(
+            "import unittest\n"
+            "class EvidenceTest(unittest.TestCase):\n"
+            "    def test_claim(self):\n"
+            "        perform_real_operation()\n"
+            "        self.assertTrue(True)\n",
+            encoding="utf-8",
+        )
+        command = "python -m unittest discover -s tests/capability -p 'test_*.py'"
+        entry["implementation"] = ["scripts/impl.py"]
+        entry["executable_evidence"] = ["tests/capability/test_proof.py"]
+        entry["failure_evidence"] = ["tests/capability/test_proof.py"]
+        entry["ci_commands"] = [command]
+        (self.root / ".github" / "workflows" / "verify.yml").write_text(command + "\n", encoding="utf-8")
+        self.write_registry([entry])
+        self.assertEqual([], GATE.validate_repository(self.root))
+
     def test_behavior_dependent_operation_before_constant_assert_is_not_vacuous(self) -> None:
         entry = self.base_entry("TESTED")
         (self.root / "scripts" / "impl.py").write_text(
@@ -195,6 +243,19 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
         exec(compile(failure, str(self.root / "tests" / "failure.py"), "exec"), {"__file__": str(self.root / "tests" / "failure.py")})
         self.assertEqual([], GATE.validate_repository(self.root))
 
+    def test_main_guard_operation_is_reachable_for_direct_python_execution(self) -> None:
+        proof = (
+            "def perform_real_operation():\n"
+            "    return 1\n"
+            "if __name__ == '__main__':\n"
+            "    perform_real_operation()\n"
+            "assert True\n"
+        )
+        namespace = {"__name__": "__main__"}
+        exec(compile(proof, str(self.root / "tests" / "proof.py"), "exec"), namespace)
+        self.write_tested_fixture(proof)
+        self.assertEqual([], GATE.validate_repository(self.root))
+
     def test_valid_tested_capability_uses_behavior_dependent_positive_and_failure_evidence(self) -> None:
         entry = self.base_entry("TESTED")
         (self.root / "scripts" / "impl.py").write_text(
@@ -235,7 +296,11 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
     def test_cli_contract_distinguishes_valid_and_vacuous_repositories(self) -> None:
         original_root = GATE.ROOT
         try:
-            for proof in ["assert True\n", "pass\n"]:
+            for proof in [
+                "assert True\n",
+                "pass\n",
+                "if False:\n    runtime_call()\nassert True\n",
+            ]:
                 with self.subTest(proof=proof):
                     self.write_tested_fixture(proof)
                     GATE.ROOT = self.root

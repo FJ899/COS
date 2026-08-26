@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import ast
+import fnmatch
 import json
 import re
+import shlex
 import sys
 from pathlib import Path
 from typing import Iterable
@@ -41,6 +43,8 @@ LIST_FIELDS = [
 _TRUTH_FALSE = 0
 _TRUTH_TRUE = 1
 _TRUTH_UNKNOWN = 2
+_EXEC_DIRECT = "direct"
+_EXEC_UNITTEST_DISCOVERY = "unittest-discovery"
 
 
 def _list(entry: dict, field: str, errors: list[str], cap_id: str) -> list[str]:
@@ -265,7 +269,64 @@ def _is_main_guard(node: ast.If) -> bool:
     )
 
 
-def _block_is_provably_vacuous(statements: Iterable[ast.stmt]) -> bool:
+def _python_command_parts(command: str) -> list[str]:
+    try:
+        return shlex.split(command)
+    except ValueError:
+        return []
+
+
+def _is_python_executable(value: str) -> bool:
+    return re.fullmatch(r"python(?:3(?:\.\d+)?)?", value) is not None
+
+
+def _command_executes_python_path_directly(command: str, evidence_path: str) -> bool:
+    parts = _python_command_parts(command)
+    return len(parts) >= 2 and _is_python_executable(parts[0]) and parts[1] == evidence_path
+
+
+def _unittest_discovery_covers_path(command: str, evidence_path: str) -> bool:
+    parts = _python_command_parts(command)
+    if len(parts) < 4 or not _is_python_executable(parts[0]):
+        return False
+    if parts[1:4] != ["-m", "unittest", "discover"]:
+        return False
+
+    start_directory = "."
+    pattern = "test*.py"
+    index = 4
+    while index < len(parts):
+        token = parts[index]
+        if token in {"-s", "--start-directory"} and index + 1 < len(parts):
+            start_directory = parts[index + 1]
+            index += 2
+            continue
+        if token in {"-p", "--pattern"} and index + 1 < len(parts):
+            pattern = parts[index + 1]
+            index += 2
+            continue
+        index += 1
+
+    normalized_path = evidence_path.replace("\\", "/").lstrip("./")
+    normalized_start = start_directory.replace("\\", "/").strip("/")
+    if normalized_start not in {"", "."}:
+        prefix = normalized_start + "/"
+        if not normalized_path.startswith(prefix):
+            return False
+    return fnmatch.fnmatch(Path(normalized_path).name, pattern)
+
+
+def _python_evidence_execution_modes(evidence_path: str, ci_commands: Iterable[str]) -> set[str]:
+    modes: set[str] = set()
+    for command in ci_commands:
+        if _command_executes_python_path_directly(command, evidence_path):
+            modes.add(_EXEC_DIRECT)
+        if _unittest_discovery_covers_path(command, evidence_path):
+            modes.add(_EXEC_UNITTEST_DISCOVERY)
+    return modes
+
+
+def _block_is_provably_vacuous(statements: Iterable[ast.stmt], *, main_guard_truth: int) -> bool:
     for node in statements:
         if isinstance(node, (ast.Pass, ast.Import, ast.ImportFrom, ast.Global, ast.Nonlocal)):
             continue
@@ -300,28 +361,44 @@ def _block_is_provably_vacuous(statements: Iterable[ast.stmt]) -> bool:
             continue
         if isinstance(node, ast.If):
             if _is_main_guard(node):
+                condition = main_guard_truth
+            else:
+                if _expr_has_runtime_dependency(node.test):
+                    return False
+                condition = _static_truthiness(node.test)
+
+            if condition == _TRUTH_TRUE:
+                if not _block_is_provably_vacuous(node.body, main_guard_truth=main_guard_truth):
+                    return False
                 continue
-            if _expr_has_runtime_dependency(node.test):
+            if condition == _TRUTH_FALSE:
+                if not _block_is_provably_vacuous(node.orelse, main_guard_truth=main_guard_truth):
+                    return False
+                continue
+            if not _block_is_provably_vacuous(node.body, main_guard_truth=main_guard_truth):
                 return False
-            if not _block_is_provably_vacuous(node.body) or not _block_is_provably_vacuous(node.orelse):
+            if not _block_is_provably_vacuous(node.orelse, main_guard_truth=main_guard_truth):
                 return False
             continue
         if isinstance(node, (ast.With, ast.AsyncWith)):
             if any(_expr_has_runtime_dependency(item.context_expr) for item in node.items):
                 return False
-            if not _block_is_provably_vacuous(node.body):
+            if not _block_is_provably_vacuous(node.body, main_guard_truth=main_guard_truth):
                 return False
             continue
         if isinstance(node, ast.Try):
             blocks = [node.body, node.orelse, node.finalbody, *(handler.body for handler in node.handlers)]
-            if any(not _block_is_provably_vacuous(block) for block in blocks):
+            if any(
+                not _block_is_provably_vacuous(block, main_guard_truth=main_guard_truth)
+                for block in blocks
+            ):
                 return False
             continue
         if isinstance(node, ast.While):
             if _expr_has_runtime_dependency(node.test):
                 return False
             if _static_truthiness(node.test) == _TRUTH_FALSE:
-                if not _block_is_provably_vacuous(node.orelse):
+                if not _block_is_provably_vacuous(node.orelse, main_guard_truth=main_guard_truth):
                     return False
                 continue
             return False
@@ -330,7 +407,7 @@ def _block_is_provably_vacuous(statements: Iterable[ast.stmt]) -> bool:
                 return False
             known, value = _literal_value(node.iter)
             if known and hasattr(value, "__len__") and len(value) == 0:
-                if not _block_is_provably_vacuous(node.orelse):
+                if not _block_is_provably_vacuous(node.orelse, main_guard_truth=main_guard_truth):
                     return False
                 continue
             return False
@@ -342,32 +419,41 @@ def _block_is_provably_vacuous(statements: Iterable[ast.stmt]) -> bool:
     return True
 
 
-def _python_evidence_is_vacuous(path: Path) -> bool:
+def _python_evidence_is_vacuous(path: Path, execution_mode: str) -> bool:
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     except (UnicodeDecodeError, SyntaxError):
         return False
 
-    if not _block_is_provably_vacuous(tree.body):
+    main_guard_truth = _TRUTH_TRUE if execution_mode == _EXEC_DIRECT else _TRUTH_FALSE
+    if not _block_is_provably_vacuous(tree.body, main_guard_truth=main_guard_truth):
         return False
 
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
-            if not _block_is_provably_vacuous(node.body):
-                return False
+    if execution_mode == _EXEC_UNITTEST_DISCOVERY:
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
+                if not _block_is_provably_vacuous(node.body, main_guard_truth=_TRUTH_FALSE):
+                    return False
 
     return True
 
 
 def _evidence_vacuity_errors(
-    root: Path, cap_id: str, field: str, values: Iterable[str]
+    root: Path,
+    cap_id: str,
+    field: str,
+    values: Iterable[str],
+    ci_commands: Iterable[str],
 ) -> list[str]:
     issues: list[str] = []
     for value in values:
         path = root / value
         if not path.is_file() or path.suffix != ".py":
             continue
-        if _python_evidence_is_vacuous(path):
+        modes = _python_evidence_execution_modes(value, ci_commands)
+        if not modes:
+            continue
+        if all(_python_evidence_is_vacuous(path, mode) for mode in modes):
             issues.append(
                 f"{cap_id}: {field} evidence is behaviorally vacuous / unconditional-success: {value}"
             )
@@ -476,10 +562,22 @@ def validate_repository(root: Path) -> list[str]:
             _existing_paths(root, cap_id, "executable_evidence", values["executable_evidence"], errors)
             _existing_paths(root, cap_id, "failure_evidence", values["failure_evidence"], errors)
             errors.extend(
-                _evidence_vacuity_errors(root, cap_id, "executable_evidence", values["executable_evidence"])
+                _evidence_vacuity_errors(
+                    root,
+                    cap_id,
+                    "executable_evidence",
+                    values["executable_evidence"],
+                    values["ci_commands"],
+                )
             )
             errors.extend(
-                _evidence_vacuity_errors(root, cap_id, "failure_evidence", values["failure_evidence"])
+                _evidence_vacuity_errors(
+                    root,
+                    cap_id,
+                    "failure_evidence",
+                    values["failure_evidence"],
+                    values["ci_commands"],
+                )
             )
             for command in values["ci_commands"]:
                 if command not in workflow_text:
