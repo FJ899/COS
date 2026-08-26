@@ -206,6 +206,18 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
                 errors = GATE.validate_repository(self.root)
                 self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
 
+    def test_adversarial_rebinding_invalidates_prior_static_constant(self) -> None:
+        proof = (
+            "flag = False\n"
+            "def flag():\n"
+            "    return True\n"
+            "if flag:\n"
+            "    perform_real_operation()\n"
+            "assert True\n"
+        )
+        self.write_tested_fixture(proof)
+        self.assertEqual([], GATE.validate_repository(self.root))
+
     def test_unittest_discovery_credits_reachable_test_method_body(self) -> None:
         proof = (
             "import unittest\n"

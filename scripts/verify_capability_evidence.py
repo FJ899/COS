@@ -396,9 +396,23 @@ def _block_is_provably_vacuous(
     constants: dict[str, object],
 ) -> bool:
     for node in statements:
-        if isinstance(node, (ast.Pass, ast.Import, ast.ImportFrom, ast.Global, ast.Nonlocal)):
+        if isinstance(node, ast.Pass):
+            continue
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                constants.pop(alias.asname or alias.name.split(".", 1)[0], None)
+            continue
+        if isinstance(node, ast.ImportFrom):
+            if any(alias.name == "*" for alias in node.names):
+                constants.clear()
+            else:
+                for alias in node.names:
+                    constants.pop(alias.asname or alias.name, None)
+            continue
+        if isinstance(node, (ast.Global, ast.Nonlocal)):
             continue
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            constants.pop(node.name, None)
             continue
         if isinstance(node, ast.Assert):
             if _expr_has_runtime_dependency(node.test, constants):
