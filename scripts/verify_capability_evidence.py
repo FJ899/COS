@@ -28,6 +28,8 @@ LIST_FIELDS = [
 _EXEC_DIRECT = "direct"
 _EXEC_UNITTEST = "unittest-discovery"
 _PROBE_MARKER = "COS_CAPABILITY_EVIDENCE_PROBE_SENTINEL"
+_PROBE_SENTINEL_EXIT = 86
+_PROBE_OTHER_FAILURE_EXIT = 87
 _PROBE_TIMEOUT = 30
 
 
@@ -164,41 +166,112 @@ def _command(evidence: str, mode: tuple[str, str | None]) -> list[str]:
     return [sys.executable, "-m", "unittest", "discover", "-s", parent, "-p", Path(evidence).name]
 
 
+def _callable_locations(path: Path) -> list[tuple[int, str]]:
+    """Return narrow structural identities for Python callables defined in path."""
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    except (UnicodeDecodeError, SyntaxError):
+        return []
+    locations: list[tuple[int, str]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            line = min([node.lineno, *(decorator.lineno for decorator in node.decorator_list)])
+            locations.append((line, node.name))
+        elif isinstance(node, ast.Lambda):
+            locations.append((node.lineno, "<lambda>"))
+    return locations
+
+
+def _callable_index(root: Path, implementations: Iterable[str]) -> dict[str, list[tuple[int, str]]]:
+    result: dict[str, list[tuple[int, str]]] = {}
+    for value in implementations:
+        path = root / value
+        if path.is_file() and path.suffix == ".py":
+            result[os.path.normcase(os.path.realpath(path))] = _callable_locations(path)
+    return result
+
+
 def _bootstrap() -> str:
-    return f'''import json, os, runpy, sys, threading\nfrom pathlib import Path\nMARKER={_PROBE_MARKER!r}\nPATHS={{os.path.realpath(p) for p in json.loads(sys.argv[1])}}\nMODE,EVIDENCE=sys.argv[2],sys.argv[3]\nclass COSCapabilityEvidenceProbeSentinel(BaseException): pass\ndef profile(frame,event,arg):\n    if event=="call" and frame.f_code.co_name!="<module>":\n        name=frame.f_code.co_filename\n        name=os.path.normcase(name if os.path.isabs(name) else os.path.abspath(name))\n        if name in PATHS: raise COSCapabilityEvidenceProbeSentinel(MARKER+":"+frame.f_code.co_name)\nsys.setprofile(profile); threading.setprofile(profile)\nif MODE=="direct":\n    sys.argv=[EVIDENCE]; sys.path[0]=str(Path(EVIDENCE).resolve().parent); runpy.run_path(EVIDENCE,run_name="__main__")\nelif MODE=="unittest-discovery":\n    sys.argv=["unittest","discover","-s",sys.argv[4],"-p",sys.argv[5]]; runpy.run_module("unittest",run_name="__main__")\nelse: raise SystemExit("unsupported probe mode")\n'''
+    return f'''import json, os, runpy, sys, threading, traceback\nfrom pathlib import Path\nMARKER={_PROBE_MARKER!r}\nSENTINEL_EXIT={_PROBE_SENTINEL_EXIT}\nOTHER_FAILURE_EXIT={_PROBE_OTHER_FAILURE_EXIT}\nRAW=json.loads(sys.argv[1])\nCALLABLES={{os.path.normcase(os.path.realpath(path)): {{(int(line), name) for line, name in locations}} for path, locations in RAW.items()}}\nMODE,EVIDENCE=sys.argv[2],sys.argv[3]\nSIGNAL_FD=int(sys.argv[4])\nclass COSCapabilityEvidenceProbeSentinel(BaseException): pass\ndef profile(frame,event,arg):\n    if event!="call": return\n    name=frame.f_code.co_filename\n    name=os.path.normcase(os.path.realpath(name if os.path.isabs(name) else os.path.abspath(name)))\n    if (frame.f_code.co_firstlineno, frame.f_code.co_name) in CALLABLES.get(name, set()):\n        os.write(SIGNAL_FD, b"S")\n        raise COSCapabilityEvidenceProbeSentinel(MARKER+":"+frame.f_code.co_name)\ndef execute():\n    sys.setprofile(profile); threading.setprofile(profile)\n    if MODE=="direct":\n        sys.argv=[EVIDENCE]; sys.path[0]=str(Path(EVIDENCE).resolve().parent); runpy.run_path(EVIDENCE,run_name="__main__")\n    elif MODE=="unittest-discovery":\n        sys.argv=["unittest","discover","-s",sys.argv[5],"-p",sys.argv[6]]; runpy.run_module("unittest",run_name="__main__")\n    else: raise SystemExit("unsupported probe mode")\ntry:\n    execute()\nexcept COSCapabilityEvidenceProbeSentinel as exc:\n    sys.setprofile(None); threading.setprofile(None)\n    print(str(exc), file=sys.stderr)\n    raise SystemExit(SENTINEL_EXIT)\nexcept SystemExit as exc:\n    sys.setprofile(None); threading.setprofile(None)\n    if exc.code in (None, 0, False): raise\n    traceback.print_exc()\n    raise SystemExit(OTHER_FAILURE_EXIT)\nexcept BaseException:\n    sys.setprofile(None); threading.setprofile(None)\n    traceback.print_exc()\n    raise SystemExit(OTHER_FAILURE_EXIT)\n'''
 
 
-def _run(root: Path, evidence: str, mode: tuple[str, str | None], implementations: Iterable[str], control: bool) -> tuple[int, str, str]:
+def _run(
+    root: Path,
+    evidence: str,
+    mode: tuple[str, str | None],
+    implementations: Iterable[str],
+    control: bool,
+) -> tuple[int, str, str, bool]:
     command = _command(evidence, mode)
+    read_fd: int | None = None
+    write_fd: int | None = None
+    pass_fds: tuple[int, ...] = ()
     if control:
-        paths = json.dumps([str((root / value).resolve()) for value in implementations if (root / value).is_file()])
-        command = [sys.executable, "-c", _bootstrap(), paths, mode[0], evidence]
+        callables = json.dumps(_callable_index(root, implementations))
+        read_fd, write_fd = os.pipe()
+        pass_fds = (write_fd,)
+        command = [sys.executable, "-c", _bootstrap(), callables, mode[0], evidence, str(write_fd)]
         if mode[0] == _EXEC_UNITTEST:
             parent = str(Path(_norm(evidence)).parent)
             if parent == ".":
                 parent = mode[1] or "."
             command += [parent, Path(evidence).name]
     try:
-        completed = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=_PROBE_TIMEOUT, check=False)
-        return completed.returncode, completed.stdout, completed.stderr
+        completed = subprocess.run(
+            command,
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=_PROBE_TIMEOUT,
+            check=False,
+            pass_fds=pass_fds,
+        )
+        sentinel_caused = False
+        if read_fd is not None:
+            if write_fd is not None:
+                os.close(write_fd)
+                write_fd = None
+            sentinel_caused = os.read(read_fd, 1) == b"S"
+        return completed.returncode, completed.stdout, completed.stderr, sentinel_caused
     except subprocess.TimeoutExpired as exc:
-        return 124, exc.stdout if isinstance(exc.stdout, str) else "", (exc.stderr if isinstance(exc.stderr, str) else "") + "\nprobe timed out"
+        return (
+            124,
+            exc.stdout if isinstance(exc.stdout, str) else "",
+            (exc.stderr if isinstance(exc.stderr, str) else "") + "\nprobe timed out",
+            False,
+        )
+    finally:
+        if write_fd is not None:
+            os.close(write_fd)
+        if read_fd is not None:
+            os.close(read_fd)
 
 
-def _probe(root: Path, evidence: str, mode: tuple[str, str | None], implementations: Iterable[str]) -> tuple[bool, str, tuple[int, str, str], tuple[int, str, str] | None]:
+def _probe(
+    root: Path,
+    evidence: str,
+    mode: tuple[str, str | None],
+    implementations: Iterable[str],
+) -> tuple[bool, str, tuple[int, str, str, bool], tuple[int, str, str, bool] | None]:
     baseline = _run(root, evidence, mode, implementations, False)
     if baseline[0] != 0:
         return False, "baseline execution failed", baseline, None
     control = _run(root, evidence, mode, implementations, True)
-    combined = control[1] + "\n" + control[2]
-    if control[0] != 0 and _PROBE_MARKER in combined:
-        return True, "control failed on implementation-call sentinel", baseline, control
+    if control[0] != 0 and control[3]:
+        return True, "control failed after internally attributed implementation-call sentinel", baseline, control
     if control[0] == 0:
         return False, "control also succeeded without entering registered implementation callable", baseline, control
-    return False, "control failed without implementation-call sentinel", baseline, control
+    return False, "control failed without internally attributed implementation-call sentinel", baseline, control
 
 
-def _probe_role(root: Path, cap_id: str, field: str, values: Iterable[str], commands: Iterable[str], implementations: Iterable[str]) -> tuple[list[str], set[str]]:
+def _probe_role(
+    root: Path,
+    cap_id: str,
+    field: str,
+    values: Iterable[str],
+    commands: Iterable[str],
+    implementations: Iterable[str],
+) -> tuple[list[str], set[str]]:
     issues: list[str] = []
     sensitive: set[str] = set()
     for value in values:
@@ -280,8 +353,12 @@ def validate_repository(root: Path) -> list[str]:
                 errors.append(f"{cap_id}: TESTED+ requires a role-distinct executable_evidence witness")
             if not failure_set - executable_set:
                 errors.append(f"{cap_id}: TESTED+ requires a role-distinct failure_evidence witness")
-            exec_errors, exec_sensitive = _probe_role(root, cap_id, "executable_evidence", values["executable_evidence"], values["ci_commands"], values["implementation"])
-            fail_errors, fail_sensitive = _probe_role(root, cap_id, "failure_evidence", values["failure_evidence"], values["ci_commands"], values["implementation"])
+            exec_errors, exec_sensitive = _probe_role(
+                root, cap_id, "executable_evidence", values["executable_evidence"], values["ci_commands"], values["implementation"]
+            )
+            fail_errors, fail_sensitive = _probe_role(
+                root, cap_id, "failure_evidence", values["failure_evidence"], values["ci_commands"], values["implementation"]
+            )
             errors.extend(exec_errors + fail_errors)
             if not exec_sensitive - failure_set:
                 errors.append(f"{cap_id}: TESTED+ has no successful role-distinct implementation-sensitive executable_evidence witness")

@@ -133,7 +133,6 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
         self.write_registry([entry])
         self.assertTrue(any("obvious stub `pass`" in error for error in GATE.validate_repository(self.root)))
 
-
     def test_unregistered_formal_markdown_claim_fails(self) -> None:
         self.write_registry([self.base_entry("PROPOSED")])
         (self.root / "README.md").write_text("CAPABILITY CLAIM: CAP-NOT-REGISTERED\n", encoding="utf-8")
@@ -142,8 +141,8 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
     def test_reliable_requirements_remain_fail_closed(self) -> None:
         entry = self.base_entry("RELIABLE")
         (self.root / "scripts" / "impl.py").write_text("def run():\n    return 1\n", encoding="utf-8")
-        positive = self.direct_loader() + "assert module.run(2) == 4\n"
-        failure = self.direct_loader() + "try:\n    module.run(-1)\nexcept ValueError:\n    pass\nelse:\n    raise AssertionError('expected ValueError')\n"
+        positive = self.direct_loader() + "assert module.run() == 1\n"
+        failure = self.direct_loader() + "assert module.run() == 1\n"
         (self.root / "tests" / "positive.py").write_text(positive, encoding="utf-8")
         (self.root / "tests" / "failure.py").write_text(failure, encoding="utf-8")
         entry["implementation"] = ["scripts/impl.py"]
@@ -181,6 +180,68 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
         self.write_direct_fixture(proof, proof)
         joined = "\n".join(GATE.validate_repository(self.root))
         self.assertIn("behavior-insensitive / unconditional-success", joined)
+
+    def test_forged_marker_and_unrelated_control_failure_is_not_sentinel_attribution(self) -> None:
+        proof = (
+            "import sys\n"
+            "if sys.getprofile() is not None:\n"
+            "    print('COS_CAPABILITY_EVIDENCE_PROBE_SENTINEL')\n"
+            "    raise RuntimeError('control-only failure')\n"
+            "assert True\n"
+        )
+        self.write_direct_fixture(proof, proof)
+        joined = "\n".join(GATE.validate_repository(self.root))
+        self.assertIn("runtime probe failed", joined)
+        self.assertIn("without internally attributed implementation-call sentinel", joined)
+
+    def test_import_only_class_body_is_not_callable_credit(self) -> None:
+        proof = self.direct_loader() + "assert True\n"
+        self.write_direct_fixture(proof, proof)
+        (self.root / "scripts" / "impl.py").write_text("class Thing:\n    value = 1\n", encoding="utf-8")
+        joined = "\n".join(GATE.validate_repository(self.root))
+        self.assertIn("behavior-insensitive / unconditional-success", joined)
+
+    def test_adversarial_marker_plus_reserved_exit_code_is_not_sentinel_attribution(self) -> None:
+        proof = (
+            "import sys\n"
+            "if sys.getprofile() is not None:\n"
+            "    print('COS_CAPABILITY_EVIDENCE_PROBE_SENTINEL')\n"
+            f"    raise SystemExit({GATE._PROBE_SENTINEL_EXIT})\n"
+            "assert True\n"
+        )
+        self.write_direct_fixture(proof, proof)
+        joined = "\n".join(GATE.validate_repository(self.root))
+        self.assertIn("runtime probe failed", joined)
+        self.assertIn("without internally attributed implementation-call sentinel", joined)
+
+    def test_adversarial_import_only_comprehension_code_block_not_credited(self) -> None:
+        proof = self.direct_loader() + "assert True\n"
+        self.write_direct_fixture(proof, proof)
+        (self.root / "scripts" / "impl.py").write_text("VALUES = [item for item in range(3)]\n", encoding="utf-8")
+        joined = "\n".join(GATE.validate_repository(self.root))
+        self.assertIn("behavior-insensitive / unconditional-success", joined)
+
+    def test_adversarial_real_method_callable_entry_remains_sensitive(self) -> None:
+        positive = self.direct_loader() + "assert module.Thing().run(2) == 4\n"
+        failure = (
+            self.direct_loader()
+            + "try:\n"
+            + "    module.Thing().run(-1)\n"
+            + "except ValueError:\n"
+            + "    pass\n"
+            + "else:\n"
+            + "    raise AssertionError('expected ValueError')\n"
+        )
+        self.write_direct_fixture(positive, failure)
+        (self.root / "scripts" / "impl.py").write_text(
+            "class Thing:\n"
+            "    def run(self, value):\n"
+            "        if value < 0:\n"
+            "            raise ValueError('negative input')\n"
+            "        return value * 2\n",
+            encoding="utf-8",
+        )
+        self.assertEqual([], GATE.validate_repository(self.root))
 
     def test_direct_definition_time_implementation_call_is_sensitive(self) -> None:
         positive = self.direct_loader() + "observed = module.run(2)\nassert observed == 4\n"
@@ -366,6 +427,26 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
             "from scripts.impl import run\n"
             "class EvidenceTest(unittest.TestCase):\n"
             "    def test_claim(self):\n"
+            "        with self.assertRaises(ValueError):\n"
+            "            run(-1)\n"
+        )
+        self.write_unittest_fixture(positive, failure)
+        self.assertEqual([], GATE.validate_repository(self.root))
+
+    def test_unittest_addcleanup_runtime_dependency_is_sensitive(self) -> None:
+        positive = (
+            "import unittest\n"
+            "from scripts.impl import run\n"
+            "class EvidenceTest(unittest.TestCase):\n"
+            "    def test_claim(self):\n"
+            "        self.addCleanup(run, 2)\n"
+            "        self.assertTrue(True)\n"
+        )
+        failure = (
+            "import unittest\n"
+            "from scripts.impl import run\n"
+            "class FailureEvidence(unittest.TestCase):\n"
+            "    def test_failure(self):\n"
             "        with self.assertRaises(ValueError):\n"
             "            run(-1)\n"
         )
