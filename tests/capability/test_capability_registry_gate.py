@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import tempfile
 import unittest
@@ -56,6 +58,18 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
             "notes": "fixture",
         }
 
+    def write_tested_fixture(self, proof: str) -> dict:
+        entry = self.base_entry("TESTED")
+        (self.root / "scripts" / "impl.py").write_text("def run():\n    return 1\n", encoding="utf-8")
+        (self.root / "tests" / "proof.py").write_text(proof, encoding="utf-8")
+        entry["implementation"] = ["scripts/impl.py"]
+        entry["executable_evidence"] = ["tests/proof.py"]
+        entry["failure_evidence"] = ["tests/proof.py"]
+        entry["ci_commands"] = ["python tests/proof.py"]
+        (self.root / ".github" / "workflows" / "verify.yml").write_text("python tests/proof.py\n", encoding="utf-8")
+        self.write_registry([entry])
+        return entry
+
     def test_proposed_requires_no_fake_implementation(self) -> None:
         self.write_registry([self.base_entry("PROPOSED")])
         errors = GATE.validate_repository(self.root)
@@ -90,7 +104,7 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
         entry = self.base_entry("RELIABLE")
         files = {
             "scripts/impl.py": "def run():\n    return 1\n",
-            "tests/proof.py": "assert True\n",
+            "tests/proof.py": "assert observed == expected\n",
             "tests/integration.py": "assert True\n",
             "evidence/run1.md": "run 1\n",
         }
@@ -114,18 +128,100 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
         self.assertIn("RELIABLE requires at least two independent real_work_evidence paths", joined)
         self.assertIn("RELIABLE requires reliability_evidence", joined)
 
-    def test_valid_tested_capability_passes(self) -> None:
+    def test_vacuous_tested_capability_fails(self) -> None:
+        self.write_tested_fixture("assert True\n")
+        errors = GATE.validate_repository(self.root)
+        joined = "\n".join(errors)
+        self.assertIn("executable_evidence evidence is behaviorally vacuous / unconditional-success", joined)
+        self.assertIn("failure_evidence evidence is behaviorally vacuous / unconditional-success", joined)
+
+    def test_constant_success_assertions_fail(self) -> None:
+        for proof in ["assert 1\n", "assert 1 == 1\n", "assert not False\n"]:
+            with self.subTest(proof=proof):
+                self.write_tested_fixture(proof)
+                errors = GATE.validate_repository(self.root)
+                self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
+
+    def test_valid_tested_capability_uses_behavior_dependent_positive_and_failure_evidence(self) -> None:
         entry = self.base_entry("TESTED")
-        (self.root / "scripts" / "impl.py").write_text("def run():\n    return 1\n", encoding="utf-8")
-        (self.root / "tests" / "proof.py").write_text("assert True\n", encoding="utf-8")
+        (self.root / "scripts" / "impl.py").write_text(
+            "def run(value):\n"
+            "    if value < 0:\n"
+            "        raise ValueError('negative input')\n"
+            "    return value * 2\n",
+            encoding="utf-8",
+        )
+        proof = (
+            "import importlib.util\n"
+            "from pathlib import Path\n"
+            "impl_path = Path(__file__).resolve().parents[1] / 'scripts' / 'impl.py'\n"
+            "spec = importlib.util.spec_from_file_location('fixture_impl', impl_path)\n"
+            "module = importlib.util.module_from_spec(spec)\n"
+            "spec.loader.exec_module(module)\n"
+            "assert module.run(2) == 4\n"
+            "try:\n"
+            "    module.run(-1)\n"
+            "except ValueError as exc:\n"
+            "    assert 'negative input' in str(exc)\n"
+            "else:\n"
+            "    raise AssertionError('expected ValueError')\n"
+        )
+        (self.root / "tests" / "proof.py").write_text(proof, encoding="utf-8")
         entry["implementation"] = ["scripts/impl.py"]
         entry["executable_evidence"] = ["tests/proof.py"]
         entry["failure_evidence"] = ["tests/proof.py"]
         entry["ci_commands"] = ["python tests/proof.py"]
         (self.root / ".github" / "workflows" / "verify.yml").write_text("python tests/proof.py\n", encoding="utf-8")
         self.write_registry([entry])
+
+        namespace = {"__file__": str(self.root / "tests" / "proof.py")}
+        exec(compile(proof, str(self.root / "tests" / "proof.py"), "exec"), namespace)
         errors = GATE.validate_repository(self.root)
         self.assertEqual([], errors)
+
+    def test_cli_contract_distinguishes_valid_and_vacuous_repositories(self) -> None:
+        original_root = GATE.ROOT
+        try:
+            self.write_tested_fixture("assert True\n")
+            GATE.ROOT = self.root
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                self.assertEqual(1, GATE.main())
+            self.assertIn("behaviorally vacuous / unconditional-success", stderr.getvalue())
+
+            entry = self.base_entry("TESTED")
+            (self.root / "scripts" / "impl.py").write_text(
+                "def run(value):\n"
+                "    if value < 0:\n"
+                "        raise ValueError('negative input')\n"
+                "    return value * 2\n",
+                encoding="utf-8",
+            )
+            proof = (
+                "import importlib.util\n"
+                "from pathlib import Path\n"
+                "impl_path = Path(__file__).resolve().parents[1] / 'scripts' / 'impl.py'\n"
+                "spec = importlib.util.spec_from_file_location('fixture_impl', impl_path)\n"
+                "module = importlib.util.module_from_spec(spec)\n"
+                "spec.loader.exec_module(module)\n"
+                "assert module.run(2) == 4\n"
+                "try:\n"
+                "    module.run(-1)\n"
+                "except ValueError as exc:\n"
+                "    assert 'negative input' in str(exc)\n"
+                "else:\n"
+                "    raise AssertionError('expected ValueError')\n"
+            )
+            (self.root / "tests" / "proof.py").write_text(proof, encoding="utf-8")
+            entry["implementation"] = ["scripts/impl.py"]
+            entry["executable_evidence"] = ["tests/proof.py"]
+            entry["failure_evidence"] = ["tests/proof.py"]
+            entry["ci_commands"] = ["python tests/proof.py"]
+            self.write_registry([entry])
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                self.assertEqual(0, GATE.main())
+            self.assertIn("[PASS] capability evidence gate", stdout.getvalue())
+        finally:
+            GATE.ROOT = original_root
 
 
 if __name__ == "__main__":

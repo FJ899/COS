@@ -85,6 +85,130 @@ def _implementation_stub_errors(root: Path, cap_id: str, implementations: Iterab
     return issues
 
 
+def _constant_value(node: ast.AST) -> tuple[bool, object]:
+    if isinstance(node, ast.Constant):
+        return True, node.value
+    if isinstance(node, ast.UnaryOp):
+        known, value = _constant_value(node.operand)
+        if not known:
+            return False, None
+        try:
+            if isinstance(node.op, ast.Not):
+                return True, not value
+            if isinstance(node.op, ast.UAdd):
+                return True, +value
+            if isinstance(node.op, ast.USub):
+                return True, -value
+        except (TypeError, ValueError, OverflowError):
+            return False, None
+        return False, None
+    if isinstance(node, ast.BoolOp):
+        values: list[object] = []
+        for item in node.values:
+            known, value = _constant_value(item)
+            if not known:
+                return False, None
+            values.append(value)
+        if isinstance(node.op, ast.And):
+            result = values[0]
+            for value in values[1:]:
+                if not result:
+                    break
+                result = value
+            return True, result
+        if isinstance(node.op, ast.Or):
+            result = values[0]
+            for value in values[1:]:
+                if result:
+                    break
+                result = value
+            return True, result
+        return False, None
+    if isinstance(node, ast.Compare):
+        known, left = _constant_value(node.left)
+        if not known:
+            return False, None
+        for operator, comparator in zip(node.ops, node.comparators):
+            known, right = _constant_value(comparator)
+            if not known:
+                return False, None
+            try:
+                if isinstance(operator, ast.Eq):
+                    ok = left == right
+                elif isinstance(operator, ast.NotEq):
+                    ok = left != right
+                elif isinstance(operator, ast.Lt):
+                    ok = left < right
+                elif isinstance(operator, ast.LtE):
+                    ok = left <= right
+                elif isinstance(operator, ast.Gt):
+                    ok = left > right
+                elif isinstance(operator, ast.GtE):
+                    ok = left >= right
+                elif isinstance(operator, ast.Is):
+                    ok = left is right
+                elif isinstance(operator, ast.IsNot):
+                    ok = left is not right
+                else:
+                    return False, None
+            except (TypeError, ValueError):
+                return False, None
+            if not ok:
+                return True, False
+            left = right
+        return True, True
+    return False, None
+
+
+def _is_expected_exception_context(node: ast.With) -> bool:
+    for item in node.items:
+        context = item.context_expr
+        if not isinstance(context, ast.Call) or not isinstance(context.func, ast.Attribute):
+            continue
+        if context.func.attr.startswith("assertRaises") or context.func.attr.startswith("assertWarns"):
+            return True
+    return False
+
+
+def _python_evidence_is_vacuous(path: Path) -> bool:
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    except (UnicodeDecodeError, SyntaxError):
+        return False
+
+    saw_constant_success = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assert):
+            known, value = _constant_value(node.test)
+            if not known:
+                return False
+            if not bool(value):
+                return False
+            saw_constant_success = True
+        elif isinstance(node, ast.With) and _is_expected_exception_context(node):
+            return False
+        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            if node.func.attr.startswith("assert"):
+                return False
+
+    return saw_constant_success
+
+
+def _evidence_vacuity_errors(
+    root: Path, cap_id: str, field: str, values: Iterable[str]
+) -> list[str]:
+    issues: list[str] = []
+    for value in values:
+        path = root / value
+        if not path.is_file() or path.suffix != ".py":
+            continue
+        if _python_evidence_is_vacuous(path):
+            issues.append(
+                f"{cap_id}: {field} evidence is behaviorally vacuous / unconditional-success: {value}"
+            )
+    return issues
+
+
 def _workflow_text(root: Path) -> str:
     workflow_root = root / ".github" / "workflows"
     if not workflow_root.is_dir():
@@ -186,6 +310,12 @@ def validate_repository(root: Path) -> list[str]:
                 errors.append(f"{cap_id}: TESTED+ requires ci_commands")
             _existing_paths(root, cap_id, "executable_evidence", values["executable_evidence"], errors)
             _existing_paths(root, cap_id, "failure_evidence", values["failure_evidence"], errors)
+            errors.extend(
+                _evidence_vacuity_errors(root, cap_id, "executable_evidence", values["executable_evidence"])
+            )
+            errors.extend(
+                _evidence_vacuity_errors(root, cap_id, "failure_evidence", values["failure_evidence"])
+            )
             for command in values["ci_commands"]:
                 if command not in workflow_text:
                     errors.append(f"{cap_id}: CI does not execute declared command: {command}")
