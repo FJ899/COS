@@ -38,6 +38,10 @@ LIST_FIELDS = [
     "integration_ci_commands",
 ]
 
+_TRUTH_FALSE = 0
+_TRUTH_TRUE = 1
+_TRUTH_UNKNOWN = 2
+
 
 def _list(entry: dict, field: str, errors: list[str], cap_id: str) -> list[str]:
     value = entry.get(field)
@@ -85,89 +89,257 @@ def _implementation_stub_errors(root: Path, cap_id: str, implementations: Iterab
     return issues
 
 
-def _constant_value(node: ast.AST) -> tuple[bool, object]:
-    if isinstance(node, ast.Constant):
-        return True, node.value
-    if isinstance(node, ast.UnaryOp):
-        known, value = _constant_value(node.operand)
-        if not known:
-            return False, None
-        try:
-            if isinstance(node.op, ast.Not):
-                return True, not value
-            if isinstance(node.op, ast.UAdd):
-                return True, +value
-            if isinstance(node.op, ast.USub):
-                return True, -value
-        except (TypeError, ValueError, OverflowError):
-            return False, None
+def _literal_value(node: ast.AST) -> tuple[bool, object]:
+    try:
+        return True, ast.literal_eval(node)
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
         return False, None
+
+
+def _static_truthiness(node: ast.AST) -> int:
+    known, value = _literal_value(node)
+    if known:
+        return _TRUTH_TRUE if bool(value) else _TRUTH_FALSE
+
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+        truth = _static_truthiness(node.operand)
+        if truth == _TRUTH_TRUE:
+            return _TRUTH_FALSE
+        if truth == _TRUTH_FALSE:
+            return _TRUTH_TRUE
+        return _TRUTH_UNKNOWN
+
     if isinstance(node, ast.BoolOp):
-        values: list[object] = []
-        for item in node.values:
-            known, value = _constant_value(item)
-            if not known:
-                return False, None
-            values.append(value)
-        if isinstance(node.op, ast.And):
-            result = values[0]
-            for value in values[1:]:
-                if not result:
-                    break
-                result = value
-            return True, result
+        truths = [_static_truthiness(item) for item in node.values]
         if isinstance(node.op, ast.Or):
-            result = values[0]
-            for value in values[1:]:
-                if result:
-                    break
-                result = value
-            return True, result
-        return False, None
+            if any(truth == _TRUTH_TRUE for truth in truths):
+                return _TRUTH_TRUE
+            if all(truth == _TRUTH_FALSE for truth in truths):
+                return _TRUTH_FALSE
+        elif isinstance(node.op, ast.And):
+            if any(truth == _TRUTH_FALSE for truth in truths):
+                return _TRUTH_FALSE
+            if all(truth == _TRUTH_TRUE for truth in truths):
+                return _TRUTH_TRUE
+        return _TRUTH_UNKNOWN
+
     if isinstance(node, ast.Compare):
-        known, left = _constant_value(node.left)
+        known, left = _literal_value(node.left)
         if not known:
-            return False, None
+            return _TRUTH_UNKNOWN
         for operator, comparator in zip(node.ops, node.comparators):
-            known, right = _constant_value(comparator)
+            known, right = _literal_value(comparator)
             if not known:
-                return False, None
+                return _TRUTH_UNKNOWN
             try:
                 if isinstance(operator, ast.Eq):
-                    ok = left == right
+                    matches = left == right
                 elif isinstance(operator, ast.NotEq):
-                    ok = left != right
+                    matches = left != right
                 elif isinstance(operator, ast.Lt):
-                    ok = left < right
+                    matches = left < right
                 elif isinstance(operator, ast.LtE):
-                    ok = left <= right
+                    matches = left <= right
                 elif isinstance(operator, ast.Gt):
-                    ok = left > right
+                    matches = left > right
                 elif isinstance(operator, ast.GtE):
-                    ok = left >= right
+                    matches = left >= right
                 elif isinstance(operator, ast.Is):
-                    ok = left is right
+                    matches = left is right
                 elif isinstance(operator, ast.IsNot):
-                    ok = left is not right
+                    matches = left is not right
+                elif isinstance(operator, ast.In):
+                    matches = left in right
+                elif isinstance(operator, ast.NotIn):
+                    matches = left not in right
                 else:
-                    return False, None
+                    return _TRUTH_UNKNOWN
             except (TypeError, ValueError):
-                return False, None
-            if not ok:
-                return True, False
+                return _TRUTH_UNKNOWN
+            if not matches:
+                return _TRUTH_FALSE
             left = right
-        return True, True
-    return False, None
+        return _TRUTH_TRUE
+
+    if isinstance(node, ast.IfExp):
+        condition = _static_truthiness(node.test)
+        if condition == _TRUTH_TRUE:
+            return _static_truthiness(node.body)
+        if condition == _TRUTH_FALSE:
+            return _static_truthiness(node.orelse)
+        body = _static_truthiness(node.body)
+        orelse = _static_truthiness(node.orelse)
+        if body == orelse and body != _TRUTH_UNKNOWN:
+            return body
+
+    return _TRUTH_UNKNOWN
 
 
-def _is_expected_exception_context(node: ast.With) -> bool:
-    for item in node.items:
-        context = item.context_expr
-        if not isinstance(context, ast.Call) or not isinstance(context.func, ast.Attribute):
-            continue
-        if context.func.attr.startswith("assertRaises") or context.func.attr.startswith("assertWarns"):
+def _expr_has_runtime_dependency(node: ast.AST) -> bool:
+    if isinstance(node, (ast.Constant, ast.Name, ast.Lambda)):
+        return False
+    if isinstance(node, ast.Call):
+        return True
+    if isinstance(node, (ast.Await, ast.Yield, ast.YieldFrom, ast.Attribute, ast.Subscript)):
+        return True
+    if isinstance(node, ast.BoolOp):
+        for item in node.values:
+            if _expr_has_runtime_dependency(item):
+                return True
+            truth = _static_truthiness(item)
+            if isinstance(node.op, ast.Or) and truth == _TRUTH_TRUE:
+                break
+            if isinstance(node.op, ast.And) and truth == _TRUTH_FALSE:
+                break
+        return False
+    if isinstance(node, ast.IfExp):
+        if _expr_has_runtime_dependency(node.test):
             return True
-    return False
+        condition = _static_truthiness(node.test)
+        if condition == _TRUTH_TRUE:
+            return _expr_has_runtime_dependency(node.body)
+        if condition == _TRUTH_FALSE:
+            return _expr_has_runtime_dependency(node.orelse)
+        return _expr_has_runtime_dependency(node.body) or _expr_has_runtime_dependency(node.orelse)
+    if isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+        return True
+    return any(_expr_has_runtime_dependency(child) for child in ast.iter_child_nodes(node))
+
+
+def _unittest_assertion_is_constant_success(call: ast.Call) -> bool:
+    if not isinstance(call.func, ast.Attribute) or not call.func.attr.startswith("assert"):
+        return False
+    name = call.func.attr
+    if name.startswith("assertRaises") or name.startswith("assertWarns"):
+        return False
+    if any(_expr_has_runtime_dependency(arg) for arg in call.args):
+        return False
+    if any(_expr_has_runtime_dependency(keyword.value) for keyword in call.keywords):
+        return False
+    if not call.args:
+        return False
+
+    if name == "assertTrue":
+        return _static_truthiness(call.args[0]) == _TRUTH_TRUE
+    if name == "assertFalse":
+        return _static_truthiness(call.args[0]) == _TRUTH_FALSE
+    if name in {"assertIsNone", "assertIsNotNone"}:
+        known, value = _literal_value(call.args[0])
+        if not known:
+            return False
+        return (value is None) if name == "assertIsNone" else (value is not None)
+
+    if name not in {"assertEqual", "assertNotEqual", "assertIs", "assertIsNot"} or len(call.args) < 2:
+        return False
+    left_known, left = _literal_value(call.args[0])
+    right_known, right = _literal_value(call.args[1])
+    if not left_known or not right_known:
+        return False
+    if name == "assertEqual":
+        return left == right
+    if name == "assertNotEqual":
+        return left != right
+    if name == "assertIs":
+        return left is right
+    return left is not right
+
+
+def _is_main_guard(node: ast.If) -> bool:
+    test = node.test
+    if not isinstance(test, ast.Compare) or len(test.ops) != 1 or not isinstance(test.ops[0], ast.Eq):
+        return False
+    if len(test.comparators) != 1:
+        return False
+    left = test.left
+    right = test.comparators[0]
+    return (
+        isinstance(left, ast.Name)
+        and left.id == "__name__"
+        and isinstance(right, ast.Constant)
+        and right.value == "__main__"
+    ) or (
+        isinstance(right, ast.Name)
+        and right.id == "__name__"
+        and isinstance(left, ast.Constant)
+        and left.value == "__main__"
+    )
+
+
+def _block_is_provably_vacuous(statements: Iterable[ast.stmt]) -> bool:
+    for node in statements:
+        if isinstance(node, (ast.Pass, ast.Import, ast.ImportFrom, ast.Global, ast.Nonlocal)):
+            continue
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        if isinstance(node, ast.Assert):
+            if _expr_has_runtime_dependency(node.test):
+                return False
+            if _static_truthiness(node.test) == _TRUTH_TRUE:
+                continue
+            return False
+        if isinstance(node, ast.Expr):
+            if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
+                if node.value.func.attr.startswith("assert"):
+                    if _unittest_assertion_is_constant_success(node.value):
+                        continue
+                    return False
+            if _expr_has_runtime_dependency(node.value):
+                return False
+            continue
+        if isinstance(node, ast.Assign):
+            if _expr_has_runtime_dependency(node.value):
+                return False
+            if any(isinstance(target, (ast.Attribute, ast.Subscript)) for target in node.targets):
+                return False
+            continue
+        if isinstance(node, ast.AnnAssign):
+            if node.value is not None and _expr_has_runtime_dependency(node.value):
+                return False
+            if isinstance(node.target, (ast.Attribute, ast.Subscript)):
+                return False
+            continue
+        if isinstance(node, ast.If):
+            if _is_main_guard(node):
+                continue
+            if _expr_has_runtime_dependency(node.test):
+                return False
+            if not _block_is_provably_vacuous(node.body) or not _block_is_provably_vacuous(node.orelse):
+                return False
+            continue
+        if isinstance(node, (ast.With, ast.AsyncWith)):
+            if any(_expr_has_runtime_dependency(item.context_expr) for item in node.items):
+                return False
+            if not _block_is_provably_vacuous(node.body):
+                return False
+            continue
+        if isinstance(node, ast.Try):
+            blocks = [node.body, node.orelse, node.finalbody, *(handler.body for handler in node.handlers)]
+            if any(not _block_is_provably_vacuous(block) for block in blocks):
+                return False
+            continue
+        if isinstance(node, ast.While):
+            if _expr_has_runtime_dependency(node.test):
+                return False
+            if _static_truthiness(node.test) == _TRUTH_FALSE:
+                if not _block_is_provably_vacuous(node.orelse):
+                    return False
+                continue
+            return False
+        if isinstance(node, (ast.For, ast.AsyncFor)):
+            if _expr_has_runtime_dependency(node.iter):
+                return False
+            known, value = _literal_value(node.iter)
+            if known and hasattr(value, "__len__") and len(value) == 0:
+                if not _block_is_provably_vacuous(node.orelse):
+                    return False
+                continue
+            return False
+        if isinstance(node, ast.Return):
+            if node.value is not None and _expr_has_runtime_dependency(node.value):
+                return False
+            continue
+        return False
+    return True
 
 
 def _python_evidence_is_vacuous(path: Path) -> bool:
@@ -176,22 +348,15 @@ def _python_evidence_is_vacuous(path: Path) -> bool:
     except (UnicodeDecodeError, SyntaxError):
         return False
 
-    saw_constant_success = False
+    if not _block_is_provably_vacuous(tree.body):
+        return False
+
     for node in ast.walk(tree):
-        if isinstance(node, ast.Assert):
-            known, value = _constant_value(node.test)
-            if not known:
-                return False
-            if not bool(value):
-                return False
-            saw_constant_success = True
-        elif isinstance(node, ast.With) and _is_expected_exception_context(node):
-            return False
-        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-            if node.func.attr.startswith("assert"):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
+            if not _block_is_provably_vacuous(node.body):
                 return False
 
-    return saw_constant_success
+    return True
 
 
 def _evidence_vacuity_errors(

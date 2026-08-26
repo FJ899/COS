@@ -135,12 +135,65 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
         self.assertIn("executable_evidence evidence is behaviorally vacuous / unconditional-success", joined)
         self.assertIn("failure_evidence evidence is behaviorally vacuous / unconditional-success", joined)
 
-    def test_constant_success_assertions_fail(self) -> None:
-        for proof in ["assert 1\n", "assert 1 == 1\n", "assert not False\n"]:
+    def test_bounded_unconditional_success_forms_fail(self) -> None:
+        proofs = [
+            "assert 1\n",
+            "assert 1 == 1\n",
+            "assert not False\n",
+            "assert (1, 2)\n",
+            "assert True or runtime_call()\n",
+            "runtime_value = False\nassert runtime_value or True\n",
+            "pass\n",
+            "answer = 42\n",
+        ]
+        for proof in proofs:
             with self.subTest(proof=proof):
+                exec(compile(proof, str(self.root / "tests" / "proof.py"), "exec"), {})
                 self.write_tested_fixture(proof)
                 errors = GATE.validate_repository(self.root)
                 self.assertTrue(any("behaviorally vacuous / unconditional-success" in error for error in errors))
+
+    def test_behavior_dependent_operation_before_constant_assert_is_not_vacuous(self) -> None:
+        entry = self.base_entry("TESTED")
+        (self.root / "scripts" / "impl.py").write_text(
+            "def run(value):\n"
+            "    if value < 0:\n"
+            "        raise ValueError('negative input')\n"
+            "    return value * 2\n",
+            encoding="utf-8",
+        )
+        loader = (
+            "import importlib.util\n"
+            "from pathlib import Path\n"
+            "impl_path = Path(__file__).resolve().parents[1] / 'scripts' / 'impl.py'\n"
+            "spec = importlib.util.spec_from_file_location('fixture_impl', impl_path)\n"
+            "module = importlib.util.module_from_spec(spec)\n"
+            "spec.loader.exec_module(module)\n"
+        )
+        positive = loader + "module.run(2)\nassert True\n"
+        failure = (
+            loader
+            + "try:\n"
+            "    module.run(-1)\n"
+            "except ValueError as exc:\n"
+            "    assert 'negative input' in str(exc)\n"
+            "else:\n"
+            "    raise AssertionError('expected ValueError')\n"
+        )
+        (self.root / "tests" / "positive.py").write_text(positive, encoding="utf-8")
+        (self.root / "tests" / "failure.py").write_text(failure, encoding="utf-8")
+        entry["implementation"] = ["scripts/impl.py"]
+        entry["executable_evidence"] = ["tests/positive.py"]
+        entry["failure_evidence"] = ["tests/failure.py"]
+        entry["ci_commands"] = ["python tests/positive.py", "python tests/failure.py"]
+        (self.root / ".github" / "workflows" / "verify.yml").write_text(
+            "python tests/positive.py\npython tests/failure.py\n", encoding="utf-8"
+        )
+        self.write_registry([entry])
+
+        exec(compile(positive, str(self.root / "tests" / "positive.py"), "exec"), {"__file__": str(self.root / "tests" / "positive.py")})
+        exec(compile(failure, str(self.root / "tests" / "failure.py"), "exec"), {"__file__": str(self.root / "tests" / "failure.py")})
+        self.assertEqual([], GATE.validate_repository(self.root))
 
     def test_valid_tested_capability_uses_behavior_dependent_positive_and_failure_evidence(self) -> None:
         entry = self.base_entry("TESTED")
@@ -182,11 +235,13 @@ class CapabilityEvidenceGateTests(unittest.TestCase):
     def test_cli_contract_distinguishes_valid_and_vacuous_repositories(self) -> None:
         original_root = GATE.ROOT
         try:
-            self.write_tested_fixture("assert True\n")
-            GATE.ROOT = self.root
-            with contextlib.redirect_stderr(io.StringIO()) as stderr:
-                self.assertEqual(1, GATE.main())
-            self.assertIn("behaviorally vacuous / unconditional-success", stderr.getvalue())
+            for proof in ["assert True\n", "pass\n"]:
+                with self.subTest(proof=proof):
+                    self.write_tested_fixture(proof)
+                    GATE.ROOT = self.root
+                    with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                        self.assertEqual(1, GATE.main())
+                    self.assertIn("behaviorally vacuous / unconditional-success", stderr.getvalue())
 
             entry = self.base_entry("TESTED")
             (self.root / "scripts" / "impl.py").write_text(
