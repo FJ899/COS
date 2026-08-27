@@ -11,12 +11,10 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from projector_public_effect_gate import (  # noqa: E402
+from projector_public_effect_trusted_runtime import (  # noqa: E402
     GitHubIssueCommentAuthoritySource,
     GitRepositoryEvidenceSource,
     InMemoryNonPublicTestSink,
-)
-from projector_public_effect_trusted_runtime import (  # noqa: E402
     execute_trusted_public_effect,
     prepare_trusted_public_effect_authority_request,
 )
