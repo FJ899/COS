@@ -76,6 +76,24 @@ def prepare_trusted_public_effect_authority_request(
         return _blocked(exc.reason)
 
 
+def _load_human_authority_fail_closed(
+    source: GitHubIssueCommentAuthoritySource,
+    request: dict[str, Any],
+) -> dict[str, Any]:
+    """Convert malformed/app-mediated authority source failures to BLOCKED semantics."""
+    try:
+        return source.load_authority(request)
+    except _Blocked:
+        raise
+    except TypeError as exc:
+        # GitHub REST represents performed_via_github_app as an object when set.
+        # A malformed or app-mediated authority record must never escape as an
+        # uncaught exception on the effect-capable path; it is UNKNOWN/BLOCKED.
+        raise _Blocked("GitHub App-mediated or malformed Human authority record rejected") from exc
+    except Exception as exc:
+        raise _Blocked(f"trusted Human authority source failed closed: {type(exc).__name__}") from exc
+
+
 def execute_trusted_public_effect(
     spec: dict[str, Any],
     human_authority_source: GitHubIssueCommentAuthoritySource,
@@ -93,7 +111,7 @@ def execute_trusted_public_effect(
     try:
         pre_authority = _fresh_prepare(spec, git_source, "TRUSTED_LIVE_GIT_AUTHORITY_VERIFICATION")
         request = authority_request(pre_authority)
-        authority = human_authority_source.load_authority(request)
+        authority = _load_human_authority_fail_closed(human_authority_source, request)
         _validate_human_authority(pre_authority, authority)
 
         write_time = _fresh_prepare(spec, git_source, "TRUSTED_LIVE_GIT_WRITE_TIME_REVALIDATION")
