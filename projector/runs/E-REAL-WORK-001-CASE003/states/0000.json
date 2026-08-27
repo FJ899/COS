@@ -1,0 +1,38 @@
+{
+  "assumptions": [
+    "A fresh review-only branch from the pinned starting SHA is reversible and within granted Human authority.",
+    "No Human operational rescue is required for routine implementation/debugging/verification."
+  ],
+  "claims": [],
+  "critical_unknown_or_blocker": "Whether a clean post-freeze implementation from the exact pinned SHA can reproduce the canonical-order fix and satisfy every frozen DONE condition without Human operational rescue.",
+  "current_done": "DONE only if test_different_input_order_produces_identical_stdout PASS; test_json_output_is_sorted_stable_and_utf8_friendly PASS; full existing suite PASS; output preserves UTF-8; output has exactly one final newline; no files outside project_registry/registry.py change; result remains review-only and unmerged.",
+  "current_goal": "Przywrócić deterministyczny, kanoniczny output rejestru projektów tak, aby wynik nie zależał od kolejności wejścia.",
+  "evidence_basis": [],
+  "goal_change": null,
+  "human_intervention": null,
+  "material_evidence_change": {
+    "evidence_refs": [],
+    "invalidates_current_route": false
+  },
+  "material_evidence_refs": [],
+  "observed_facts": [],
+  "previous_state_sha256": null,
+  "route": {
+    "description": "Existing Intelligence must propose the first justified move before material work.",
+    "evidence_basis": [],
+    "justification": "Initial binding froze the current critical unknown: Whether a clean post-freeze implementation from the exact pinned SHA can reproduce the canonical-order fix and satisfy every frozen DONE condition without Human operational rescue.",
+    "next_move_kind": "INTELLIGENCE_DECISION_REQUIRED",
+    "route_id": "INITIAL_BINDING"
+  },
+  "route_change": null,
+  "run_id": "E-REAL-WORK-001-CASE003",
+  "run_manifest_sha256": "f8385483ebfd92981a4827db2a608c198fcf1137262b1bde091516da0f877f74",
+  "schema_version": "2.0",
+  "sequence": 0,
+  "state_sha256": "ca9869785c15c707e3247eea5e6f853f118b31e031f363384430c9d4eec18145",
+  "status": "ACTIVE",
+  "transition_reason": "INITIAL_BINDING",
+  "unknowns": [
+    "Whether a clean post-freeze implementation from the exact pinned SHA can reproduce the canonical-order fix and satisfy every frozen DONE condition without Human operational rescue."
+  ]
+}

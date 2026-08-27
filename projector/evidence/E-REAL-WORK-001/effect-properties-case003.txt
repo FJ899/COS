@@ -1,0 +1,8 @@
+FINAL_SHA=6d013df645c85faf2823097c86d534be53bf4093
+order_independent=True
+utf8_roundtrip=True
+contains_utf8_polish=True
+exactly_one_final_newline=True
+canonical_project_ids=A,B
+output_utf8_hex=7b2270726f6a65637473223a5b7b226e616d65223a22c581c4856b61222c2270726f6a6563745f6964223a2241222c22737461747573223a22414354495645227d2c7b226e616d65223a22c5bb75726177222c2270726f6a6563745f6964223a2242222c22737461747573223a22414354495645227d5d7d0a
+output_repr='{"projects":[{"name":"Łąka","project_id":"A","status":"ACTIVE"},{"name":"Żuraw","project_id":"B","status":"ACTIVE"}]}\n'

@@ -1,0 +1,203 @@
+{
+  "assumptions": [
+    "GitHub Actions run #40 will execute the unchanged repository CI against exact final SHA; its result is not yet known."
+  ],
+  "claims": [],
+  "critical_unknown_or_blocker": "Repository CI on exact final SHA is queued/not yet complete.",
+  "current_done": "DONE only if test_different_input_order_produces_identical_stdout PASS; test_json_output_is_sorted_stable_and_utf8_friendly PASS; full existing suite PASS; output preserves UTF-8; output has exactly one final newline; no files outside project_registry/registry.py change; result remains review-only and unmerged.",
+  "current_goal": "Przywrócić deterministyczny, kanoniczny output rejestru projektów tak, aby wynik nie zależał od kolejności wejścia.",
+  "evidence_basis": [
+    "E-FINAL-ARTIFACT-001",
+    "E-FINAL-DIFF-001",
+    "E-FINAL-TESTS-001",
+    "E-EFFECT-PROPERTIES-001",
+    "E-REVIEW-PR-001"
+  ],
+  "goal_change": null,
+  "human_intervention": null,
+  "material_evidence_change": {
+    "evidence_refs": [
+      "E-FINAL-ARTIFACT-001",
+      "E-FINAL-DIFF-001",
+      "E-FINAL-TESTS-001",
+      "E-EFFECT-PROPERTIES-001",
+      "E-REVIEW-PR-001"
+    ],
+    "invalidates_current_route": false
+  },
+  "material_evidence_refs": [
+    {
+      "evidence_id": "E-HUMAN-RESOLUTION-001",
+      "immutable_identity": "sha256:de34e77a0522910f38ca20c9198c871c97676bc194ebc4c663c57f9eaacd73be",
+      "kind": "HUMAN_WORKLOAD_SELECTION",
+      "locator": "projector/evidence/E-REAL-WORK-001/human-resolution.txt",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "HUMAN",
+      "scope": "HUMAN_DECISION",
+      "supports": [
+        "P2-OQ-V2-001",
+        "R-007",
+        "AC-006"
+      ]
+    },
+    {
+      "evidence_id": "E-TARGET-ISSUE-004",
+      "immutable_identity": "sha256:bdd4ca0fcd603cae6e0380a45ec6fc807f11a1488186fc13e6af9688b89e7a62",
+      "kind": "PINNED_WORKLOAD_CONTRACT",
+      "locator": "projector/evidence/E-REAL-WORK-001/issue-4-snapshot.json",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "GitHub/FJ899-executor-pilot-target",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "R-011",
+        "AC-006",
+        "starting-sha",
+        "allowed-scope"
+      ]
+    },
+    {
+      "evidence_id": "E-BASELINE-FAIL-001",
+      "immutable_identity": "sha256:e15a8fdae3f1304727b3a40a86224d19b649fe4af19770fe2fb7ef88a1248cdb",
+      "kind": "TEST_RESULT",
+      "locator": "projector/evidence/E-REAL-WORK-001/baseline-case003.txt",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "P3 local exact-source reconstruction",
+      "scope": "TEST",
+      "supports": [
+        "R-005",
+        "R-007",
+        "R-008",
+        "AC-006",
+        "baseline-failure"
+      ]
+    },
+    {
+      "evidence_id": "E-P3-DEVIATIONS-001",
+      "immutable_identity": "sha256:7fc4c796d3e8f851e13a3c83c0b5dd2ec11f8cb90315a283190b98e6acd0c09c",
+      "kind": "PROCESS_DEVIATION_RECORD",
+      "locator": "projector/evidence/E-REAL-WORK-001/p3-pre-freeze-deviations.json",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "P3 IMPLEMENTATION",
+      "scope": "PROJECTOR_INTERNAL",
+      "supports": [
+        "R-006",
+        "R-011",
+        "P3-DEV-001",
+        "P3-DEV-002"
+      ]
+    },
+    {
+      "evidence_id": "E-FINAL-ARTIFACT-001",
+      "immutable_identity": "git:FJ899/executor-pilot-target@6d013df645c85faf2823097c86d534be53bf4093",
+      "kind": "GIT_COMMIT",
+      "locator": "https://github.com/FJ899/executor-pilot-target/commit/6d013df645c85faf2823097c86d534be53bf4093",
+      "observed_at": "2026-08-25T23:11:37Z",
+      "producer": "GitHub",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "R-011",
+        "AC-006",
+        "final-implementation-sha"
+      ]
+    },
+    {
+      "evidence_id": "E-FINAL-DIFF-001",
+      "immutable_identity": "sha256:b9f54796c8ffde1da523401179ada2005928716d56dc12d7e7308cf6790755ff",
+      "kind": "DIFF_SCOPE",
+      "locator": "projector/evidence/E-REAL-WORK-001/final-diff-snapshot.json",
+      "observed_at": "2026-08-25T23:11:37Z",
+      "producer": "P3 from GitHub compare API",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "R-011",
+        "AC-006",
+        "allowed-scope"
+      ]
+    },
+    {
+      "evidence_id": "E-FINAL-TESTS-001",
+      "immutable_identity": "sha256:f34b55522934441055650f3c4d4667a345499d7f59c7851416d6925b9d1a2a81",
+      "kind": "TEST_RESULT",
+      "locator": "projector/evidence/E-REAL-WORK-001/final-tests-case003.txt",
+      "observed_at": "2026-08-25T23:11:37Z",
+      "producer": "P3 exact-final-blob reconstruction",
+      "scope": "TEST",
+      "supports": [
+        "R-007",
+        "R-008",
+        "AC-006",
+        "frozen-test-suite"
+      ]
+    },
+    {
+      "evidence_id": "E-EFFECT-PROPERTIES-001",
+      "immutable_identity": "sha256:d46ac9f1e6759ca593ee66ec755af3a3fb73116bff0a5e24217bde6faaf3661f",
+      "kind": "OBSERVABLE_OUTPUT_PROPERTIES",
+      "locator": "projector/evidence/E-REAL-WORK-001/effect-properties-case003.txt",
+      "observed_at": "2026-08-25T23:11:37Z",
+      "producer": "P3 exact-final-blob execution",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "AC-006",
+        "order-independence",
+        "UTF-8",
+        "final-newline"
+      ]
+    },
+    {
+      "evidence_id": "E-REVIEW-PR-001",
+      "immutable_identity": "sha256:b37aa87b262ec16c98186202950af329407e114b2099c798e17716fb3e81e382",
+      "kind": "REVIEW_SURFACE",
+      "locator": "projector/evidence/E-REAL-WORK-001/review-pr-13-snapshot.json",
+      "observed_at": "2026-08-25T23:11:37Z",
+      "producer": "GitHub",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "R-013",
+        "AC-006",
+        "unmerged-review-only"
+      ]
+    }
+  ],
+  "observed_facts": [
+    "Official post-freeze branch projector/e-real-work-001-case003 was created from exact pinned c42bead2bbbff9c84486f17637ec80f35eeffa25.",
+    "Official final implementation SHA is 6d013df645c85faf2823097c86d534be53bf4093.",
+    "GitHub compare shows exactly one changed file: project_registry/registry.py; one commit; +4/-1.",
+    "Frozen local verification against byte-identical final source/test blobs: compileall PASS and unittest 13/13 PASS.",
+    "Direct output observation: different input order produces identical output; UTF-8 Polish names are preserved; canonical project IDs are A,B; output has exactly one final LF newline.",
+    "Draft PR #13 is open and unmerged."
+  ],
+  "previous_state_sha256": "5003857689598fb3a55699d5f0c5aee4094cbba306092d4647ba0acc0bf43661",
+  "route": {
+    "description": "Observe repository CI run #40 for exact final SHA and freeze its result; do not merge.",
+    "evidence_basis": [
+      "E-FINAL-ARTIFACT-001",
+      "E-FINAL-TESTS-001",
+      "E-EFFECT-PROPERTIES-001",
+      "E-REVIEW-PR-001"
+    ],
+    "justification": "Local frozen verification and direct effect checks pass, but independently hosted repository CI on the final SHA is still pending.",
+    "next_move_kind": "EVIDENCE_SEEKING_VERIFICATION",
+    "route_id": "CASE003-VERIFY-FINAL-SHA"
+  },
+  "route_change": {
+    "from_route_id": "CASE003-CANONICALIZE-BY-PROJECT-ID",
+    "reason": "Implementation and local effect evidence are complete; the remaining evidence point is repository CI on exact final SHA.",
+    "to_route_id": "CASE003-VERIFY-FINAL-SHA"
+  },
+  "run_id": "E-REAL-WORK-001-CASE003",
+  "run_manifest_sha256": "f8385483ebfd92981a4827db2a608c198fcf1137262b1bde091516da0f877f74",
+  "schema_version": "2.0",
+  "sequence": 2,
+  "state_sha256": "a6a134751efaa14ea1a1de6d64687a7c596e9b85c09758b9f56480396674d3f8",
+  "status": "ACTIVE",
+  "transition_reason": "Official material implementation completed; move from implementation to exact-final-SHA verification while retaining review-only state.",
+  "unknowns": [
+    "Whether repository CI run #40 on exact final SHA 6d013df645c85faf2823097c86d534be53bf4093 completes successfully."
+  ]
+}

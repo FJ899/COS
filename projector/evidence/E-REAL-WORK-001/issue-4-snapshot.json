@@ -1,0 +1,13 @@
+{
+  "repository": "FJ899/executor-pilot-target",
+  "issue_number": 4,
+  "title": "CASE-003: restore canonical deterministic output",
+  "state": "open",
+  "updated_at": "2026-08-02T20:11:34Z",
+  "pinned_branch": "case-003-broken",
+  "pinned_commit": "c42bead2bbbff9c84486f17637ec80f35eeffa25",
+  "reference_base": "be1de04a1dbac7aac2d541b48cb252e1d72e4b7d",
+  "allowed_scope": ["project_registry/registry.py"],
+  "expected_baseline": "13 tests; 2 failures: test_different_input_order_produces_identical_stdout and test_json_output_is_sorted_stable_and_utf8_friendly",
+  "verification": ["python -m compileall -q project_registry tests", "python -m unittest discover -s tests -v"]
+}

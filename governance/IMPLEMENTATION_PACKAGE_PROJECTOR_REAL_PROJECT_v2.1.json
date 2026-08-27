@@ -1,0 +1,284 @@
+{
+  "schema_version": "1.0",
+  "package_version": "v2.1",
+  "package_status": "P3_IMPLEMENTATION_AND_REAL_WORK_EVIDENCE_COMPLETE_READY_FOR_P4_AUDIT",
+  "supersedes_for_p3_state": "v2.0 package by addition only; v2.0 remains historical and immutable",
+  "task_contract": {
+    "name": "PROJECTOR / INTENT-TO-OUTCOME REAL PROJECT",
+    "version": "v1.0",
+    "commit": "ef128a0885310524475fba1cd291d1f34400b0cc",
+    "path": "governance/TASK_CONTRACT_PROJECTOR_REAL_PROJECT_v1.0.md",
+    "owner": "P1 SPECIFICATION under Human-owned intent"
+  },
+  "architecture_contract": {
+    "name": "PROJECTOR / INTENT-TO-OUTCOME REAL PROJECT",
+    "version": "v2.0",
+    "commit": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+    "path": "governance/ARCHITECTURE_CONTRACT_PROJECTOR_REAL_PROJECT_v2.0.md",
+    "blob_sha": "e2e2158440939ba96cddffe9c0ac158ad07510f4",
+    "owner": "P2 ARCHITECTURE"
+  },
+  "projector_implementation": {
+    "repository": "FJ899/COS",
+    "branch": "impl/projector-real-project-v2",
+    "base_sha": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+    "build_sha": "590c6203a567117af3c52cdaff11a5ccfe4eee97",
+    "core_package_commit": "fad77790a234be185eba12f6c6989c2eb5a865bd",
+    "pre_run_freeze_commit": "9d7c0aa22975df882d58850738f68466dab9a7f3",
+    "owner": "P3 IMPLEMENTATION"
+  },
+  "real_work": {
+    "evidence_id": "E-REAL-WORK-001",
+    "manifest_path": "projector/evidence/E-REAL-WORK-001/manifest.json",
+    "manifest_sha256": "c3388e042f08e10ae0426e372afc693b549ec1a2039d4a62120a6fd199809a8e",
+    "target_repository": "FJ899/executor-pilot-target",
+    "issue": 4,
+    "starting_branch": "case-003-broken",
+    "starting_sha": "c42bead2bbbff9c84486f17637ec80f35eeffa25",
+    "official_branch": "projector/e-real-work-001-case003",
+    "final_sha": "6d013df645c85faf2823097c86d534be53bf4093",
+    "changed_files": [
+      "project_registry/registry.py"
+    ],
+    "final_blob_sha": "c7a348cf2b0005d6ca515d23306998902d24800a",
+    "review_pr": 13,
+    "merged": false,
+    "frozen_commands": [
+      "python -m compileall -q project_registry tests",
+      "python -m unittest discover -s tests -v"
+    ],
+    "local_result": "13/13 PASS; effect-property checks PASS",
+    "repository_ci": {
+      "workflow": "pilot-target-ci",
+      "run_number": 40,
+      "run_id": 32909611801,
+      "job_id": 98000971606,
+      "head_sha": "6d013df645c85faf2823097c86d534be53bf4093",
+      "conclusion": "success",
+      "compile": "success",
+      "test": "success"
+    },
+    "human_operational_rescue": "NONE"
+  },
+  "projector_run": {
+    "run_id": "E-REAL-WORK-001-CASE003",
+    "run_path": "projector/runs/E-REAL-WORK-001-CASE003",
+    "pre_run_freeze_commit": "9d7c0aa22975df882d58850738f68466dab9a7f3",
+    "final_sequence": 3,
+    "final_state_identity": "cedf51387357367c6c6aba97e2a8008a3a275cdd9c7876a089476c6e6a306ef3",
+    "final_state_file_sha256": "4b267b5fb1b2dd238522e8b667c6dcd2cdf7fa0e3040d9ec250d845979f7bfae",
+    "verify": "VALID",
+    "recover_evidence_sha256": "fe105fa5b4caada57412023029f2f7133e9872cf96dbdcb7fc83b670f27e1d0f"
+  },
+  "deviations": [
+    {
+      "id": "P3-DEV-001",
+      "fact": "Exploratory target fix/PR #12 was created before required Projector pre-run freeze.",
+      "containment": "Excluded from official E-REAL-WORK-001; official execution restarted from exact c42bead2 after durable COS pre-run freeze 9d7c0aa2.",
+      "p4_review_required": true
+    },
+    {
+      "id": "P3-DEV-002",
+      "fact": "P3 accidentally created target Issue #11 __noop__ while selecting a GitHub action.",
+      "containment": "Issue #11 immediately closed as not_planned; no repository file changed.",
+      "p4_review_required": true
+    }
+  ],
+  "capability_registry": {
+    "capability": "CAP-ITO-001",
+    "status": "PROPOSED",
+    "path": "governance/CAPABILITY_REGISTRY.json",
+    "blob_sha": "115593751a966919c6184597aee09381fd820dcf",
+    "modified_by_p3": false,
+    "note": "No capability promotion is made before independent P4 semantic audit."
+  },
+  "provenance_matrix": {
+    "R-001": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-001", "AD-V2-002", "AD-V2-008"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["scripts/projector_run.py", "FJ899/executor-pilot-target@6d013df645c85faf2823097c86d534be53bf4093"],
+      "test_or_evidence": ["E-CI-001", "E-REAL-WORK-001"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-002": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-002"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["scripts/projector_run.py"],
+      "test_or_evidence": ["E-HUMAN-RESOLUTION-001", "projector/runs/E-REAL-WORK-001-CASE003/run.json"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-003": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-003", "AD-V2-004"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["scripts/projector_run.py"],
+      "test_or_evidence": ["projector/runs/E-REAL-WORK-001-CASE003/states/0000.json", "projector/runs/E-REAL-WORK-001-CASE003/states/0003.json"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-004": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-003", "AD-V2-005", "AD-V2-007"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["scripts/projector_run.py"],
+      "test_or_evidence": ["projector/runs/E-REAL-WORK-001-CASE003/states/0000.json", "projector/runs/E-REAL-WORK-001-CASE003/states/0001.json", "projector/runs/E-REAL-WORK-001-CASE003/states/0002.json", "projector/runs/E-REAL-WORK-001-CASE003/states/0003.json"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-005": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-002", "AD-V2-005"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["scripts/projector_run.py"],
+      "test_or_evidence": ["E-BASELINE-FAIL-001", "projector/runs/E-REAL-WORK-001-CASE003/states/0001.json", "E-REAL-WORK-001"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-006": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-006"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["scripts/projector_run.py"],
+      "test_or_evidence": ["E-HUMAN-RESOLUTION-001", "E-P3-DEVIATIONS-001", "E-REAL-WORK-001"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-007": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-007", "AD-V2-008"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["FJ899/executor-pilot-target@6d013df645c85faf2823097c86d534be53bf4093"],
+      "test_or_evidence": ["E-FINAL-ARTIFACT-001", "E-FINAL-DIFF-001", "E-FINAL-TESTS-001", "E-EFFECT-PROPERTIES-001", "E-TARGET-CI-001", "E-REVIEW-PR-FINAL-001", "E-REAL-WORK-001"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-008": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-005", "AD-V2-008"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["scripts/projector_run.py"],
+      "test_or_evidence": ["E-LOCAL-002", "E-LOCAL-003", "E-BASELINE-FAIL-001", "E-FINAL-TESTS-001"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-009": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-001", "AD-V2-009"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["scripts/verify_capability_evidence.py"],
+      "test_or_evidence": ["E-CI-001", "governance/CAPABILITY_REGISTRY.json@115593751a966919c6184597aee09381fd820dcf"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-010": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-003", "AD-V2-008"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["scripts/projector_run.py"],
+      "test_or_evidence": ["E-LOCAL-002", "projector/evidence/E-REAL-WORK-001/final-recover.json", "projector/evidence/E-REAL-WORK-001/projector-final-verify.txt"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-011": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-003", "AD-V2-007"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["scripts/projector_run.py", "governance/IMPLEMENTATION_PACKAGE_PROJECTOR_REAL_PROJECT_v2.1.json"],
+      "test_or_evidence": ["E-P3-DEVIATIONS-001", "E-REAL-WORK-001", "provenance_matrix"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-012": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-008", "AD-V2-009"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["P3 evidence package only"],
+      "test_or_evidence": ["P4 AUDIT = NOT YET AUDITED"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    },
+    "R-013": {
+      "requirement_owner": "P1 SPECIFICATION under Human-owned intent",
+      "task_contract": "v1.0@ef128a0885310524475fba1cd291d1f34400b0cc",
+      "architecture_owner": "P2 ARCHITECTURE",
+      "architecture_contract": "v2.0@6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+      "architecture_decisions": ["AD-V2-004", "AD-V2-006", "AD-V2-009"],
+      "implementation_owner": "P3 IMPLEMENTATION",
+      "implementation_identity": "Projector BUILD 590c6203a567117af3c52cdaff11a5ccfe4eee97; real-work final 6d013df645c85faf2823097c86d534be53bf4093 where applicable",
+      "implementation_paths": ["No acceptance command/state created by P3"],
+      "test_or_evidence": ["E-REVIEW-PR-FINAL-001", "HUMAN FINAL ACCEPTANCE = NOT YET CREATED"],
+      "p4_finding": "NOT YET AUDITED",
+      "human_acceptance": "NOT YET CREATED"
+    }
+  },
+  "known_limitations": [
+    "Single bounded real-work result does not establish RELIABLE maturity.",
+    "P3 deviations are preserved and P4 must independently judge their impact.",
+    "P3 evidence and Projector DONE state do not substitute for independent P4 findings."
+  ],
+  "unresolved_items": [
+    "P4 independent requirement-level audit",
+    "Human final acceptance after P4"
+  ],
+  "p4_audit": "NOT YET AUDITED",
+  "human_final_acceptance": "NOT YET CREATED",
+  "claims_requiring_independent_verification": [
+    "Whether each R-001..R-013 is satisfied by the exact frozen artifacts.",
+    "Whether E-REAL-WORK-001 is semantically sufficient for R-007/AC-006 despite preserved P3 deviations.",
+    "Whether no hidden Human operational rescue occurred.",
+    "Whether target output properties and frozen test results reproduce independently on final SHA."
+  ],
+  "package_commit": "RECORDED_EXTERNALLY_IN_P3_HANDOFF_BECAUSE_A_GIT_COMMIT_CANNOT_SELF_EMBED_ITS_OWN_SHA"
+}
