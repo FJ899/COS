@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Canonical effect-capable Projector v2.1 trusted runtime.
 
-Exactly one function in the P3 implementation may invoke ``sink.write``:
-``execute_trusted_public_effect`` below.  It owns both trusted read boundaries:
-concrete Git observations/proofs and immutable GitHub Human decision evidence.
-No caller dictionary can substitute for those reads.
+The external-write API deliberately does *not* accept Git/Human evidence-source
+objects from its caller.  It snapshots caller locators, constructs immutable
+production sources internally, performs two distinct live Git observations and
+fetches one immutable GitHub Issue Comment between them.  Test adapters are not
+part of this module's effect-capable API.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ import secrets
 import subprocess
 import urllib.error
 import urllib.request
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -52,45 +54,60 @@ def _repo_name(value: str) -> str:
 
 def _branch_name(ref: str, name: str) -> str:
     value = _string(ref, name)
-    return value[len("refs/heads/"):] if value.startswith("refs/heads/") else value
+    return value[len("refs/heads/") :] if value.startswith("refs/heads/") else value
 
 
-class InMemoryNonPublicTestSink:
-    """Only sink permitted with explicit test-only trusted sources."""
-
-    def __init__(self) -> None:
-        self.calls: list[dict[str, Any]] = []
-
-    def write(self, effect_descriptor: dict[str, Any]) -> dict[str, Any]:
-        self.calls.append(json.loads(json.dumps(effect_descriptor)))
-        return {
-            "result_ref": "test-harness://public-effect/result-1",
-            "result_identity": "NON_PUBLIC_TEST_EFFECT",
-            "observed_at": _utc_now(),
-        }
+def _positive_int(value: Any, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise _Blocked(f"{name} must be a positive integer")
+    return value
 
 
-class GitRepositoryEvidenceSource:
-    """Concrete read-side Git adapter. Production instances target github.com exactly."""
+def _json_snapshot(value: Any, name: str) -> dict[str, Any]:
+    """Detach runtime decisions from subsequent caller mutation."""
+    try:
+        cloned = json.loads(json.dumps(value, sort_keys=True, separators=(",", ":")))
+    except (TypeError, ValueError) as exc:
+        raise _Blocked(f"{name} must be exact JSON data") from exc
+    return _object(cloned, name)
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class _GitHubGitEvidenceSource:
+    """Immutable production Git reader bound to github.com/<repository>.git.
+
+    There is no test factory, mutable ``test_only`` marker, or stored mutable
+    remote URL.  The canonical remote is derived from the frozen repository
+    identity every time it is used.
+    """
+
+    worktree: Path
+    repository: str
 
     def __init__(self, worktree: str | Path, repository: str) -> None:
-        self.worktree = Path(worktree).resolve()
-        self.repository = _repo_name(repository)
-        self.remote_url = f"https://github.com/{self.repository}.git"
-        self.test_only = False
-        if not (self.worktree / ".git").exists():
+        resolved = Path(worktree).resolve()
+        repo = _repo_name(repository)
+        if not (resolved / ".git").exists():
             raise _Blocked("trusted Git worktree must contain .git")
+        object.__setattr__(self, "worktree", resolved)
+        object.__setattr__(self, "repository", repo)
 
-    @classmethod
-    def for_non_public_test(cls, worktree: str | Path, repository: str, remote_url: str) -> "GitRepositoryEvidenceSource":
-        obj = cls.__new__(cls)
-        obj.worktree = Path(worktree).resolve()
-        obj.repository = _repo_name(repository)
-        obj.remote_url = _string(remote_url, "test remote_url")
-        obj.test_only = True
-        if not (obj.worktree / ".git").exists():
-            raise _Blocked("test Git worktree must contain .git")
-        return obj
+    @property
+    def remote_url(self) -> str:
+        return f"https://github.com/{self.repository}.git"
+
+    def _git_env(self) -> dict[str, str]:
+        """Prevent replace refs and caller-provided process-level Git overrides."""
+        env = dict(os.environ)
+        for key in list(env):
+            if key.startswith("GIT_CONFIG_KEY_") or key.startswith("GIT_CONFIG_VALUE_"):
+                env.pop(key, None)
+        env.pop("GIT_CONFIG_COUNT", None)
+        env.pop("GIT_ALTERNATE_OBJECT_DIRECTORIES", None)
+        env.pop("GIT_OBJECT_DIRECTORY", None)
+        env.pop("GIT_REPLACE_REF_BASE", None)
+        env["GIT_NO_REPLACE_OBJECTS"] = "1"
+        return env
 
     def _run(self, args: list[str], *, text: bool = True, check: bool = True) -> str | bytes:
         try:
@@ -100,6 +117,7 @@ class GitRepositoryEvidenceSource:
                 stderr=subprocess.PIPE,
                 text=text,
                 check=False,
+                env=self._git_env(),
             )
         except OSError as exc:
             raise _Blocked(f"trusted Git invocation failed: {exc}") from exc
@@ -133,6 +151,7 @@ class GitRepositoryEvidenceSource:
             stderr=subprocess.PIPE,
             text=True,
             check=False,
+            env=self._git_env(),
         )
         if proc.returncode == 0:
             return True
@@ -150,25 +169,42 @@ class GitRepositoryEvidenceSource:
 
     def _raw_diff_entries(self, base_sha: str, candidate_sha: str) -> list[dict[str, Any]]:
         output = self._run(
-            ["diff", "--raw", "-z", "--no-abbrev", "--find-renames", "--find-copies", base_sha, candidate_sha, "--"],
+            [
+                "diff",
+                "--raw",
+                "-z",
+                "--no-abbrev",
+                "--find-renames",
+                "--find-copies",
+                base_sha,
+                candidate_sha,
+                "--",
+            ],
             text=False,
         )
         assert isinstance(output, bytes)
         parts = output.split(b"\0")
         entries: list[dict[str, Any]] = []
-        i = 0
-        kind_map = {"A": "ADDED", "M": "MODIFIED", "D": "DELETED", "R": "RENAMED", "C": "COPIED", "T": "TYPE_CHANGED"}
-        while i < len(parts) and parts[i]:
-            token = parts[i].decode("utf-8", "surrogateescape")
-            i += 1
+        index = 0
+        kind_map = {
+            "A": "ADDED",
+            "M": "MODIFIED",
+            "D": "DELETED",
+            "R": "RENAMED",
+            "C": "COPIED",
+            "T": "TYPE_CHANGED",
+        }
+        while index < len(parts) and parts[index]:
+            token = parts[index].decode("utf-8", "surrogateescape")
+            index += 1
             if "\t" in token:
                 header, first_path = token.split("\t", 1)
             else:
                 header = token
-                if i >= len(parts):
+                if index >= len(parts):
                     raise _Blocked("malformed trusted raw diff")
-                first_path = parts[i].decode("utf-8", "surrogateescape")
-                i += 1
+                first_path = parts[index].decode("utf-8", "surrogateescape")
+                index += 1
             fields = header[1:].split()
             if not header.startswith(":") or len(fields) < 5:
                 raise _Blocked("malformed trusted raw diff header")
@@ -177,15 +213,15 @@ class GitRepositoryEvidenceSource:
             if code not in kind_map:
                 raise _Blocked(f"unsupported trusted Git diff status: {status}")
             if code in {"R", "C"}:
-                if i >= len(parts):
+                if index >= len(parts):
                     raise _Blocked("malformed trusted rename/copy diff")
-                second_path = parts[i].decode("utf-8", "surrogateescape")
-                i += 1
+                second_path = parts[index].decode("utf-8", "surrogateescape")
+                index += 1
                 previous_path, path = first_path, second_path
             else:
                 previous_path, path = None, first_path
 
-            def obj(mode: str, oid: str) -> dict[str, Any]:
+            def git_object(mode: str, oid: str) -> dict[str, Any]:
                 if mode == "000000" or set(oid) == {"0"}:
                     return {"object_id": None, "object_type": None, "git_mode": None}
                 exact_oid = _sha40(oid, "trusted diff object id")
@@ -195,13 +231,15 @@ class GitRepositoryEvidenceSource:
                     "git_mode": mode,
                 }
 
-            entries.append({
-                "path": path,
-                "previous_path": previous_path,
-                "change_kind": kind_map[code],
-                "base_object": obj(old_mode, old_oid),
-                "candidate_object": obj(new_mode, new_oid),
-            })
+            entries.append(
+                {
+                    "path": path,
+                    "previous_path": previous_path,
+                    "change_kind": kind_map[code],
+                    "base_object": git_object(old_mode, old_oid),
+                    "candidate_object": git_object(new_mode, new_oid),
+                }
+            )
         return entries
 
     def _topology(self, base_sha: str, candidate_sha: str) -> dict[str, Any]:
@@ -221,11 +259,13 @@ class GitRepositoryEvidenceSource:
             if len(fields) != 3:
                 raise _Blocked("trusted candidate topology record malformed")
             sha, tree_sha, parents = fields
-            items.append({
-                "commit_sha": _sha40(sha, "topology commit"),
-                "tree_sha": _sha40(tree_sha, "topology tree"),
-                "ordered_parent_shas": [_sha40(p, "topology parent") for p in parents.split() if p],
-            })
+            items.append(
+                {
+                    "commit_sha": _sha40(sha, "topology commit"),
+                    "tree_sha": _sha40(tree_sha, "topology tree"),
+                    "ordered_parent_shas": [_sha40(parent, "topology parent") for parent in parents.split() if parent],
+                }
+            )
         return {
             "candidate_head_sha": candidate_sha,
             "candidate_head_tree_sha": candidate_tree_sha,
@@ -240,7 +280,10 @@ class GitRepositoryEvidenceSource:
         if repository != self.repository:
             raise _Blocked("trusted Git source is bound to a different repository")
         base_ref = _branch_name(_string(spec.get("base_ref"), "base_ref"), "base_ref")
-        candidate_ref = _branch_name(_string(spec.get("candidate_ref_or_pr_head"), "candidate_ref_or_pr_head"), "candidate_ref_or_pr_head")
+        candidate_ref = _branch_name(
+            _string(spec.get("candidate_ref_or_pr_head"), "candidate_ref_or_pr_head"),
+            "candidate_ref_or_pr_head",
+        )
         frozen = _sha40(spec.get("frozen_source_sha"), "frozen_source_sha")
         expected_public_result = _object(spec.get("expected_public_result"), "expected_public_result")
         invocation = secrets.token_hex(16)
@@ -313,8 +356,15 @@ class GitRepositoryEvidenceSource:
         }
 
 
-class GitHubIssueCommentAuthoritySource:
-    """Concrete durable Human authority source: one immutable GitHub Issue Comment."""
+@dataclass(frozen=True, slots=True, init=False)
+class _GitHubIssueCommentAuthoritySource:
+    """Immutable production Human source that always performs a GitHub GET."""
+
+    repository: str
+    issue_number: int
+    comment_id: int
+    actor_login: str
+    actor_id: int
 
     def __init__(
         self,
@@ -323,44 +373,20 @@ class GitHubIssueCommentAuthoritySource:
         comment_id: int,
         actor_login: str,
         actor_id: int,
-        *,
-        token_env: str = "GITHUB_TOKEN",
     ) -> None:
-        self.repository = _repo_name(repository)
-        if issue_number <= 0 or comment_id <= 0 or actor_id <= 0:
-            raise _Blocked("issue/comment/actor IDs must be positive")
-        self.issue_number = issue_number
-        self.comment_id = comment_id
-        self.actor_login = _string(actor_login, "actor_login")
-        self.actor_id = actor_id
-        self.token_env = token_env
-        self.test_only = False
-        self._test_comment: dict[str, Any] | None = None
-
-    @classmethod
-    def for_non_public_test(
-        cls,
-        repository: str,
-        issue_number: int,
-        comment_id: int,
-        actor_login: str,
-        actor_id: int,
-        comment: dict[str, Any],
-    ) -> "GitHubIssueCommentAuthoritySource":
-        obj = cls(repository, issue_number, comment_id, actor_login, actor_id)
-        obj.test_only = True
-        obj._test_comment = json.loads(json.dumps(comment))
-        return obj
+        object.__setattr__(self, "repository", _repo_name(repository))
+        object.__setattr__(self, "issue_number", _positive_int(issue_number, "issue_number"))
+        object.__setattr__(self, "comment_id", _positive_int(comment_id, "comment_id"))
+        object.__setattr__(self, "actor_login", _string(actor_login, "actor_login"))
+        object.__setattr__(self, "actor_id", _positive_int(actor_id, "actor_id"))
 
     def _fetch_comment(self) -> dict[str, Any]:
-        if self._test_comment is not None:
-            return json.loads(json.dumps(self._test_comment))
         url = f"https://api.github.com/repos/{self.repository}/issues/comments/{self.comment_id}"
         headers = {
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         }
-        token = os.environ.get(self.token_env)
+        token = os.environ.get("GITHUB_TOKEN")
         if token:
             headers["Authorization"] = f"Bearer {token}"
         request = urllib.request.Request(url, headers=headers, method="GET")
@@ -418,71 +444,119 @@ class GitHubIssueCommentAuthoritySource:
         }
 
 
+def _authority_locator(value: Any, repository: str) -> tuple[int, int, str, int]:
+    locator = _json_snapshot(value, "human authority locator")
+    required = {"repository", "issue_number", "comment_id", "actor_login", "actor_id"}
+    if set(locator) != required:
+        raise _Blocked("human authority locator must contain exact locator fields")
+    locator_repo = _repo_name(_string(locator.get("repository"), "human authority locator.repository"))
+    if locator_repo != repository:
+        raise _Blocked("Human authority locator is bound to a different repository")
+    return (
+        _positive_int(locator.get("issue_number"), "human authority locator.issue_number"),
+        _positive_int(locator.get("comment_id"), "human authority locator.comment_id"),
+        _string(locator.get("actor_login"), "human authority locator.actor_login"),
+        _positive_int(locator.get("actor_id"), "human authority locator.actor_id"),
+    )
+
+
 def _canonicalize_trusted_git_proof(observed: dict[str, Any]) -> dict[str, Any]:
-    """Make D_HASH fact-stable while freshness remains source-invocation-bound."""
+    """Make D_HASH fact-stable while freshness stays invocation-bound."""
     value = copy.deepcopy(observed)
-    repo = value["repository"]
+    repository = value["repository"]
     frozen = value["frozen_source_sha"]
     base = value["base_observation"]["sha"]
     candidate = value["candidate_observation"]["sha"]
     frozen_status = value["ancestry"]["frozen_to_base"]["status"]
     candidate_status = value["ancestry"]["base_to_candidate"]["status"]
     value["ancestry"]["frozen_to_base"]["evidence_ref"] = (
-        f"git-proof:{repo}:frozen-to-base:{frozen_status}:{frozen}:{base}"
+        f"git-proof:{repository}:frozen-to-base:{frozen_status}:{frozen}:{base}"
     )
     value["ancestry"]["base_to_candidate"]["evidence_ref"] = (
-        f"git-proof:{repo}:base-to-candidate:{candidate_status}:{base}:{candidate}"
+        f"git-proof:{repository}:base-to-candidate:{candidate_status}:{base}:{candidate}"
     )
     return value
 
 
-def _fresh_prepare(spec: dict[str, Any], git_source: GitRepositoryEvidenceSource, trust_level: str) -> dict[str, Any]:
-    observed = git_source.observe(_object(spec, "effect spec"))
+def _fresh_prepare(
+    spec: dict[str, Any],
+    git_source: _GitHubGitEvidenceSource,
+    trust_level: str,
+) -> dict[str, Any]:
+    observed = git_source.observe(spec)
     canonical = _canonicalize_trusted_git_proof(observed)
     return _prepare(canonical, trust_level=trust_level)
 
 
 def prepare_trusted_public_effect_authority_request(
     spec: dict[str, Any],
-    git_source: GitRepositoryEvidenceSource,
+    git_worktree: str | Path,
 ) -> dict[str, Any]:
-    """Fresh trusted B_PRE_X/Git proof for the Human gate; no write capability."""
-    if type(git_source) is not GitRepositoryEvidenceSource:
-        return _blocked("UNTRUSTED_GIT_EVIDENCE_SOURCE_TYPE")
+    """Fresh production Git observation for the Human gate; never writes target."""
     try:
-        prepared = _fresh_prepare(spec, git_source, "TRUSTED_LIVE_GIT_PRE_HUMAN_GATE")
+        spec_snapshot = _json_snapshot(spec, "effect spec")
+        repository = _repo_name(_string(spec_snapshot.get("repository"), "repository"))
+        git_source = _GitHubGitEvidenceSource(git_worktree, repository)
+        prepared = _fresh_prepare(spec_snapshot, git_source, "TRUSTED_LIVE_GIT_PRE_HUMAN_GATE")
         return {
             "status": "AWAITING_HUMAN_PUBLIC_EFFECT_AUTHORITY",
             "prepared": prepared,
             "authority_request": authority_request(prepared),
             "source_invocation_id": prepared["source_invocation_id"],
+            "trusted_source_origin": "INTERNAL_PRODUCTION_GITHUB_GIT_SOURCE",
             "target_write_performed": False,
         }
     except _Blocked as exc:
         return _blocked(exc.reason)
+    except Exception as exc:
+        return _blocked(f"TRUSTED_SOURCE_FAILURE:{type(exc).__name__}")
 
 
 def execute_trusted_public_effect(
     spec: dict[str, Any],
-    human_authority_source: GitHubIssueCommentAuthoritySource,
-    git_source: GitRepositoryEvidenceSource,
+    human_authority_locator: dict[str, Any],
+    git_worktree: str | Path,
     sink: PublicEffectWriteSink,
 ) -> dict[str, Any]:
-    """SOLE effect-capable path: live Git -> immutable Human -> live Git -> sink."""
-    if type(git_source) is not GitRepositoryEvidenceSource:
-        return _blocked("UNTRUSTED_GIT_EVIDENCE_SOURCE_TYPE")
-    if type(human_authority_source) is not GitHubIssueCommentAuthoritySource:
-        return _blocked("UNTRUSTED_HUMAN_AUTHORITY_SOURCE_TYPE")
-    if (git_source.test_only or human_authority_source.test_only) and type(sink) is not InMemoryNonPublicTestSink:
-        return _blocked("TEST_ONLY_TRUSTED_SOURCE_CANNOT_REACH_EXTERNAL_SINK")
+    """SOLE external-effect API: internally created live Git/Human sources -> write.
+
+    No Git or Human evidence-source object is accepted from the caller.  The
+    production Git remote is derived internally from the exact repository.  The
+    Human source always performs a GitHub GET; there is no synthetic comment
+    field or test-only switch on either production source.
+    """
 
     try:
-        pre_authority = _fresh_prepare(spec, git_source, "TRUSTED_LIVE_GIT_AUTHORITY_VERIFICATION")
+        spec_snapshot = _json_snapshot(spec, "effect spec")
+        repository = _repo_name(_string(spec_snapshot.get("repository"), "repository"))
+        issue_number, comment_id, actor_login, actor_id = _authority_locator(
+            human_authority_locator,
+            repository,
+        )
+
+        git_source = _GitHubGitEvidenceSource(git_worktree, repository)
+        human_source = _GitHubIssueCommentAuthoritySource(
+            repository,
+            issue_number,
+            comment_id,
+            actor_login,
+            actor_id,
+        )
+
+        pre_authority = _fresh_prepare(
+            spec_snapshot,
+            git_source,
+            "TRUSTED_LIVE_GIT_AUTHORITY_VERIFICATION",
+        )
         request = authority_request(pre_authority)
-        authority = human_authority_source.load_authority(request)
+        authority = human_source.load_authority(request)
         _validate_human_authority(pre_authority, authority)
 
-        write_time = _fresh_prepare(spec, git_source, "TRUSTED_LIVE_GIT_WRITE_TIME_REVALIDATION")
+        write_time = _fresh_prepare(
+            spec_snapshot,
+            git_source,
+            "TRUSTED_LIVE_GIT_WRITE_TIME_REVALIDATION",
+        )
         if pre_authority["source_invocation_id"] == write_time["source_invocation_id"]:
             raise _Blocked("write-time Git observation was not a distinct trusted invocation")
         if authority_request(write_time) != request:
@@ -503,11 +577,17 @@ def execute_trusted_public_effect(
 
     gate = write_time["public_effect_gate"]
     return {
-        "schema_version": "projector-public-effect-gate-result/1.1",
+        "schema_version": "projector-public-effect-gate-result/1.2",
         "status": "PUBLIC_EFFECT_COMPLETED_REVIEW_REQUIRED",
         "effect_evidence_status": "OBSERVED",
         "target_write_performed": True,
         "target_write_result": result,
+        "trusted_source_boundary": {
+            "git": "INTERNAL_PRODUCTION_GITHUB_GIT_SOURCE",
+            "human": "INTERNAL_PRODUCTION_GITHUB_ISSUE_COMMENT_SOURCE",
+            "caller_source_objects_accepted": False,
+            "test_adapter_path_present": False,
+        },
         "public_effect_gate": {
             "effect_kind": gate["effect_kind"],
             "repository": gate["repository"],
