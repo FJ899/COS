@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Projector v2.1 exact public-effect authority gate.
+"""Projector v2.1 public-effect authority gate.
 
-This module is an additive helper around the frozen Projector v2.0 recorder. It
-has no GitHub credentials and performs no provider I/O by itself. A caller must
-supply exact read-side observations/proofs and a write sink. The sink is invoked
-only after exact Human PUBLIC_EFFECT authority and write-time revalidation pass.
+The pure ``prepare_public_effect_gate`` helper remains useful for deterministic
+manifest construction and non-public tests, but caller-supplied observations are
+explicitly NOT effect-capable.  The only API in this module that may call an
+external write sink is ``execute_authorized_public_effect_from_trusted_sources``.
+That function obtains Git facts itself from a concrete live Git adapter, obtains
+Human authority itself from an immutable GitHub Issue Comment, then performs a
+second live Git observation immediately before the write.
 """
 
 from __future__ import annotations
@@ -13,8 +16,12 @@ import hashlib
 import json
 import os
 import re
+import secrets
+import subprocess
 import tempfile
-from datetime import datetime
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -43,7 +50,7 @@ CHANGE_KINDS = {"ADDED", "MODIFIED", "DELETED", "RENAMED", "COPIED", "TYPE_CHANG
 
 
 class PublicEffectGateError(RuntimeError):
-    """Invalid local gate input or unsupported call."""
+    """Fail-closed gate or trusted-source error."""
 
 
 class _Blocked(PublicEffectGateError):
@@ -55,6 +62,25 @@ class _Blocked(PublicEffectGateError):
 class PublicEffectWriteSink(Protocol):
     def write(self, effect_descriptor: dict[str, Any]) -> dict[str, Any]:
         """Perform exactly one already-authorized public effect."""
+
+
+class InMemoryNonPublicTestSink:
+    """Bounded sink allowed only with explicit test-only trusted sources."""
+
+    def __init__(self) -> None:
+        self.calls: list[dict[str, Any]] = []
+
+    def write(self, effect_descriptor: dict[str, Any]) -> dict[str, Any]:
+        self.calls.append(json.loads(json.dumps(effect_descriptor)))
+        return {
+            "result_ref": "test-harness://public-effect/result-1",
+            "result_identity": "NON_PUBLIC_TEST_EFFECT",
+            "observed_at": _utc_now(),
+        }
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def canonical_json_bytes(value: Any) -> bytes:
@@ -90,19 +116,14 @@ def _sha40(value: Any, name: str) -> str:
     return text
 
 
-def _sha256(value: Any, name: str) -> str:
-    text = _string(value, name)
-    if HEX64_RE.fullmatch(text) is None:
-        raise _Blocked(f"{name} must be a lowercase SHA-256 hex digest")
-    return text
-
-
 def _timestamp(value: Any, name: str) -> str:
     text = _string(value, name)
     try:
-        datetime.fromisoformat(text.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
     except ValueError as exc:
         raise _Blocked(f"{name} must be an ISO-8601 timestamp") from exc
+    if parsed.tzinfo is None:
+        raise _Blocked(f"{name} must include timezone information")
     return text
 
 
@@ -114,7 +135,7 @@ def _require_keys(value: dict[str, Any], required: set[str], name: str) -> None:
 
 def _blocked(reason: str) -> dict[str, Any]:
     return {
-        "schema_version": "projector-public-effect-gate-result/1.0",
+        "schema_version": "projector-public-effect-gate-result/1.1",
         "status": "BLOCKED",
         "effect_evidence_status": "UNKNOWN",
         "target_write_performed": False,
@@ -139,64 +160,6 @@ def _expected_pre_purpose(effect_kind: str) -> str:
     raise _Blocked(f"unsupported PUBLIC_EFFECT kind: {effect_kind}")
 
 
-def _validate_base_observation(
-    value: Any,
-    *,
-    effect_kind: str,
-    repository: str,
-    base_ref: str,
-) -> dict[str, Any]:
-    observation = _object(value, "base_observation")
-    _require_keys(
-        observation,
-        {"purpose", "repository", "base_ref", "sha", "observed_at", "evidence_ref"},
-        "base_observation",
-    )
-    if observation.get("purpose") != _expected_pre_purpose(effect_kind):
-        raise _Blocked(f"{effect_kind} requires a separately fresh {_expected_pre_purpose(effect_kind)} observation")
-    if observation.get("repository") != repository or observation.get("base_ref") != base_ref:
-        raise _Blocked("base observation is bound to a different repository/base ref")
-    _sha40(observation.get("sha"), "base_observation.sha")
-    _timestamp(observation.get("observed_at"), "base_observation.observed_at")
-    _string(observation.get("evidence_ref"), "base_observation.evidence_ref")
-    return observation
-
-
-def _validate_candidate_observation(
-    value: Any,
-    *,
-    repository: str,
-    candidate_ref_or_pr_head: str,
-) -> dict[str, Any]:
-    observation = _object(value, "candidate_observation")
-    _require_keys(
-        observation,
-        {"repository", "candidate_ref_or_pr_head", "sha", "tree_sha", "observed_at", "evidence_ref"},
-        "candidate_observation",
-    )
-    if observation.get("repository") != repository:
-        raise _Blocked("candidate observation is bound to a different repository")
-    if observation.get("candidate_ref_or_pr_head") != candidate_ref_or_pr_head:
-        raise _Blocked("candidate observation is bound to a different candidate ref/head")
-    _sha40(observation.get("sha"), "candidate_observation.sha")
-    _sha40(observation.get("tree_sha"), "candidate_observation.tree_sha")
-    _timestamp(observation.get("observed_at"), "candidate_observation.observed_at")
-    _string(observation.get("evidence_ref"), "candidate_observation.evidence_ref")
-    return observation
-
-
-def _base_relation(frozen_source_sha: str, base_sha: str, proof: dict[str, Any]) -> str:
-    status = proof.get("status")
-    _string(proof.get("evidence_ref"), "ancestry.frozen_to_base.evidence_ref")
-    if frozen_source_sha == base_sha:
-        if status not in {EQUAL, PROVEN_ANCESTOR}:
-            raise _Blocked("frozen-source/current-base equality is not positively proven")
-        return BASE_EQUALS
-    if status != PROVEN_ANCESTOR:
-        raise _Blocked("FROZEN_SOURCE_NOT_PROVEN_ANCESTOR_OF_CURRENT_BASE")
-    return BASE_ADVANCED
-
-
 def _normalize_git_object(value: Any, name: str) -> dict[str, Any]:
     obj = _object(value, name)
     _require_keys(obj, {"object_id", "object_type", "git_mode"}, name)
@@ -218,14 +181,10 @@ def _normalize_git_object(value: Any, name: str) -> dict[str, Any]:
 def _normalize_changed_entries(value: Any) -> list[dict[str, Any]]:
     entries = _list(value, "changed_entries")
     normalized: list[dict[str, Any]] = []
-    seen_paths: set[tuple[str | None, str]] = set()
+    seen: set[tuple[str | None, str]] = set()
     for index, raw in enumerate(entries):
         item = _object(raw, f"changed_entries[{index}]")
-        _require_keys(
-            item,
-            {"path", "previous_path", "change_kind", "base_object", "candidate_object"},
-            f"changed_entries[{index}]",
-        )
+        _require_keys(item, {"path", "previous_path", "change_kind", "base_object", "candidate_object"}, f"changed_entries[{index}]")
         path = _string(item.get("path"), f"changed_entries[{index}].path")
         previous_path = item.get("previous_path")
         if previous_path is not None:
@@ -234,50 +193,35 @@ def _normalize_changed_entries(value: Any) -> list[dict[str, Any]]:
         if change_kind not in CHANGE_KINDS:
             raise _Blocked(f"changed_entries[{index}].change_kind is unsupported")
         base_object = _normalize_git_object(item.get("base_object"), f"changed_entries[{index}].base_object")
-        candidate_object = _normalize_git_object(
-            item.get("candidate_object"), f"changed_entries[{index}].candidate_object"
-        )
-        if change_kind == "ADDED" and base_object["object_id"] is not None:
-            raise _Blocked("ADDED entry must have a null base object")
-        if change_kind == "ADDED" and candidate_object["object_id"] is None:
-            raise _Blocked("ADDED entry must have an exact candidate object")
-        if change_kind == "DELETED" and candidate_object["object_id"] is not None:
-            raise _Blocked("DELETED entry must have a null candidate object")
-        if change_kind == "DELETED" and base_object["object_id"] is None:
-            raise _Blocked("DELETED entry must have an exact base object")
-        if change_kind not in {"ADDED", "DELETED"}:
-            if base_object["object_id"] is None or candidate_object["object_id"] is None:
-                raise _Blocked(f"{change_kind} entry requires exact base and candidate objects")
+        candidate_object = _normalize_git_object(item.get("candidate_object"), f"changed_entries[{index}].candidate_object")
+        if change_kind == "ADDED" and (base_object["object_id"] is not None or candidate_object["object_id"] is None):
+            raise _Blocked("ADDED entry must have null base and exact candidate object")
+        if change_kind == "DELETED" and (candidate_object["object_id"] is not None or base_object["object_id"] is None):
+            raise _Blocked("DELETED entry must have exact base and null candidate object")
+        if change_kind not in {"ADDED", "DELETED"} and (base_object["object_id"] is None or candidate_object["object_id"] is None):
+            raise _Blocked(f"{change_kind} entry requires exact base and candidate objects")
         if change_kind in {"RENAMED", "COPIED"} and previous_path is None:
             raise _Blocked(f"{change_kind} entry requires previous_path")
         key = (previous_path, path)
-        if key in seen_paths:
+        if key in seen:
             raise _Blocked("changed_entries contains a duplicate path identity")
-        seen_paths.add(key)
-        normalized.append(
-            {
-                "path": path,
-                "previous_path": previous_path,
-                "change_kind": change_kind,
-                "base_object": base_object,
-                "candidate_object": candidate_object,
-            }
-        )
+        seen.add(key)
+        normalized.append({
+            "path": path,
+            "previous_path": previous_path,
+            "change_kind": change_kind,
+            "base_object": base_object,
+            "candidate_object": candidate_object,
+        })
     return sorted(normalized, key=lambda item: (item["path"], item["previous_path"] or "", item["change_kind"]))
 
 
 def _normalize_topology(value: Any, *, candidate_sha: str, candidate_tree_sha: str) -> dict[str, Any]:
     topology = _object(value, "candidate_commit_topology")
-    _require_keys(
-        topology,
-        {"candidate_head_sha", "candidate_head_tree_sha", "candidate_commits"},
-        "candidate_commit_topology",
-    )
+    _require_keys(topology, {"candidate_head_sha", "candidate_head_tree_sha", "candidate_commits"}, "candidate_commit_topology")
     if _sha40(topology.get("candidate_head_sha"), "candidate_commit_topology.candidate_head_sha") != candidate_sha:
         raise _Blocked("candidate topology head differs from exact candidate SHA")
-    if _sha40(
-        topology.get("candidate_head_tree_sha"), "candidate_commit_topology.candidate_head_tree_sha"
-    ) != candidate_tree_sha:
+    if _sha40(topology.get("candidate_head_tree_sha"), "candidate_commit_topology.candidate_head_tree_sha") != candidate_tree_sha:
         raise _Blocked("candidate topology tree differs from exact candidate tree")
     commits = _list(topology.get("candidate_commits"), "candidate_commit_topology.candidate_commits")
     if not commits:
@@ -286,37 +230,20 @@ def _normalize_topology(value: Any, *, candidate_sha: str, candidate_tree_sha: s
     seen: set[str] = set()
     for index, raw in enumerate(commits):
         commit = _object(raw, f"candidate_commit_topology.candidate_commits[{index}]")
-        _require_keys(
-            commit,
-            {"commit_sha", "tree_sha", "ordered_parent_shas"},
-            f"candidate_commit_topology.candidate_commits[{index}]",
-        )
+        _require_keys(commit, {"commit_sha", "tree_sha", "ordered_parent_shas"}, f"candidate_commit_topology.candidate_commits[{index}]")
         commit_sha = _sha40(commit.get("commit_sha"), f"candidate_commit_topology.candidate_commits[{index}].commit_sha")
         tree_sha = _sha40(commit.get("tree_sha"), f"candidate_commit_topology.candidate_commits[{index}].tree_sha")
-        parents = _list(
-            commit.get("ordered_parent_shas"),
-            f"candidate_commit_topology.candidate_commits[{index}].ordered_parent_shas",
-        )
-        normalized_parents = [
-            _sha40(parent, f"candidate_commit_topology.candidate_commits[{index}].ordered_parent_shas[{parent_index}]")
-            for parent_index, parent in enumerate(parents)
-        ]
+        parents = [_sha40(parent, f"candidate_commit_topology.candidate_commits[{index}].ordered_parent_shas") for parent in _list(commit.get("ordered_parent_shas"), f"candidate_commit_topology.candidate_commits[{index}].ordered_parent_shas")]
         if commit_sha in seen:
-            raise _Blocked("candidate topology contains a duplicate commit SHA")
+            raise _Blocked("candidate topology contains duplicate commit SHA")
         seen.add(commit_sha)
-        normalized.append(
-            {"commit_sha": commit_sha, "tree_sha": tree_sha, "ordered_parent_shas": normalized_parents}
-        )
+        normalized.append({"commit_sha": commit_sha, "tree_sha": tree_sha, "ordered_parent_shas": parents})
     if normalized[-1]["commit_sha"] != candidate_sha or normalized[-1]["tree_sha"] != candidate_tree_sha:
-        raise _Blocked("candidate topology must end at the exact candidate head/tree")
-    return {
-        "candidate_head_sha": candidate_sha,
-        "candidate_head_tree_sha": candidate_tree_sha,
-        "candidate_commits": normalized,
-    }
+        raise _Blocked("candidate topology must end at exact candidate head/tree")
+    return {"candidate_head_sha": candidate_sha, "candidate_head_tree_sha": candidate_tree_sha, "candidate_commits": normalized}
 
 
-def _prepare(data: dict[str, Any]) -> dict[str, Any]:
+def _prepare(data: dict[str, Any], *, trust_level: str) -> dict[str, Any]:
     effect_kind = _string(data.get("effect_kind"), "effect_kind")
     if effect_kind not in EFFECT_KINDS:
         raise _Blocked(f"effect_kind must be one of {sorted(EFFECT_KINDS)}")
@@ -328,17 +255,24 @@ def _prepare(data: dict[str, Any]) -> dict[str, Any]:
     frozen_source_sha = _sha40(data.get("frozen_source_sha"), "frozen_source_sha")
     expected_public_result = _object(data.get("expected_public_result"), "expected_public_result")
 
-    base_observation = _validate_base_observation(
-        data.get("base_observation"), effect_kind=effect_kind, repository=repository, base_ref=base_ref
-    )
-    candidate_observation = _validate_candidate_observation(
-        data.get("candidate_observation"),
-        repository=repository,
-        candidate_ref_or_pr_head=candidate_ref,
-    )
-    base_sha = base_observation["sha"]
-    candidate_sha = candidate_observation["sha"]
-    candidate_tree_sha = candidate_observation["tree_sha"]
+    base = _object(data.get("base_observation"), "base_observation")
+    _require_keys(base, {"purpose", "repository", "base_ref", "sha", "observed_at", "evidence_ref"}, "base_observation")
+    if base.get("purpose") != _expected_pre_purpose(effect_kind):
+        raise _Blocked(f"{effect_kind} requires a separately fresh {_expected_pre_purpose(effect_kind)} observation")
+    if base.get("repository") != repository or base.get("base_ref") != base_ref:
+        raise _Blocked("base observation is bound to different repository/base ref")
+    base_sha = _sha40(base.get("sha"), "base_observation.sha")
+    _timestamp(base.get("observed_at"), "base_observation.observed_at")
+    _string(base.get("evidence_ref"), "base_observation.evidence_ref")
+
+    candidate = _object(data.get("candidate_observation"), "candidate_observation")
+    _require_keys(candidate, {"repository", "candidate_ref_or_pr_head", "sha", "tree_sha", "observed_at", "evidence_ref"}, "candidate_observation")
+    if candidate.get("repository") != repository or candidate.get("candidate_ref_or_pr_head") != candidate_ref:
+        raise _Blocked("candidate observation is bound to different repository/ref")
+    candidate_sha = _sha40(candidate.get("sha"), "candidate_observation.sha")
+    candidate_tree_sha = _sha40(candidate.get("tree_sha"), "candidate_observation.tree_sha")
+    _timestamp(candidate.get("observed_at"), "candidate_observation.observed_at")
+    _string(candidate.get("evidence_ref"), "candidate_observation.evidence_ref")
 
     ancestry = _object(data.get("ancestry"), "ancestry")
     _require_keys(ancestry, {"frozen_to_base", "base_to_candidate", "merge_base_sha"}, "ancestry")
@@ -346,21 +280,24 @@ def _prepare(data: dict[str, Any]) -> dict[str, Any]:
     base_to_candidate = _object(ancestry.get("base_to_candidate"), "ancestry.base_to_candidate")
     _require_keys(frozen_to_base, {"status", "evidence_ref"}, "ancestry.frozen_to_base")
     _require_keys(base_to_candidate, {"status", "evidence_ref"}, "ancestry.base_to_candidate")
-    relation = _base_relation(frozen_source_sha, base_sha, frozen_to_base)
+    _string(frozen_to_base.get("evidence_ref"), "ancestry.frozen_to_base.evidence_ref")
+    _string(base_to_candidate.get("evidence_ref"), "ancestry.base_to_candidate.evidence_ref")
+    if frozen_source_sha == base_sha:
+        if frozen_to_base.get("status") not in {EQUAL, PROVEN_ANCESTOR}:
+            raise _Blocked("frozen-source/current-base equality is not positively proven")
+        relation = BASE_EQUALS
+    else:
+        if frozen_to_base.get("status") != PROVEN_ANCESTOR:
+            raise _Blocked("FROZEN_SOURCE_NOT_PROVEN_ANCESTOR_OF_CURRENT_BASE")
+        relation = BASE_ADVANCED
     if base_to_candidate.get("status") != PROVEN_ANCESTOR:
         raise _Blocked("CURRENT_BASE_NOT_PROVEN_ANCESTOR_OF_CANDIDATE")
-    _string(base_to_candidate.get("evidence_ref"), "ancestry.base_to_candidate.evidence_ref")
     merge_base_sha = _sha40(ancestry.get("merge_base_sha"), "ancestry.merge_base_sha")
     if merge_base_sha != base_sha:
-        raise _Blocked("merge base does not equal the exact proven current base")
+        raise _Blocked("merge base does not equal exact proven current base")
 
-    topology = _normalize_topology(
-        data.get("candidate_commit_topology"),
-        candidate_sha=candidate_sha,
-        candidate_tree_sha=candidate_tree_sha,
-    )
+    topology = _normalize_topology(data.get("candidate_commit_topology"), candidate_sha=candidate_sha, candidate_tree_sha=candidate_tree_sha)
     changed_entries = _normalize_changed_entries(data.get("changed_entries"))
-
     diff_manifest = {
         "schema_version": "projector-authorized-diff-manifest/1.0",
         "repository": repository,
@@ -391,12 +328,14 @@ def _prepare(data: dict[str, Any]) -> dict[str, Any]:
     }
     effect_hash = sha256_json(effect_descriptor)
     return {
-        "schema_version": "projector-public-effect-gate-preparation/1.0",
+        "schema_version": "projector-public-effect-gate-preparation/1.1",
         "status": "AWAITING_HUMAN_PUBLIC_EFFECT_AUTHORITY",
+        "trust_level": trust_level,
         "effect_evidence_status": "NOT_YET_CREATED",
         "target_write_performed": False,
         "architecture_parent": ARCHITECTURE_PARENT,
         "architecture_amendment": ARCHITECTURE_AMENDMENT,
+        "source_invocation_id": data.get("source_invocation_id"),
         "public_effect_gate": {
             "effect_kind": effect_kind,
             "repository": repository,
@@ -407,8 +346,8 @@ def _prepare(data: dict[str, Any]) -> dict[str, Any]:
             "base_relation": relation,
             "candidate_sha": candidate_sha,
             "candidate_tree_sha": candidate_tree_sha,
-            "base_observation_ref": base_observation["evidence_ref"],
-            "candidate_observation_ref": candidate_observation["evidence_ref"],
+            "base_observation_ref": base["evidence_ref"],
+            "candidate_observation_ref": candidate["evidence_ref"],
             "ancestry_evidence_refs": [frozen_to_base["evidence_ref"], base_to_candidate["evidence_ref"]],
             "diff_manifest": diff_manifest,
             "diff_manifest_sha256": diff_hash,
@@ -424,17 +363,16 @@ def _prepare(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def prepare_public_effect_gate(data: dict[str, Any]) -> dict[str, Any]:
-    """Build the exact pre-effect tuple or return BLOCKED+UNKNOWN without writing."""
-
+    """Pure manifest builder. Caller-declared evidence is NEVER effect-capable."""
     try:
-        return _prepare(_object(data, "public effect input"))
+        return _prepare(_object(data, "public effect input"), trust_level="CALLER_DECLARED_NOT_EFFECT_CAPABLE")
     except _Blocked as exc:
         return _blocked(exc.reason)
 
 
 def authority_request(prepared: dict[str, Any]) -> dict[str, Any]:
     if prepared.get("status") != "AWAITING_HUMAN_PUBLIC_EFFECT_AUTHORITY":
-        raise PublicEffectGateError("authority request requires a successfully prepared gate")
+        raise PublicEffectGateError("authority request requires successfully prepared gate")
     gate = prepared["public_effect_gate"]
     return {
         "schema_version": "projector-public-effect-authority-request/1.0",
@@ -457,61 +395,14 @@ def authority_request(prepared: dict[str, Any]) -> dict[str, Any]:
 def _validate_human_authority(prepared: dict[str, Any], authority: Any) -> dict[str, Any]:
     record = _object(authority, "human_authority")
     request = authority_request(prepared)
-    required = set(request) | {"decision", "human_decision_evidence_ref"}
-    _require_keys(record, required, "human_authority")
+    _require_keys(record, set(request) | {"decision", "human_decision_evidence_ref"}, "human_authority")
     if record.get("decision") != "AUTHORIZE":
         raise _Blocked("Human PUBLIC_EFFECT decision is not AUTHORIZE")
-    if record.get("classification") != "GENUINE_HUMAN_OWNED_GATE":
-        raise _Blocked("Human authority classification must be GENUINE_HUMAN_OWNED_GATE")
-    if record.get("authority_basis") != "PUBLIC_EFFECT":
-        raise _Blocked("Human authority basis must be PUBLIC_EFFECT")
     _string(record.get("human_decision_evidence_ref"), "human_authority.human_decision_evidence_ref")
     for key, expected in request.items():
         if record.get(key) != expected:
             raise _Blocked(f"Human PUBLIC_EFFECT authority does not bind exact {key}")
     return record
-
-
-def _validate_revalidation(prepared: dict[str, Any], value: Any) -> dict[str, Any]:
-    revalidation = _object(value, "write_time_revalidation")
-    required = {
-        "schema_version",
-        "effect_kind",
-        "repository",
-        "base_ref",
-        "candidate_ref_or_pr_head",
-        "observed_base_sha",
-        "observed_candidate_sha",
-        "diff_manifest",
-        "effect_descriptor",
-        "observed_at",
-        "evidence_ref",
-    }
-    _require_keys(revalidation, required, "write_time_revalidation")
-    gate = prepared["public_effect_gate"]
-    if revalidation.get("effect_kind") != gate["effect_kind"]:
-        raise _Blocked("write-time effect kind differs from Human-bound effect")
-    if revalidation.get("repository") != gate["repository"] or revalidation.get("base_ref") != gate["base_ref"]:
-        raise _Blocked("write-time repository/base differs from Human-bound effect")
-    if revalidation.get("candidate_ref_or_pr_head") != gate["candidate_ref_or_pr_head"]:
-        raise _Blocked("write-time target ref/head differs from Human-bound effect")
-    if _sha40(revalidation.get("observed_base_sha"), "write_time_revalidation.observed_base_sha") != gate["fresh_base_sha"]:
-        raise _Blocked("write-time current base differs from Human-bound B_PRE_X")
-    if _sha40(
-        revalidation.get("observed_candidate_sha"), "write_time_revalidation.observed_candidate_sha"
-    ) != gate["candidate_sha"]:
-        raise _Blocked("write-time candidate differs from Human-bound C_PRE_X")
-    _timestamp(revalidation.get("observed_at"), "write_time_revalidation.observed_at")
-    _string(revalidation.get("evidence_ref"), "write_time_revalidation.evidence_ref")
-    diff_manifest = _object(revalidation.get("diff_manifest"), "write_time_revalidation.diff_manifest")
-    effect_descriptor = _object(
-        revalidation.get("effect_descriptor"), "write_time_revalidation.effect_descriptor"
-    )
-    if sha256_json(diff_manifest) != gate["diff_manifest_sha256"] or diff_manifest != gate["diff_manifest"]:
-        raise _Blocked("write-time diff manifest differs from Human-bound D_HASH_X")
-    if sha256_json(effect_descriptor) != gate["effect_sha256"] or effect_descriptor != gate["effect_descriptor"]:
-        raise _Blocked("write-time effect descriptor differs from Human-bound E_HASH_X")
-    return revalidation
 
 
 def execute_authorized_public_effect(
@@ -520,32 +411,406 @@ def execute_authorized_public_effect(
     write_time_revalidation: dict[str, Any],
     sink: PublicEffectWriteSink,
 ) -> dict[str, Any]:
-    """Invoke sink exactly once only after the entire v2.1 gate passes."""
+    """Legacy caller-supplied path is intentionally disarmed after P4 FAIL."""
+    _ = prepared, human_authority, write_time_revalidation, sink
+    return _blocked("UNTRUSTED_CALLER_EVIDENCE_NOT_EFFECT_CAPABLE")
 
-    if prepared.get("status") != "AWAITING_HUMAN_PUBLIC_EFFECT_AUTHORITY":
-        return _blocked("public effect was not successfully prepared")
+
+def _branch_name(ref: str, name: str) -> str:
+    value = _string(ref, name)
+    return value[len("refs/heads/"):] if value.startswith("refs/heads/") else value
+
+
+def _repo_name(value: str) -> str:
+    if value.count("/") != 1:
+        raise _Blocked("repository must use owner/name form")
+    return value
+
+
+class GitRepositoryEvidenceSource:
+    """Concrete read-side Git adapter. Production instances target github.com exactly."""
+
+    def __init__(self, worktree: str | Path, repository: str) -> None:
+        self.worktree = Path(worktree).resolve()
+        self.repository = _repo_name(repository)
+        self.remote_url = f"https://github.com/{self.repository}.git"
+        self.test_only = False
+        if not (self.worktree / ".git").exists():
+            raise PublicEffectGateError("trusted Git worktree must contain .git")
+
+    @classmethod
+    def for_non_public_test(cls, worktree: str | Path, repository: str, remote_url: str) -> "GitRepositoryEvidenceSource":
+        obj = cls.__new__(cls)
+        obj.worktree = Path(worktree).resolve()
+        obj.repository = _repo_name(repository)
+        obj.remote_url = _string(remote_url, "test remote_url")
+        obj.test_only = True
+        if not (obj.worktree / ".git").exists():
+            raise PublicEffectGateError("test Git worktree must contain .git")
+        return obj
+
+    def _run(self, args: list[str], *, text: bool = True, check: bool = True) -> str | bytes:
+        try:
+            proc = subprocess.run(
+                ["git", "-C", str(self.worktree), *args],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=text,
+                check=False,
+            )
+        except OSError as exc:
+            raise _Blocked(f"trusted Git invocation failed: {exc}") from exc
+        if check and proc.returncode != 0:
+            stderr = proc.stderr if isinstance(proc.stderr, str) else proc.stderr.decode("utf-8", "replace")
+            raise _Blocked(f"trusted Git proof failed: {' '.join(args[:3])}: {stderr.strip()}")
+        return proc.stdout
+
+    def _remote_head(self, branch: str) -> str:
+        output = self._run(["ls-remote", self.remote_url, f"refs/heads/{branch}"])
+        assert isinstance(output, str)
+        rows = [line for line in output.splitlines() if line.strip()]
+        if len(rows) != 1:
+            raise _Blocked(f"fresh remote head unavailable or ambiguous for {branch}")
+        sha, ref = rows[0].split("\t", 1)
+        if ref != f"refs/heads/{branch}":
+            raise _Blocked("fresh remote head returned unexpected ref")
+        return _sha40(sha, "fresh remote head")
+
+    def _fetch_branch(self, branch: str, expected_sha: str) -> None:
+        self._run(["fetch", "--quiet", "--no-tags", self.remote_url, f"refs/heads/{branch}"])
+        fetched = self._run(["rev-parse", "FETCH_HEAD"])
+        assert isinstance(fetched, str)
+        if fetched.strip() != expected_sha:
+            raise _Blocked("remote branch changed during trusted observation")
+
+    def _is_ancestor(self, older: str, newer: str) -> bool:
+        proc = subprocess.run(
+            ["git", "-C", str(self.worktree), "merge-base", "--is-ancestor", older, newer],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        if proc.returncode == 0:
+            return True
+        if proc.returncode == 1:
+            return False
+        raise _Blocked(f"trusted ancestry proof unavailable: {proc.stderr.strip()}")
+
+    def _object_type(self, oid: str) -> str:
+        output = self._run(["cat-file", "-t", oid])
+        assert isinstance(output, str)
+        object_type = output.strip()
+        if object_type not in OBJECT_TYPES:
+            raise _Blocked(f"unsupported Git object type: {object_type}")
+        return object_type
+
+    def _raw_diff_entries(self, base_sha: str, candidate_sha: str) -> list[dict[str, Any]]:
+        output = self._run(["diff", "--raw", "-z", "--no-abbrev", "--find-renames", "--find-copies", base_sha, candidate_sha, "--"], text=False)
+        assert isinstance(output, bytes)
+        parts = output.split(b"\0")
+        entries: list[dict[str, Any]] = []
+        i = 0
+        kind_map = {"A": "ADDED", "M": "MODIFIED", "D": "DELETED", "R": "RENAMED", "C": "COPIED", "T": "TYPE_CHANGED"}
+        while i < len(parts) and parts[i]:
+            token = parts[i].decode("utf-8", "surrogateescape")
+            i += 1
+            if "\t" in token:
+                header, first_path = token.split("\t", 1)
+            else:
+                header = token
+                if i >= len(parts):
+                    raise _Blocked("malformed trusted raw diff")
+                first_path = parts[i].decode("utf-8", "surrogateescape")
+                i += 1
+            fields = header[1:].split()
+            if not header.startswith(":") or len(fields) < 5:
+                raise _Blocked("malformed trusted raw diff header")
+            old_mode, new_mode, old_oid, new_oid, status = fields[:5]
+            code = status[0]
+            if code not in kind_map:
+                raise _Blocked(f"unsupported trusted Git diff status: {status}")
+            if code in {"R", "C"}:
+                if i >= len(parts):
+                    raise _Blocked("malformed trusted rename/copy diff")
+                second_path = parts[i].decode("utf-8", "surrogateescape")
+                i += 1
+                previous_path, path = first_path, second_path
+            else:
+                previous_path, path = None, first_path
+
+            def obj(mode: str, oid: str) -> dict[str, Any]:
+                if mode == "000000" or set(oid) == {"0"}:
+                    return {"object_id": None, "object_type": None, "git_mode": None}
+                exact_oid = _sha40(oid, "trusted diff object id")
+                return {"object_id": exact_oid, "object_type": self._object_type(exact_oid), "git_mode": mode}
+
+            entries.append({
+                "path": path,
+                "previous_path": previous_path,
+                "change_kind": kind_map[code],
+                "base_object": obj(old_mode, old_oid),
+                "candidate_object": obj(new_mode, new_oid),
+            })
+        return entries
+
+    def _topology(self, base_sha: str, candidate_sha: str) -> dict[str, Any]:
+        tree = self._run(["show", "-s", "--format=%T", candidate_sha])
+        assert isinstance(tree, str)
+        candidate_tree_sha = _sha40(tree.strip(), "candidate tree")
+        revs = self._run(["rev-list", "--reverse", "--topo-order", f"{base_sha}..{candidate_sha}"])
+        assert isinstance(revs, str)
+        commits = [line.strip() for line in revs.splitlines() if line.strip()]
+        if not commits or commits[-1] != candidate_sha:
+            raise _Blocked("trusted candidate topology does not terminate at candidate head")
+        items: list[dict[str, Any]] = []
+        for commit_sha in commits:
+            line = self._run(["show", "-s", "--format=%H%x00%T%x00%P", commit_sha])
+            assert isinstance(line, str)
+            fields = line.rstrip("\n").split("\x00")
+            if len(fields) != 3:
+                raise _Blocked("trusted candidate topology record malformed")
+            sha, tree_sha, parents = fields
+            items.append({
+                "commit_sha": _sha40(sha, "topology commit"),
+                "tree_sha": _sha40(tree_sha, "topology tree"),
+                "ordered_parent_shas": [_sha40(p, "topology parent") for p in parents.split() if p],
+            })
+        return {
+            "candidate_head_sha": candidate_sha,
+            "candidate_head_tree_sha": candidate_tree_sha,
+            "candidate_commits": items,
+        }
+
+    def observe(self, spec: dict[str, Any]) -> dict[str, Any]:
+        effect_kind = _string(spec.get("effect_kind"), "effect_kind")
+        if effect_kind not in EFFECT_KINDS:
+            raise _Blocked("unsupported effect kind")
+        repository = _repo_name(_string(spec.get("repository"), "repository"))
+        if repository != self.repository:
+            raise _Blocked("trusted Git source is bound to a different repository")
+        base_ref = _branch_name(_string(spec.get("base_ref"), "base_ref"), "base_ref")
+        candidate_ref = _branch_name(_string(spec.get("candidate_ref_or_pr_head"), "candidate_ref_or_pr_head"), "candidate_ref_or_pr_head")
+        frozen = _sha40(spec.get("frozen_source_sha"), "frozen_source_sha")
+        expected_public_result = _object(spec.get("expected_public_result"), "expected_public_result")
+        invocation = secrets.token_hex(16)
+        observed_at = _utc_now()
+
+        base_sha = self._remote_head(base_ref)
+        self._fetch_branch(base_ref, base_sha)
+        if effect_kind == "CREATE_OR_UPDATE_PR":
+            candidate_sha = self._remote_head(candidate_ref)
+            self._fetch_branch(candidate_ref, candidate_sha)
+        else:
+            local = self._run(["rev-parse", f"{candidate_ref}^{{commit}}"])
+            assert isinstance(local, str)
+            candidate_sha = _sha40(local.strip(), "local candidate head")
+
+        if frozen == base_sha:
+            frozen_status = EQUAL
+        elif self._is_ancestor(frozen, base_sha):
+            frozen_status = PROVEN_ANCESTOR
+        else:
+            raise _Blocked("FROZEN_SOURCE_NOT_PROVEN_ANCESTOR_OF_CURRENT_BASE")
+        if not self._is_ancestor(base_sha, candidate_sha):
+            raise _Blocked("CURRENT_BASE_NOT_PROVEN_ANCESTOR_OF_CANDIDATE")
+        merge_base = self._run(["merge-base", base_sha, candidate_sha])
+        assert isinstance(merge_base, str)
+        merge_base_sha = _sha40(merge_base.strip(), "trusted merge base")
+        if merge_base_sha != base_sha:
+            raise _Blocked("trusted merge base does not equal current base")
+
+        topology = self._topology(base_sha, candidate_sha)
+        changed_entries = self._raw_diff_entries(base_sha, candidate_sha)
+        evidence_prefix = f"git-live:{repository}:{invocation}"
+        return {
+            "source_invocation_id": invocation,
+            "effect_kind": effect_kind,
+            "repository": repository,
+            "base_ref": base_ref,
+            "candidate_ref_or_pr_head": candidate_ref,
+            "frozen_source_sha": frozen,
+            "base_observation": {
+                "purpose": _expected_pre_purpose(effect_kind),
+                "repository": repository,
+                "base_ref": base_ref,
+                "sha": base_sha,
+                "observed_at": observed_at,
+                "evidence_ref": f"{evidence_prefix}:base:{base_sha}",
+            },
+            "candidate_observation": {
+                "repository": repository,
+                "candidate_ref_or_pr_head": candidate_ref,
+                "sha": candidate_sha,
+                "tree_sha": topology["candidate_head_tree_sha"],
+                "observed_at": observed_at,
+                "evidence_ref": f"{evidence_prefix}:candidate:{candidate_sha}",
+            },
+            "ancestry": {
+                "frozen_to_base": {"status": frozen_status, "evidence_ref": f"{evidence_prefix}:ancestry:{frozen}:{base_sha}"},
+                "base_to_candidate": {"status": PROVEN_ANCESTOR, "evidence_ref": f"{evidence_prefix}:ancestry:{base_sha}:{candidate_sha}"},
+                "merge_base_sha": merge_base_sha,
+            },
+            "candidate_commit_topology": topology,
+            "changed_entries": changed_entries,
+            "expected_public_result": expected_public_result,
+        }
+
+
+class GitHubIssueCommentAuthoritySource:
+    """Concrete durable Human authority source: one immutable GitHub Issue Comment."""
+
+    def __init__(
+        self,
+        repository: str,
+        issue_number: int,
+        comment_id: int,
+        actor_login: str,
+        actor_id: int,
+        *,
+        token_env: str = "GITHUB_TOKEN",
+    ) -> None:
+        self.repository = _repo_name(repository)
+        if issue_number <= 0 or comment_id <= 0 or actor_id <= 0:
+            raise PublicEffectGateError("issue/comment/actor IDs must be positive")
+        self.issue_number = issue_number
+        self.comment_id = comment_id
+        self.actor_login = _string(actor_login, "actor_login")
+        self.actor_id = actor_id
+        self.token_env = token_env
+        self.test_only = False
+        self._test_comment: dict[str, Any] | None = None
+
+    @classmethod
+    def for_non_public_test(
+        cls,
+        repository: str,
+        issue_number: int,
+        comment_id: int,
+        actor_login: str,
+        actor_id: int,
+        comment: dict[str, Any],
+    ) -> "GitHubIssueCommentAuthoritySource":
+        obj = cls(repository, issue_number, comment_id, actor_login, actor_id)
+        obj.test_only = True
+        obj._test_comment = json.loads(json.dumps(comment))
+        return obj
+
+    def _fetch_comment(self) -> dict[str, Any]:
+        if self._test_comment is not None:
+            return json.loads(json.dumps(self._test_comment))
+        url = f"https://api.github.com/repos/{self.repository}/issues/comments/{self.comment_id}"
+        headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+        token = os.environ.get(self.token_env)
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        request = urllib.request.Request(url, headers=headers, method="GET")
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:
+                if getattr(response, "status", 200) != 200:
+                    raise _Blocked("trusted Human authority source returned non-200")
+                payload = json.loads(response.read().decode("utf-8"))
+        except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
+            raise _Blocked(f"trusted Human authority retrieval failed: {exc}") from exc
+        return _object(payload, "GitHub Human authority comment")
+
+    def load_authority(self, expected_request: dict[str, Any]) -> dict[str, Any]:
+        comment = self._fetch_comment()
+        if comment.get("id") != self.comment_id:
+            raise _Blocked("GitHub Human authority comment ID mismatch")
+        issue_url = _string(comment.get("issue_url"), "comment.issue_url")
+        if issue_url != f"https://api.github.com/repos/{self.repository}/issues/{self.issue_number}":
+            raise _Blocked("GitHub Human authority comment is bound to different Issue")
+        user = _object(comment.get("user"), "comment.user")
+        if user.get("login") != self.actor_login or user.get("id") != self.actor_id or user.get("type") != "User":
+            raise _Blocked("GitHub Human authority actor identity mismatch")
+        if comment.get("performed_via_github_app") not in {None}:
+            raise _Blocked("GitHub Human authority comment was performed via GitHub App")
+        created_at = _timestamp(comment.get("created_at"), "comment.created_at")
+        updated_at = _timestamp(comment.get("updated_at"), "comment.updated_at")
+        if created_at != updated_at:
+            raise _Blocked("GitHub Human authority comment was edited")
+        body_text = _string(comment.get("body"), "comment.body")
+        try:
+            body = json.loads(body_text)
+        except json.JSONDecodeError as exc:
+            raise _Blocked("GitHub Human authority body is not exact JSON") from exc
+        body = _object(body, "GitHub Human authority body")
+        if set(body) != {"schema_version", "request", "decision", "nonce"}:
+            raise _Blocked("GitHub Human authority body must contain exact decision fields")
+        if body.get("schema_version") != "projector-public-effect-human-decision/1.0":
+            raise _Blocked("GitHub Human authority schema mismatch")
+        if body.get("decision") != "AUTHORIZE":
+            raise _Blocked("GitHub Human authority decision is not AUTHORIZE")
+        _string(body.get("nonce"), "Human authority nonce")
+        if body.get("request") != expected_request:
+            raise _Blocked("GitHub Human authority request does not equal exact live tuple")
+        node_id = _string(comment.get("node_id"), "comment.node_id")
+        evidence_ref = f"github-issue-comment:{self.repository}:{self.issue_number}:{self.comment_id}:{node_id}:{hashlib.sha256(body_text.encode('utf-8')).hexdigest()}"
+        return {**expected_request, "decision": "AUTHORIZE", "human_decision_evidence_ref": evidence_ref}
+
+
+def prepare_public_effect_gate_from_trusted_git(spec: dict[str, Any], git_source: GitRepositoryEvidenceSource) -> dict[str, Any]:
+    """Obtain a fresh B_PRE_X and exact Git proof from the concrete read adapter."""
+    if type(git_source) is not GitRepositoryEvidenceSource:
+        return _blocked("UNTRUSTED_GIT_EVIDENCE_SOURCE_TYPE")
     try:
-        authority = _validate_human_authority(prepared, human_authority)
-        revalidation = _validate_revalidation(prepared, write_time_revalidation)
+        observed = git_source.observe(_object(spec, "effect spec"))
+        return _prepare(observed, trust_level="TRUSTED_LIVE_GIT")
     except _Blocked as exc:
         return _blocked(exc.reason)
 
-    write_result = sink.write(prepared["public_effect_gate"]["effect_descriptor"])
+
+def _validated_write_result(write_result: Any) -> dict[str, Any]:
+    result = _object(write_result, "write_result")
+    _require_keys(result, {"result_ref", "result_identity", "observed_at"}, "write_result")
+    _string(result.get("result_ref"), "write_result.result_ref")
+    _string(result.get("result_identity"), "write_result.result_identity")
+    _timestamp(result.get("observed_at"), "write_result.observed_at")
+    return result
+
+
+def execute_authorized_public_effect_from_trusted_sources(
+    spec: dict[str, Any],
+    human_authority_source: GitHubIssueCommentAuthoritySource,
+    git_source: GitRepositoryEvidenceSource,
+    sink: PublicEffectWriteSink,
+) -> dict[str, Any]:
+    """The sole effect-capable path: live Git -> Human source -> live Git -> write."""
+    if type(git_source) is not GitRepositoryEvidenceSource:
+        return _blocked("UNTRUSTED_GIT_EVIDENCE_SOURCE_TYPE")
+    if type(human_authority_source) is not GitHubIssueCommentAuthoritySource:
+        return _blocked("UNTRUSTED_HUMAN_AUTHORITY_SOURCE_TYPE")
+    if (git_source.test_only or human_authority_source.test_only) and type(sink) is not InMemoryNonPublicTestSink:
+        return _blocked("TEST_ONLY_TRUSTED_SOURCE_CANNOT_REACH_EXTERNAL_SINK")
     try:
-        result = _object(write_result, "write_result")
-        _require_keys(result, {"result_ref", "result_identity", "observed_at"}, "write_result")
-        _string(result.get("result_ref"), "write_result.result_ref")
-        _string(result.get("result_identity"), "write_result.result_identity")
-        _timestamp(result.get("observed_at"), "write_result.observed_at")
+        first_observed = git_source.observe(_object(spec, "effect spec"))
+        first = _prepare(first_observed, trust_level="TRUSTED_LIVE_GIT")
+        request = authority_request(first)
+        authority = human_authority_source.load_authority(request)
+        _validate_human_authority(first, authority)
+
+        second_observed = git_source.observe(_object(spec, "effect spec"))
+        second = _prepare(second_observed, trust_level="TRUSTED_LIVE_GIT_WRITE_TIME_REVALIDATION")
+        if first.get("source_invocation_id") == second.get("source_invocation_id"):
+            raise _Blocked("write-time Git observation was not a distinct trusted invocation")
+        if authority_request(second) != request:
+            raise _Blocked("write-time live Git state differs from Human-authorized tuple")
+        _validate_human_authority(second, authority)
+    except _Blocked as exc:
+        return _blocked(exc.reason)
+
+    write_result = sink.write(second["public_effect_gate"]["effect_descriptor"])
+    try:
+        result = _validated_write_result(write_result)
     except _Blocked as exc:
         raise PublicEffectGateError(
-            "write sink returned without exact durable result identity; external effect requires reconciliation: "
-            + exc.reason
+            "write sink returned without exact durable result identity; external effect requires reconciliation: " + exc.reason
         ) from exc
 
-    gate = prepared["public_effect_gate"]
+    gate = second["public_effect_gate"]
     return {
-        "schema_version": "projector-public-effect-gate-result/1.0",
+        "schema_version": "projector-public-effect-gate-result/1.1",
         "status": "PUBLIC_EFFECT_COMPLETED_REVIEW_REQUIRED",
         "effect_evidence_status": "OBSERVED",
         "target_write_performed": True,
@@ -569,7 +834,8 @@ def execute_authorized_public_effect(
             "authority_classification": "GENUINE_HUMAN_OWNED_GATE",
             "authority_basis": "PUBLIC_EFFECT",
             "write_time_revalidation": "PASS",
-            "write_time_revalidation_evidence_ref": revalidation["evidence_ref"],
+            "write_time_revalidation_evidence_ref": second["public_effect_gate"]["base_observation_ref"],
+            "write_time_source_invocation_id": second["source_invocation_id"],
             "write_performed": True,
             "write_result_ref": result["result_ref"],
         },
@@ -582,8 +848,7 @@ def execute_authorized_public_effect(
 
 
 def write_record_exclusive_atomic(path: str | Path, value: dict[str, Any]) -> None:
-    """Persist an exact gate/result record without overwriting prior evidence."""
-
+    """Persist exact gate/result evidence without overwriting prior evidence."""
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
