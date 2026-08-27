@@ -29,15 +29,9 @@
       "name": "Capability evidence promotion gate",
       "claim": "Given a formal capability registry entry, the repository verifier rejects unsupported status promotion, unregistered formal claims, missing evidence paths, missing CI execution declarations, insufficient RELIABLE evidence, and obvious Python stubs in registered implementation paths.",
       "status": "TESTED",
-      "implementation": [
-        "scripts/verify_capability_evidence.py"
-      ],
-      "executable_evidence": [
-        "tests/capability/test_capability_registry_gate.py"
-      ],
-      "failure_evidence": [
-        "tests/capability/test_capability_registry_gate.py"
-      ],
+      "implementation": ["scripts/verify_capability_evidence.py"],
+      "executable_evidence": ["tests/capability/test_capability_registry_positive_evidence.py"],
+      "failure_evidence": ["tests/capability/test_capability_registry_failure_evidence.py"],
       "integration_evidence": [],
       "real_work_evidence": [],
       "reliability_evidence": [],
