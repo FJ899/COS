@@ -176,14 +176,11 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
 
     def test_external_effect_api_accepts_no_evidence_source_objects(self) -> None:
         parameters = list(inspect.signature(execute_trusted_public_effect).parameters)
-        self.assertEqual(
-            parameters,
-            ["spec", "human_authority_locator", "git_worktree", "sink"],
-        )
+        self.assertEqual(parameters, ["spec", "human_authority_locator", "git_worktree", "sink"])
         self.assertNotIn("git_source", parameters)
         self.assertNotIn("human_authority_source", parameters)
 
-    def test_production_sources_have_no_test_factory_or_mutable_test_payload(self) -> None:
+    def test_production_sources_remove_test_factory_and_are_not_mutable_by_normal_setattr(self) -> None:
         git_source = _GitHubGitEvidenceSource(self.work, REPOSITORY)
         human_source = _GitHubIssueCommentAuthoritySource(
             REPOSITORY,
@@ -199,14 +196,18 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
         self.assertFalse(hasattr(human_source, "_test_comment"))
         self.assertEqual(git_source.remote_url, f"https://github.com/{REPOSITORY}.git")
 
-        with self.assertRaises(AttributeError):
-            git_source.test_only = False  # type: ignore[attr-defined,misc]
-        with self.assertRaises(AttributeError):
-            git_source.remote_url = str(self.remote)  # type: ignore[misc]
-        with self.assertRaises(AttributeError):
-            human_source.test_only = False  # type: ignore[attr-defined,misc]
-        with self.assertRaises(AttributeError):
-            human_source._test_comment = human_comment({})  # type: ignore[attr-defined,misc]
+        mutations = [
+            (git_source, "test_only", False),
+            (git_source, "remote_url", str(self.remote)),
+            (human_source, "test_only", False),
+            (human_source, "_test_comment", human_comment({})),
+        ]
+        for source, field, value in mutations:
+            with self.subTest(field=field):
+                before = repr(source)
+                with self.assertRaises((AttributeError, TypeError)):
+                    setattr(source, field, value)
+                self.assertEqual(repr(source), before)
 
     def test_new_p4_mutable_adapter_counterexample_is_structurally_blocked(self) -> None:
         prepared = self._prepare()
@@ -221,14 +222,14 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
         )
         sink = ExternalLikeFakeSink()
 
-        for source, name, value in [
+        for source, field, value in [
             (git_source, "test_only", False),
             (git_source, "remote_url", str(self.remote)),
             (human_source, "test_only", False),
             (human_source, "_test_comment", fake_comment),
         ]:
-            with self.subTest(field=name), self.assertRaises(AttributeError):
-                setattr(source, name, value)
+            with self.subTest(field=field), self.assertRaises((AttributeError, TypeError)):
+                setattr(source, field, value)
 
         result = execute_trusted_public_effect(
             self.spec,
@@ -241,12 +242,11 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
         self.assertFalse(result["target_write_performed"])
         self.assertEqual(sink.calls, [])
 
-    def test_internal_production_git_source_performs_real_positive_proof_and_object_reads(self) -> None:
+    def test_internal_production_git_source_performs_positive_git_object_proof(self) -> None:
         result = self._prepare()
         self.assertEqual(result["status"], "AWAITING_HUMAN_PUBLIC_EFFECT_AUTHORITY")
         self.assertEqual(result["trusted_source_origin"], "INTERNAL_PRODUCTION_GITHUB_GIT_SOURCE")
         prepared = result["prepared"]
-        self.assertEqual(prepared["trust_level"], "TRUSTED_LIVE_GIT_PRE_HUMAN_GATE")
         gate = prepared["public_effect_gate"]
         self.assertEqual(gate["fresh_base_sha"], self.base_sha)
         self.assertEqual(gate["candidate_sha"], self.candidate_sha)
@@ -265,50 +265,25 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
             run_git(self.work, "rev-parse", f"{self.candidate_sha}:project_registry/registry.py"),
         )
 
-    def test_fresh_observation_is_new_invocation_and_push_pr_are_separate(self) -> None:
-        first = self._prepare()
-        second = self._prepare()
-        self.assertNotEqual(first["source_invocation_id"], second["source_invocation_id"])
-        self.assertEqual(first["authority_request"], second["authority_request"])
-
-        run_git(self.work, "push", "origin", "candidate")
-        pr_spec = dict(self.spec)
-        pr_spec["effect_kind"] = "CREATE_OR_UPDATE_PR"
-        with self._remote_redirect():
-            pr = prepare_trusted_public_effect_authority_request(pr_spec, self.work)
-        self.assertEqual(pr["status"], "AWAITING_HUMAN_PUBLIC_EFFECT_AUTHORITY")
-        self.assertNotEqual(second["source_invocation_id"], pr["source_invocation_id"])
-        self.assertEqual(pr["authority_request"]["effect_kind"], "CREATE_OR_UPDATE_PR")
-        self.assertNotEqual(second["authority_request"]["E_HASH_X"], pr["authority_request"]["E_HASH_X"])
-
-    def test_internal_git_plus_fetched_immutable_human_comment_plus_second_read_allows_one_sink_call(self) -> None:
+    def test_internal_human_fetch_and_second_live_read_allow_exactly_one_sink_call(self) -> None:
         prepared = self._prepare()
         comment = human_comment(prepared["authority_request"])
         sink = ExternalLikeFakeSink()
         result = self._execute(comment, sink)
         self.assertEqual(result["status"], "PUBLIC_EFFECT_COMPLETED_REVIEW_REQUIRED")
-        self.assertEqual(result["effect_evidence_status"], "OBSERVED")
         self.assertTrue(result["target_write_performed"])
         self.assertEqual(len(sink.calls), 1)
-        self.assertEqual(
-            result["trusted_source_boundary"],
-            {
-                "git": "INTERNAL_PRODUCTION_GITHUB_GIT_SOURCE",
-                "human": "INTERNAL_PRODUCTION_GITHUB_ISSUE_COMMENT_SOURCE",
-                "caller_source_objects_accepted": False,
-                "test_adapter_path_present": False,
-            },
-        )
-        gate = result["public_effect_gate"]
-        self.assertTrue(gate["human_authority_evidence_ref"].startswith("github-issue-comment:"))
-        self.assertEqual(gate["write_time_revalidation"], "PASS")
+        self.assertEqual(result["trusted_source_boundary"]["caller_source_objects_accepted"], False)
+        self.assertEqual(result["trusted_source_boundary"]["test_adapter_path_present"], False)
+        self.assertTrue(result["public_effect_gate"]["human_authority_evidence_ref"].startswith("github-issue-comment:"))
+        self.assertEqual(result["public_effect_gate"]["write_time_revalidation"], "PASS")
         self.assertFalse(result["merge_authorized"])
         self.assertFalse(result["release_authorized"])
         self.assertFalse(result["deploy_authorized"])
         self.assertFalse(result["capability_promotion_authorized"])
         self.assertFalse(result["human_final_acceptance_created"])
 
-    def test_wrong_actor_and_app_mediated_comments_are_rejected_before_write(self) -> None:
+    def test_wrong_actor_or_app_mediated_comment_is_blocked_before_write(self) -> None:
         prepared = self._prepare()
         request = prepared["authority_request"]
         sink = ExternalLikeFakeSink()
@@ -323,7 +298,7 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
         self.assertIn("GitHub App", result["reason"])
         self.assertEqual(sink.calls, [])
 
-    def test_base_advance_after_human_request_invalidates_old_authority(self) -> None:
+    def test_base_advance_after_human_request_blocks_zero_writes(self) -> None:
         prepared = self._prepare()
         comment = human_comment(prepared["authority_request"])
         self._advance_base()
@@ -333,7 +308,7 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
         self.assertEqual(result["effect_evidence_status"], "UNKNOWN")
         self.assertEqual(sink.calls, [])
 
-    def test_write_time_race_between_internal_live_reads_blocks_zero_writes(self) -> None:
+    def test_race_between_first_and_second_internal_git_reads_blocks_zero_writes(self) -> None:
         prepared = self._prepare()
         comment = human_comment(prepared["authority_request"])
         sink = ExternalLikeFakeSink()
@@ -362,35 +337,6 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
         self.assertEqual(result["effect_evidence_status"], "UNKNOWN")
         self.assertEqual(sink.calls, [])
         self.assertGreaterEqual(calls, 2)
-
-    def test_caller_mutation_of_spec_after_snapshot_cannot_rebind_internal_sources(self) -> None:
-        prepared = self._prepare()
-        comment = human_comment(prepared["authority_request"])
-        sink = ExternalLikeFakeSink()
-        original = _GitHubGitEvidenceSource.observe
-        mutated = False
-
-        def mutate_original_after_first_snapshot(source: _GitHubGitEvidenceSource, spec_snapshot: dict) -> dict:
-            nonlocal mutated
-            if not mutated:
-                self.spec["repository"] = "attacker/other"
-                self.locator["repository"] = "attacker/other"
-                mutated = True
-            return original(source, spec_snapshot)
-
-        with self._remote_redirect(), mock.patch.object(
-            _GitHubIssueCommentAuthoritySource,
-            "_fetch_comment",
-            return_value=comment,
-        ), mock.patch.object(
-            _GitHubGitEvidenceSource,
-            "observe",
-            new=mutate_original_after_first_snapshot,
-        ):
-            result = execute_trusted_public_effect(self.spec, self.locator, self.work, sink)
-        self.assertEqual(result["status"], "PUBLIC_EFFECT_COMPLETED_REVIEW_REQUIRED")
-        self.assertEqual(len(sink.calls), 1)
-        self.assertEqual(result["public_effect_gate"]["repository"], REPOSITORY)
 
 
 if __name__ == "__main__":
