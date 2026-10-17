@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import subprocess
 import sys
 import tempfile
@@ -164,6 +165,25 @@ class ProjectorRecoveryTests(unittest.TestCase):
         run["raw_human_intent"] = "silently rewritten intent"
         path.write_text(json.dumps(run, indent=2), encoding="utf-8")
         self._run("recover", "--run-dir", str(self.run_dir), expect=1)
+
+    def test_rehashed_history_must_obey_live_transition_rules(self) -> None:
+        path = self.run_dir / "states" / "0001.json"
+        original = path.read_text(encoding="utf-8")
+        for field in ("evidence_basis", "route.evidence_basis", "material_evidence_refs"):
+            with self.subTest(field=field):
+                state = json.loads(original)
+                if field == "route.evidence_basis":
+                    state["route"]["evidence_basis"] = []
+                else:
+                    state[field] = []
+                state.pop("state_sha256")
+                state["state_sha256"] = hashlib.sha256(json.dumps(
+                    state, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+                ).encode("utf-8")).hexdigest()
+                path.write_text(json.dumps(state), encoding="utf-8")
+                self._run("recover", "--run-dir", str(self.run_dir), expect=1)
+                self._run("verify", "--run-dir", str(self.run_dir), expect=1)
+        path.write_text(original, encoding="utf-8")
 
 
 if __name__ == "__main__":
