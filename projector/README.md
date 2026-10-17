@@ -31,6 +31,14 @@ Najważniejsze reguły:
 
 ## Public effects
 
+Domyślny profil operacyjny to `PRIVATE_SINGLE_USER_ANALYSIS_ONLY`. Publiczne
+efekty są w nim technicznie wyłączone przez zamrożoną politykę; zarówno
+przygotowanie żądania autoryzacji, jak i próba wykonania kończą się bez zapisu
+statusem `BLOCKED / PUBLIC_EFFECTS_DISABLED_BY_OPERATIONAL_PROFILE`.
+
+Kod bramki pozostaje jako nieaktywna, testowana granica dla ewentualnej
+przyszłej wersji. Nie jest częścią zaakceptowanego prywatnego zastosowania.
+
 `projector_public_effect_gate.py` buduje deterministyczne manifesty i sam nie
 może wykonać zapisu. `projector_public_effect_trusted_runtime.py` wykonuje
 ponowny odczyt Git, pobiera nieedytowany komentarz Human z GitHub i dopiero po
@@ -50,10 +58,10 @@ Runtime dodatkowo:
 - nie zezwala na ponowną próbę po niepewnym zapisie bez wcześniejszego
   uzgodnienia rzeczywistego stanu zdalnego.
 
-Granice obecnej wersji są istotne: dziennik wykorzystania zgody jest lokalny
+Granice nieaktywnej warstwy efektów są istotne: dziennik wykorzystania zgody jest lokalny
 dla danego klonu, a `observed_public_result` jest raportem wykonawcy zapisu,
 nie niezależnym odczytem GitHub. Z tego powodu warstwa publicznych efektów nie
-powinna jeszcze otrzymać akceptacji P4 ani uprawnienia do automatycznego merge.
+nie otrzymuje akceptacji P4 ani uprawnienia do automatycznego merge.
 Kolejna wersja musi użyć współdzielonej idempotencji i niezależnego odczytu
 stanu zdalnego po zapisie.
 

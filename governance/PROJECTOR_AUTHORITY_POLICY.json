@@ -1,5 +1,7 @@
 {
-  "schema_version": "projector-authority-policy/1.0",
+  "schema_version": "projector-authority-policy/1.1",
+  "operational_profile": "PRIVATE_SINGLE_USER_ANALYSIS_ONLY",
+  "public_effects_enabled": false,
   "repository_owners": [
     "FJ899"
   ],

@@ -46,7 +46,7 @@ from projector_public_effect_gate import (
 AUTHORITY_POLICY_PATH = (
     Path(__file__).resolve().parents[1] / "governance" / "PROJECTOR_AUTHORITY_POLICY.json"
 )
-AUTHORITY_POLICY_SHA256 = "e71e719bee63511369d15d265659a8109cff5f08216716ab70be55c314a46396"
+AUTHORITY_POLICY_SHA256 = "117d487c55f0cd7b0e9ba6acf5fe28a928a6b2a30a318f6e76979029172bde8d"
 GIT_COMMAND_TIMEOUT_SECONDS = 30
 
 
@@ -88,10 +88,30 @@ def _load_authority_policy(repository: str) -> set[tuple[str, int]]:
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise _Blocked(f"trusted Human authority policy unavailable: {exc}") from exc
     policy = _object(policy, "Human authority policy")
-    if set(policy) != {"schema_version", "repository_owners", "authorized_humans"}:
+    if set(policy) != {
+        "schema_version",
+        "operational_profile",
+        "public_effects_enabled",
+        "repository_owners",
+        "authorized_humans",
+    }:
         raise _Blocked("Human authority policy must contain exact fields")
-    if policy.get("schema_version") != "projector-authority-policy/1.0":
+    if policy.get("schema_version") != "projector-authority-policy/1.1":
         raise _Blocked("Human authority policy schema mismatch")
+    if policy.get("operational_profile") != "PRIVATE_SINGLE_USER_ANALYSIS_ONLY":
+        raise _Blocked("unsupported Projector operational profile")
+    if policy.get("public_effects_enabled") is not False:
+        raise _Blocked("public effects cannot be enabled in the private analysis profile")
+    raise _Blocked("PUBLIC_EFFECTS_DISABLED_BY_OPERATIONAL_PROFILE")
+
+
+def _authorized_humans_from_enabled_policy(policy: dict[str, Any], repository: str) -> set[tuple[str, int]]:
+    """Validate actors for a future profile that explicitly enables effects.
+
+    The current pinned profile always blocks before reaching this helper.  It
+    remains separate so the existing verification suite can exercise the
+    dormant effect boundary without weakening the production default.
+    """
     owners = policy.get("repository_owners")
     humans = policy.get("authorized_humans")
     if not isinstance(owners, list) or repository.split("/", 1)[0] not in owners:
@@ -569,6 +589,7 @@ def prepare_trusted_public_effect_authority_request(
     try:
         spec_snapshot = _json_snapshot(spec, "effect spec")
         repository = _repo_name(_string(spec_snapshot.get("repository"), "repository"))
+        _load_authority_policy(repository)
         git_source = _GitHubGitEvidenceSource(git_worktree, repository)
         prepared = _fresh_prepare(spec_snapshot, git_source, "TRUSTED_LIVE_GIT_PRE_HUMAN_GATE")
         return {
