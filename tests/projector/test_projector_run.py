@@ -146,6 +146,31 @@ class ProjectorRunTests(unittest.TestCase):
         self.run_cli("init", "--run-dir", str(self.run_dir), "--input", str(path), expect=1)
         self.assertFalse(self.run_dir.exists())
 
+    def test_duplicate_json_keys_and_unexpected_fields_are_rejected(self) -> None:
+        duplicate = self.root / "duplicate.json"
+        duplicate.write_text('{"raw_human_intent":"a","raw_human_intent":"b"}', encoding="utf-8")
+        self.run_cli("init", "--run-dir", str(self.run_dir), "--input", str(duplicate), expect=1)
+        self.assertFalse(self.run_dir.exists())
+
+        payload = init_payload()
+        payload["unexpected"] = True
+        path = self.write_input("unexpected.json", payload)
+        self.run_cli("init", "--run-dir", str(self.run_dir), "--input", str(path), expect=1)
+        self.assertFalse(self.run_dir.exists())
+
+    def test_timezone_is_required_and_main_is_an_approved_implementation_branch(self) -> None:
+        payload = init_payload()
+        payload["provenance"]["implementation"]["branch"] = "main"
+        path = self.write_input("main-init.json", payload)
+        self.run_cli("init", "--run-dir", str(self.run_dir), "--input", str(path))
+
+        transition = transition_payload()
+        transition["material_evidence_refs"][0]["observed_at"] = "2026-08-26T00:00:00"
+        transition_path = self.write_input("naive-time.json", transition)
+        self.run_cli(
+            "transition", "--run-dir", str(self.run_dir), "--input", str(transition_path), expect=1
+        )
+
     def test_unauthorized_goal_change_is_rejected_without_new_snapshot(self) -> None:
         self.initialize()
         payload = transition_payload(goal="Convenient replacement goal")
@@ -232,6 +257,14 @@ class ProjectorRunTests(unittest.TestCase):
         self.run_cli("transition", "--run-dir", str(self.run_dir), "--input", str(path))
         latest = json.loads((self.run_dir / "states" / "0001.json").read_text(encoding="utf-8"))
         self.assertEqual("DONE", latest["status"])
+
+        resume = transition_payload()
+        resume_path = self.write_input("resume-after-done.json", resume)
+        result = self.run_cli(
+            "transition", "--run-dir", str(self.run_dir), "--input", str(resume_path), expect=1
+        )
+        self.assertIn("DONE is terminal", result.stderr)
+        self.assertFalse((self.run_dir / "states" / "0002.json").exists())
 
 
 if __name__ == "__main__":

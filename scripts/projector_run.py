@@ -31,7 +31,7 @@ ARCHITECTURE_CONTRACT = {
     "path": "governance/ARCHITECTURE_CONTRACT_PROJECTOR_REAL_PROJECT_v2.0.md",
 }
 IMPLEMENTATION_REPOSITORY = "FJ899/COS"
-IMPLEMENTATION_BRANCH = "impl/projector-real-project-v2"
+IMPLEMENTATION_BRANCHES = {"impl/projector-real-project-v2", "main"}
 STATUSES = {"ACTIVE", "BLOCKED", "DONE"}
 EVIDENCE_SCOPES = {"PROJECTOR_INTERNAL", "WORKLOAD_EXTERNAL", "HUMAN_DECISION", "TEST"}
 HUMAN_INTERVENTION_CLASSES = {"GENUINE_HUMAN_OWNED_GATE", "HUMAN_OPERATIONAL_RESCUE"}
@@ -44,6 +44,25 @@ HUMAN_AUTHORITY_BASES = {
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
 HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+STATE_FILE_RE = re.compile(r"^[0-9]{4,}\.json$")
+TRANSITION_INPUT_FIELDS = {
+    "current_goal",
+    "current_done",
+    "observed_facts",
+    "assumptions",
+    "claims",
+    "unknowns",
+    "critical_unknown_or_blocker",
+    "material_evidence_refs",
+    "route",
+    "status",
+    "transition_reason",
+    "material_evidence_change",
+    "evidence_basis",
+    "human_intervention",
+    "route_change",
+    "goal_change",
+}
 
 
 class ProjectorError(RuntimeError):
@@ -74,7 +93,15 @@ def read_json(path: Path) -> dict[str, Any]:
     except OSError as exc:
         raise ProjectorError(f"cannot read {path}: {exc}") from exc
     try:
-        value = json.loads(raw)
+        def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+            result: dict[str, Any] = {}
+            for key, item in pairs:
+                if key in result:
+                    raise ProjectorError(f"duplicate JSON key in {path}: {key}")
+                result[key] = item
+            return result
+
+        value = json.loads(raw, object_pairs_hook=reject_duplicate_keys)
     except json.JSONDecodeError as exc:
         raise ProjectorError(f"invalid JSON in {path}: {exc}") from exc
     if not isinstance(value, dict):
@@ -98,6 +125,11 @@ def write_json_exclusive_atomic(path: Path, value: dict[str, Any]) -> None:
             os.link(tmp, path)
         except FileExistsError as exc:
             raise ProjectorError(f"refusing to overwrite append-only artifact: {path}") from exc
+        directory_fd = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
     finally:
         try:
             tmp.unlink()
@@ -131,18 +163,29 @@ def require_nullable_string(value: Any, name: str) -> str | None:
     return require_string(value, name)
 
 
-def require_exact_keys(value: dict[str, Any], required: set[str], name: str) -> None:
+def require_exact_keys(
+    value: dict[str, Any],
+    required: set[str],
+    name: str,
+    *,
+    optional: set[str] | None = None,
+) -> None:
     missing = sorted(required - value.keys())
+    unexpected = sorted(value.keys() - required - (optional or set()))
     if missing:
         raise ProjectorError(f"{name} missing required fields: {', '.join(missing)}")
+    if unexpected:
+        raise ProjectorError(f"{name} contains unexpected fields: {', '.join(unexpected)}")
 
 
 def validate_timestamp(value: Any, name: str) -> str:
     text = require_string(value, name)
     try:
-        datetime.fromisoformat(text.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
     except ValueError as exc:
         raise ProjectorError(f"{name} must be an ISO-8601 timestamp") from exc
+    if parsed.tzinfo is None:
+        raise ProjectorError(f"{name} must include timezone information")
     return text
 
 
@@ -153,6 +196,13 @@ def validate_provenance(value: Any) -> dict[str, Any]:
     task = require_object(provenance["task_contract"], "provenance.task_contract")
     architecture = require_object(provenance["architecture_contract"], "provenance.architecture_contract")
     implementation = require_object(provenance["implementation"], "provenance.implementation")
+    require_exact_keys(task, set(TASK_CONTRACT), "provenance.task_contract")
+    require_exact_keys(architecture, set(ARCHITECTURE_CONTRACT), "provenance.architecture_contract")
+    require_exact_keys(
+        implementation,
+        {"repository", "branch", "sha"},
+        "provenance.implementation",
+    )
 
     for name, actual, expected in (
         ("task_contract", task, TASK_CONTRACT),
@@ -166,8 +216,11 @@ def validate_provenance(value: Any) -> dict[str, Any]:
 
     if implementation.get("repository") != IMPLEMENTATION_REPOSITORY:
         raise ProjectorError("provenance.implementation.repository does not match frozen repository")
-    if implementation.get("branch") != IMPLEMENTATION_BRANCH:
-        raise ProjectorError("provenance.implementation.branch does not match frozen branch")
+    if implementation.get("branch") not in IMPLEMENTATION_BRANCHES:
+        raise ProjectorError(
+            "provenance.implementation.branch must be an approved implementation branch: "
+            + ", ".join(sorted(IMPLEMENTATION_BRANCHES))
+        )
     sha = require_string(implementation.get("sha"), "provenance.implementation.sha")
     if not SHA40_RE.fullmatch(sha):
         raise ProjectorError("provenance.implementation.sha must be an exact 40-character lowercase git SHA")
@@ -459,7 +512,7 @@ def validate_init_input(value: dict[str, Any], run_id: str) -> tuple[dict[str, A
         "known_human_authority_gates",
         "provenance",
     }
-    require_exact_keys(value, required, "init input")
+    require_exact_keys(value, required, "init input", optional={"initial_route"})
     for key in (
         "raw_human_intent",
         "bounded_target",
@@ -526,7 +579,17 @@ def state_paths(run_dir: Path) -> list[Path]:
     states_dir = run_dir / "states"
     if not states_dir.is_dir():
         raise ProjectorError("missing states directory")
-    paths = sorted(path for path in states_dir.iterdir() if path.is_file())
+    entries = list(states_dir.iterdir())
+    unexpected = sorted(
+        path.name
+        for path in entries
+        if path.is_file() and not path.name.startswith(".") and STATE_FILE_RE.fullmatch(path.name) is None
+    )
+    if unexpected:
+        raise ProjectorError(f"unexpected files in states directory: {', '.join(unexpected)}")
+    paths = sorted(
+        path for path in entries if path.is_file() and STATE_FILE_RE.fullmatch(path.name) is not None
+    )
     if not paths:
         raise ProjectorError("run has no state snapshots")
     expected_names = [f"{index:04d}.json" for index in range(len(paths))]
@@ -598,7 +661,11 @@ def verify_bundle(run_dir: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         else:
             # Recovery must enforce exactly the same transition invariants as
             # live append. Hash consistency alone does not validate a history.
-            validate_transition_input(state, run=run, states=states)
+            validate_transition_input(
+                {key: state[key] for key in TRANSITION_INPUT_FIELDS},
+                run=run,
+                states=states,
+            )
 
         if state["status"] == "DONE":
             external = [ref for ref in state["material_evidence_refs"] if ref["scope"] == "WORKLOAD_EXTERNAL"]
@@ -623,26 +690,12 @@ def validate_transition_input(
     run: dict[str, Any],
     states: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    required = {
-        "current_goal",
-        "current_done",
-        "observed_facts",
-        "assumptions",
-        "claims",
-        "unknowns",
-        "critical_unknown_or_blocker",
-        "material_evidence_refs",
-        "route",
-        "status",
-        "transition_reason",
-        "material_evidence_change",
-        "evidence_basis",
-        "human_intervention",
-        "route_change",
-        "goal_change",
-    }
-    require_exact_keys(proposed, required, "transition input")
+    require_exact_keys(proposed, TRANSITION_INPUT_FIELDS, "transition input")
     previous = states[-1]
+    if previous["status"] == "DONE":
+        raise ProjectorError(
+            "DONE is terminal; create a new run with explicit parent provenance to continue work"
+        )
     current_refs = validate_evidence_refs(proposed["material_evidence_refs"], "material_evidence_refs")
     evidence_index = build_evidence_index(states)
     for ref in current_refs:

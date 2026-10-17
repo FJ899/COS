@@ -65,8 +65,9 @@ def human_comment(
 
 
 class ExternalLikeFakeSink:
-    def __init__(self) -> None:
+    def __init__(self, observed_public_result: dict | None = None) -> None:
         self.calls: list[dict] = []
+        self.observed_public_result = observed_public_result
 
     def write(self, descriptor: dict) -> dict:
         self.calls.append(json.loads(json.dumps(descriptor)))
@@ -74,6 +75,11 @@ class ExternalLikeFakeSink:
             "result_ref": "fixture://external-like/result-1",
             "result_identity": "EXACT_NON_PUBLIC_TEST_RESULT",
             "observed_at": "2026-08-27T10:00:03Z",
+            "observed_public_result": self.observed_public_result or {
+                "draft_only": True,
+                "merge_authorized": False,
+                "candidate_sha": self.calls[-1]["C_PRE_X"],
+            },
         }
 
 
@@ -282,6 +288,33 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
         self.assertFalse(result["deploy_authorized"])
         self.assertFalse(result["capability_promotion_authorized"])
         self.assertFalse(result["human_final_acceptance_created"])
+
+        replay = self._execute(comment, sink)
+        self.assertEqual("BLOCKED", replay["status"])
+        self.assertIn("REPLAY", replay["reason"])
+        self.assertEqual(1, len(sink.calls))
+
+    def test_mismatched_observed_result_requires_reconciliation_and_consumes_authority(self) -> None:
+        prepared = self._prepare()
+        comment = human_comment(prepared["authority_request"])
+        sink = ExternalLikeFakeSink({"candidate_sha": "wrong"})
+        result = self._execute(comment, sink)
+        self.assertEqual("RECONCILIATION_REQUIRED", result["status"])
+        self.assertEqual("UNKNOWN", result["target_write_performed"])
+        self.assertEqual(1, len(sink.calls))
+
+        replay = self._execute(comment, sink)
+        self.assertEqual("BLOCKED", replay["status"])
+        self.assertEqual(1, len(sink.calls))
+
+    def test_caller_cannot_nominate_an_untrusted_human(self) -> None:
+        locator = dict(self.locator, actor_login="attacker", actor_id=1)
+        sink = ExternalLikeFakeSink()
+        with self._remote_redirect():
+            result = execute_trusted_public_effect(self.spec, locator, self.work, sink)
+        self.assertEqual("BLOCKED", result["status"])
+        self.assertIn("trusted policy", result["reason"])
+        self.assertEqual([], sink.calls)
 
     def test_wrong_actor_or_app_mediated_comment_is_blocked_before_write(self) -> None:
         prepared = self._prepare()

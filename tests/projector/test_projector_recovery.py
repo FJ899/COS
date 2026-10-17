@@ -159,6 +159,11 @@ class ProjectorRecoveryTests(unittest.TestCase):
         source.rename(target)
         self._run("verify", "--run-dir", str(self.run_dir), expect=1)
 
+    def test_crash_residue_temp_file_does_not_break_recovery(self) -> None:
+        (self.run_dir / "states" / ".0002.json.interrupted").write_text("partial", encoding="utf-8")
+        result = self._run("verify", "--run-dir", str(self.run_dir))
+        self.assertEqual("VALID", json.loads(result.stdout)["verification"])
+
     def test_mutated_immutable_run_manifest_is_detected(self) -> None:
         path = self.run_dir / "run.json"
         run = json.loads(path.read_text(encoding="utf-8"))
