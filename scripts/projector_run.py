@@ -596,22 +596,9 @@ def verify_bundle(run_dir: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
             if state["route_change"] is not None:
                 raise ProjectorError("initial state cannot contain route_change")
         else:
-            validate_goal_change(
-                state["goal_change"],
-                previous_goal=previous_goal,
-                previous_done=previous_done,
-                proposed_goal=state["current_goal"],
-                proposed_done=state["current_done"],
-                evidence_index=evidence_index,
-            )
-            validate_human_intervention(state["human_intervention"], evidence_index)
-            assert previous_route_id is not None
-            validate_route_change(state["route_change"], previous_route_id, state["route"]["route_id"])
-            material_change = validate_material_evidence_change(state["material_evidence_change"], evidence_index)
-            if material_change["invalidates_current_route"]:
-                rerouted = state["route"]["route_id"] != previous_route_id
-                if not rerouted and state["status"] != "BLOCKED":
-                    raise ProjectorError("declared route invalidation must reroute or truthfully BLOCK")
+            # Recovery must enforce exactly the same transition invariants as
+            # live append. Hash consistency alone does not validate a history.
+            validate_transition_input(state, run=run, states=states)
 
         if state["status"] == "DONE":
             external = [ref for ref in state["material_evidence_refs"] if ref["scope"] == "WORKLOAD_EXTERNAL"]
