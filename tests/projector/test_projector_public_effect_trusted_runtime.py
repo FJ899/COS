@@ -12,6 +12,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import projector_public_effect_trusted_runtime as trusted_runtime  # noqa: E402
 from projector_public_effect_trusted_runtime import (  # noqa: E402
     _GitHubGitEvidenceSource,
     _GitHubIssueCommentAuthoritySource,
@@ -65,8 +66,9 @@ def human_comment(
 
 
 class ExternalLikeFakeSink:
-    def __init__(self) -> None:
+    def __init__(self, observed_public_result: dict | None = None) -> None:
         self.calls: list[dict] = []
+        self.observed_public_result = observed_public_result
 
     def write(self, descriptor: dict) -> dict:
         self.calls.append(json.loads(json.dumps(descriptor)))
@@ -74,6 +76,11 @@ class ExternalLikeFakeSink:
             "result_ref": "fixture://external-like/result-1",
             "result_identity": "EXACT_NON_PUBLIC_TEST_RESULT",
             "observed_at": "2026-08-27T10:00:03Z",
+            "observed_public_result": self.observed_public_result or {
+                "draft_only": True,
+                "merge_authorized": False,
+                "candidate_sha": self.calls[-1]["C_PRE_X"],
+            },
         }
 
 
@@ -143,12 +150,19 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
             return_value=str(self.remote),
         )
 
+    def _enabled_policy_for_boundary_tests(self):
+        return mock.patch.object(
+            trusted_runtime,
+            "_load_authority_policy",
+            return_value={(ACTOR_LOGIN, ACTOR_ID)},
+        )
+
     def _prepare(self) -> dict:
-        with self._remote_redirect():
+        with self._remote_redirect(), self._enabled_policy_for_boundary_tests():
             return prepare_trusted_public_effect_authority_request(self.spec, self.work)
 
     def _execute(self, comment: dict, sink: ExternalLikeFakeSink) -> dict:
-        with self._remote_redirect(), mock.patch.object(
+        with self._remote_redirect(), self._enabled_policy_for_boundary_tests(), mock.patch.object(
             _GitHubIssueCommentAuthoritySource,
             "_fetch_comment",
             return_value=comment,
@@ -179,6 +193,13 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
         self.assertEqual(parameters, ["spec", "human_authority_locator", "git_worktree", "sink"])
         self.assertNotIn("git_source", parameters)
         self.assertNotIn("human_authority_source", parameters)
+
+    def test_private_analysis_profile_blocks_public_effect_preparation_by_default(self) -> None:
+        with self._remote_redirect():
+            result = prepare_trusted_public_effect_authority_request(self.spec, self.work)
+        self.assertEqual("BLOCKED", result["status"])
+        self.assertEqual("PUBLIC_EFFECTS_DISABLED_BY_OPERATIONAL_PROFILE", result["reason"])
+        self.assertFalse(result["target_write_performed"])
 
     def test_production_sources_remove_test_factory_and_are_not_mutable_by_normal_setattr(self) -> None:
         git_source = _GitHubGitEvidenceSource(self.work, REPOSITORY)
@@ -231,12 +252,13 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises((AttributeError, TypeError)):
                 setattr(source, field, value)
 
-        result = execute_trusted_public_effect(
-            self.spec,
-            human_source,  # type: ignore[arg-type]
-            git_source,  # type: ignore[arg-type]
-            sink,
-        )
+        with self._enabled_policy_for_boundary_tests():
+            result = execute_trusted_public_effect(
+                self.spec,
+                human_source,  # type: ignore[arg-type]
+                git_source,  # type: ignore[arg-type]
+                sink,
+            )
         self.assertEqual(result["status"], "BLOCKED")
         self.assertEqual(result["effect_evidence_status"], "UNKNOWN")
         self.assertFalse(result["target_write_performed"])
@@ -283,6 +305,33 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
         self.assertFalse(result["capability_promotion_authorized"])
         self.assertFalse(result["human_final_acceptance_created"])
 
+        replay = self._execute(comment, sink)
+        self.assertEqual("BLOCKED", replay["status"])
+        self.assertIn("REPLAY", replay["reason"])
+        self.assertEqual(1, len(sink.calls))
+
+    def test_mismatched_observed_result_requires_reconciliation_and_consumes_authority(self) -> None:
+        prepared = self._prepare()
+        comment = human_comment(prepared["authority_request"])
+        sink = ExternalLikeFakeSink({"candidate_sha": "wrong"})
+        result = self._execute(comment, sink)
+        self.assertEqual("RECONCILIATION_REQUIRED", result["status"])
+        self.assertEqual("UNKNOWN", result["target_write_performed"])
+        self.assertEqual(1, len(sink.calls))
+
+        replay = self._execute(comment, sink)
+        self.assertEqual("BLOCKED", replay["status"])
+        self.assertEqual(1, len(sink.calls))
+
+    def test_caller_cannot_nominate_an_untrusted_human(self) -> None:
+        locator = dict(self.locator, actor_login="attacker", actor_id=1)
+        sink = ExternalLikeFakeSink()
+        with self._remote_redirect(), self._enabled_policy_for_boundary_tests():
+            result = execute_trusted_public_effect(self.spec, locator, self.work, sink)
+        self.assertEqual("BLOCKED", result["status"])
+        self.assertIn("trusted policy", result["reason"])
+        self.assertEqual([], sink.calls)
+
     def test_wrong_actor_or_app_mediated_comment_is_blocked_before_write(self) -> None:
         prepared = self._prepare()
         request = prepared["authority_request"]
@@ -323,7 +372,7 @@ class TrustedRuntimeOriginIsolationTests(unittest.TestCase):
                 self._advance_base()
             return value
 
-        with self._remote_redirect(), mock.patch.object(
+        with self._remote_redirect(), self._enabled_policy_for_boundary_tests(), mock.patch.object(
             _GitHubIssueCommentAuthoritySource,
             "_fetch_comment",
             return_value=comment,

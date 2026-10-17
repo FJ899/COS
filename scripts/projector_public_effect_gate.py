@@ -102,8 +102,11 @@ def _timestamp(value: Any, name: str) -> str:
 
 def _require_keys(value: dict[str, Any], required: set[str], name: str) -> None:
     missing = sorted(required - value.keys())
+    unexpected = sorted(value.keys() - required)
     if missing:
         raise _Blocked(f"{name} missing required fields: {', '.join(missing)}")
+    if unexpected:
+        raise _Blocked(f"{name} contains unexpected fields: {', '.join(unexpected)}")
 
 
 def _blocked(reason: str) -> dict[str, Any]:
@@ -378,12 +381,22 @@ def _validate_human_authority(prepared: dict[str, Any], authority: Any) -> dict[
     return record
 
 
-def _validated_write_result(write_result: Any) -> dict[str, Any]:
+def _validated_write_result(
+    write_result: Any,
+    expected_public_result: dict[str, Any],
+) -> dict[str, Any]:
     result = _object(write_result, "write_result")
-    _require_keys(result, {"result_ref", "result_identity", "observed_at"}, "write_result")
+    _require_keys(
+        result,
+        {"result_ref", "result_identity", "observed_at", "observed_public_result"},
+        "write_result",
+    )
     _string(result.get("result_ref"), "write_result.result_ref")
     _string(result.get("result_identity"), "write_result.result_identity")
     _timestamp(result.get("observed_at"), "write_result.observed_at")
+    observed = _object(result.get("observed_public_result"), "write_result.observed_public_result")
+    if observed != expected_public_result:
+        raise _Blocked("external write result does not match exact expected_public_result")
     return result
 
 
@@ -416,5 +429,10 @@ def write_record_exclusive_atomic(path: str | Path, value: dict[str, Any]) -> No
             os.link(temporary, destination)
         except FileExistsError as exc:
             raise PublicEffectGateError(f"refusing to overwrite public-effect evidence: {destination}") from exc
+        directory_fd = os.open(destination.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
     finally:
         temporary.unlink(missing_ok=True)

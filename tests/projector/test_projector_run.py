@@ -38,6 +38,13 @@ def init_payload() -> dict:
         "bounded_target": "Produce one observable outcome while preserving the Human goal.",
         "goal": "Improve the target outcome",
         "done": "The predefined external check reports the target effect",
+        "done_criteria": [
+            {
+                "criterion_id": "done.external-effect",
+                "description": "The predefined external check reports the target effect",
+                "required_evidence_scope": "WORKLOAD_EXTERNAL",
+            }
+        ],
         "verification_method": "Read the independently observable result artifact",
         "current_critical_unknown": "Which evidence-seeking route can produce the target effect?",
         "assumptions": ["Available tools can inspect the target state"],
@@ -146,6 +153,31 @@ class ProjectorRunTests(unittest.TestCase):
         self.run_cli("init", "--run-dir", str(self.run_dir), "--input", str(path), expect=1)
         self.assertFalse(self.run_dir.exists())
 
+    def test_duplicate_json_keys_and_unexpected_fields_are_rejected(self) -> None:
+        duplicate = self.root / "duplicate.json"
+        duplicate.write_text('{"raw_human_intent":"a","raw_human_intent":"b"}', encoding="utf-8")
+        self.run_cli("init", "--run-dir", str(self.run_dir), "--input", str(duplicate), expect=1)
+        self.assertFalse(self.run_dir.exists())
+
+        payload = init_payload()
+        payload["unexpected"] = True
+        path = self.write_input("unexpected.json", payload)
+        self.run_cli("init", "--run-dir", str(self.run_dir), "--input", str(path), expect=1)
+        self.assertFalse(self.run_dir.exists())
+
+    def test_timezone_is_required_and_main_is_an_approved_implementation_branch(self) -> None:
+        payload = init_payload()
+        payload["provenance"]["implementation"]["branch"] = "main"
+        path = self.write_input("main-init.json", payload)
+        self.run_cli("init", "--run-dir", str(self.run_dir), "--input", str(path))
+
+        transition = transition_payload()
+        transition["material_evidence_refs"][0]["observed_at"] = "2026-08-26T00:00:00"
+        transition_path = self.write_input("naive-time.json", transition)
+        self.run_cli(
+            "transition", "--run-dir", str(self.run_dir), "--input", str(transition_path), expect=1
+        )
+
     def test_unauthorized_goal_change_is_rejected_without_new_snapshot(self) -> None:
         self.initialize()
         payload = transition_payload(goal="Convenient replacement goal")
@@ -219,7 +251,9 @@ class ProjectorRunTests(unittest.TestCase):
     def test_done_accepts_workload_external_effect_reference(self) -> None:
         self.initialize()
         payload = transition_payload()
-        external = evidence("ev-effect", "WORKLOAD_EXTERNAL", ["R-007", "AC-006"])
+        external = evidence(
+            "ev-effect", "WORKLOAD_EXTERNAL", ["R-007", "AC-006", "done.external-effect"]
+        )
         payload["material_evidence_refs"].append(external)
         payload["evidence_basis"].append("ev-effect")
         payload["route"]["evidence_basis"].append("ev-effect")
@@ -232,6 +266,77 @@ class ProjectorRunTests(unittest.TestCase):
         self.run_cli("transition", "--run-dir", str(self.run_dir), "--input", str(path))
         latest = json.loads((self.run_dir / "states" / "0001.json").read_text(encoding="utf-8"))
         self.assertEqual("DONE", latest["status"])
+
+        resume = transition_payload()
+        resume_path = self.write_input("resume-after-done.json", resume)
+        result = self.run_cli(
+            "transition", "--run-dir", str(self.run_dir), "--input", str(resume_path), expect=1
+        )
+        self.assertIn("DONE is terminal", result.stderr)
+        self.assertFalse((self.run_dir / "states" / "0002.json").exists())
+
+    def test_done_rejects_external_evidence_not_bound_to_every_done_criterion(self) -> None:
+        payload = init_payload()
+        payload["done_criteria"].append(
+            {
+                "criterion_id": "done.human-acceptance",
+                "description": "Human records final acceptance",
+                "required_evidence_scope": "HUMAN_DECISION",
+            }
+        )
+        path = self.write_input("init-two-criteria.json", payload)
+        self.run_cli("init", "--run-dir", str(self.run_dir), "--input", str(path))
+
+        transition = transition_payload()
+        external = evidence("ev-effect", "WORKLOAD_EXTERNAL", ["done.external-effect"])
+        transition["material_evidence_refs"].append(external)
+        transition["evidence_basis"].append("ev-effect")
+        transition["route"]["evidence_basis"].append("ev-effect")
+        transition["status"] = "DONE"
+        transition["critical_unknown_or_blocker"] = None
+        transition["unknowns"] = []
+        transition["material_evidence_change"]["evidence_refs"].append("ev-effect")
+        transition_path = self.write_input("done-missing-acceptance.json", transition)
+        result = self.run_cli(
+            "transition", "--run-dir", str(self.run_dir), "--input", str(transition_path), expect=1
+        )
+        self.assertIn("done.human-acceptance", result.stderr)
+
+    def test_init_rejects_done_criterion_with_internal_or_test_scope(self) -> None:
+        payload = init_payload()
+        payload["done_criteria"][0]["required_evidence_scope"] = "TEST"
+        path = self.write_input("bad-done-criterion.json", payload)
+        self.run_cli("init", "--run-dir", str(self.run_dir), "--input", str(path), expect=1)
+        self.assertFalse(self.run_dir.exists())
+
+    def test_schema_2_1_rejects_changing_done_without_new_criteria_and_run(self) -> None:
+        self.initialize()
+        payload = transition_payload(done="A different completion definition")
+        decision = evidence("ev-human-done", "HUMAN_DECISION", ["R-003"])
+        payload["material_evidence_refs"].append(decision)
+        payload["evidence_basis"].append("ev-human-done")
+        payload["goal_change"] = {
+            "type": "HUMAN_GOAL_CHANGE",
+            "human_decision_evidence_ref": "ev-human-done",
+            "new_goal": payload["current_goal"],
+            "new_done": payload["current_done"],
+        }
+        payload["human_intervention"] = {
+            "classification": "GENUINE_HUMAN_OWNED_GATE",
+            "reason": "Human requested a new completion definition",
+            "authority_basis": "GOAL_OR_NORMATIVE_MEANING",
+            "human_decision_evidence_ref": "ev-human-done",
+        }
+        path = self.write_input("changed-done.json", payload)
+        result = self.run_cli(
+            "transition", "--run-dir", str(self.run_dir), "--input", str(path), expect=1
+        )
+        self.assertIn("DONE criteria are immutable", result.stderr)
+
+    def test_bundled_schema_2_0_history_remains_verifiable(self) -> None:
+        historical = ROOT / "projector" / "runs" / "E-REAL-WORK-001-CASE003"
+        result = self.run_cli("verify", "--run-dir", str(historical))
+        self.assertEqual("VALID", json.loads(result.stdout)["verification"])
 
 
 if __name__ == "__main__":

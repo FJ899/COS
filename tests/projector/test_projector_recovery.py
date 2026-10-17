@@ -39,6 +39,13 @@ def init_payload() -> dict:
         "bounded_target": "Maintain a durable recoverable state for the bounded work.",
         "goal": "Preserve enough durable state to continue correctly",
         "done": "A fresh process reconstructs the exact current state",
+        "done_criteria": [
+            {
+                "criterion_id": "done.recovered-state",
+                "description": "A fresh process reconstructs the exact current state",
+                "required_evidence_scope": "WORKLOAD_EXTERNAL",
+            }
+        ],
         "verification_method": "Run the recover command in a fresh process",
         "current_critical_unknown": "Will the first evidence update remain recoverable?",
         "assumptions": ["Filesystem persistence is available"],
@@ -158,6 +165,11 @@ class ProjectorRecoveryTests(unittest.TestCase):
         target = self.run_dir / "states" / "0002.json"
         source.rename(target)
         self._run("verify", "--run-dir", str(self.run_dir), expect=1)
+
+    def test_crash_residue_temp_file_does_not_break_recovery(self) -> None:
+        (self.run_dir / "states" / ".0002.json.interrupted").write_text("partial", encoding="utf-8")
+        result = self._run("verify", "--run-dir", str(self.run_dir))
+        self.assertEqual("VALID", json.loads(result.stdout)["verification"])
 
     def test_mutated_immutable_run_manifest_is_detected(self) -> None:
         path = self.run_dir / "run.json"

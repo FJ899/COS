@@ -1,0 +1,17 @@
+{
+  "schema_version": "projector-authority-policy/1.1",
+  "operational_profile": "PRIVATE_SINGLE_USER_ANALYSIS_ONLY",
+  "public_effects_enabled": false,
+  "repository_owners": [
+    "FJ899"
+  ],
+  "authorized_humans": [
+    {
+      "github_login": "FJ899",
+      "github_user_id": 275481581,
+      "authority_scopes": [
+        "PUBLIC_EFFECT"
+      ]
+    }
+  ]
+}

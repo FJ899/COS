@@ -28,6 +28,7 @@ from projector_public_effect_gate import (
     EQUAL,
     OBJECT_TYPES,
     PROVEN_ANCESTOR,
+    PublicEffectGateError,
     PublicEffectWriteSink,
     _Blocked,
     _blocked,
@@ -39,7 +40,14 @@ from projector_public_effect_gate import (
     _validate_human_authority,
     _validated_write_result,
     authority_request,
+    write_record_exclusive_atomic,
 )
+
+AUTHORITY_POLICY_PATH = (
+    Path(__file__).resolve().parents[1] / "governance" / "PROJECTOR_AUTHORITY_POLICY.json"
+)
+AUTHORITY_POLICY_SHA256 = "117d487c55f0cd7b0e9ba6acf5fe28a928a6b2a30a318f6e76979029172bde8d"
+GIT_COMMAND_TIMEOUT_SECONDS = 30
 
 
 def _utc_now() -> str:
@@ -47,14 +55,86 @@ def _utc_now() -> str:
 
 
 def _repo_name(value: str) -> str:
-    if value.count("/") != 1:
+    if value.count("/") != 1 or any(
+        character not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_./"
+        for character in value
+    ):
         raise _Blocked("repository must use owner/name form")
     return value
 
 
 def _branch_name(ref: str, name: str) -> str:
     value = _string(ref, name)
-    return value[len("refs/heads/") :] if value.startswith("refs/heads/") else value
+    value = value[len("refs/heads/") :] if value.startswith("refs/heads/") else value
+    if (
+        value.startswith("-")
+        or value.endswith((".", "/"))
+        or ".." in value
+        or "@{" in value
+        or any(character in value for character in " ~^:?*[\\\n\r\t")
+    ):
+        raise _Blocked(f"{name} is not a safe branch name")
+    return value
+
+
+def _load_authority_policy(repository: str) -> set[tuple[str, int]]:
+    try:
+        raw_bytes = AUTHORITY_POLICY_PATH.read_bytes()
+        if hashlib.sha256(raw_bytes).hexdigest() != AUTHORITY_POLICY_SHA256:
+            raise _Blocked("trusted Human authority policy identity mismatch")
+        policy = json.loads(raw_bytes.decode("utf-8"))
+    except _Blocked:
+        raise
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise _Blocked(f"trusted Human authority policy unavailable: {exc}") from exc
+    policy = _object(policy, "Human authority policy")
+    if set(policy) != {
+        "schema_version",
+        "operational_profile",
+        "public_effects_enabled",
+        "repository_owners",
+        "authorized_humans",
+    }:
+        raise _Blocked("Human authority policy must contain exact fields")
+    if policy.get("schema_version") != "projector-authority-policy/1.1":
+        raise _Blocked("Human authority policy schema mismatch")
+    if policy.get("operational_profile") != "PRIVATE_SINGLE_USER_ANALYSIS_ONLY":
+        raise _Blocked("unsupported Projector operational profile")
+    if policy.get("public_effects_enabled") is not False:
+        raise _Blocked("public effects cannot be enabled in the private analysis profile")
+    raise _Blocked("PUBLIC_EFFECTS_DISABLED_BY_OPERATIONAL_PROFILE")
+
+
+def _authorized_humans_from_enabled_policy(policy: dict[str, Any], repository: str) -> set[tuple[str, int]]:
+    """Validate actors for a future profile that explicitly enables effects.
+
+    The current pinned profile always blocks before reaching this helper.  It
+    remains separate so the existing verification suite can exercise the
+    dormant effect boundary without weakening the production default.
+    """
+    owners = policy.get("repository_owners")
+    humans = policy.get("authorized_humans")
+    if not isinstance(owners, list) or repository.split("/", 1)[0] not in owners:
+        raise _Blocked("repository owner is not authorized by trusted Human authority policy")
+    if not isinstance(humans, list):
+        raise _Blocked("Human authority policy authorized_humans must be a list")
+    authorized: set[tuple[str, int]] = set()
+    for index, human in enumerate(humans):
+        human = _object(human, f"Human authority policy authorized_humans[{index}]")
+        if set(human) != {"github_login", "github_user_id", "authority_scopes"}:
+            raise _Blocked("Human authority policy actor must contain exact fields")
+        scopes = human.get("authority_scopes")
+        if not isinstance(scopes, list) or "PUBLIC_EFFECT" not in scopes:
+            continue
+        authorized.add(
+            (
+                _string(human.get("github_login"), "policy github_login"),
+                _positive_int(human.get("github_user_id"), "policy github_user_id"),
+            )
+        )
+    if not authorized:
+        raise _Blocked("Human authority policy contains no PUBLIC_EFFECT authority")
+    return authorized
 
 
 def _positive_int(value: Any, name: str) -> int:
@@ -118,8 +198,9 @@ class _GitHubGitEvidenceSource:
                 text=text,
                 check=False,
                 env=self._git_env(),
+                timeout=GIT_COMMAND_TIMEOUT_SECONDS,
             )
-        except OSError as exc:
+        except (OSError, subprocess.TimeoutExpired) as exc:
             raise _Blocked(f"trusted Git invocation failed: {exc}") from exc
         if check and proc.returncode != 0:
             stderr = proc.stderr if isinstance(proc.stderr, str) else proc.stderr.decode("utf-8", "replace")
@@ -152,6 +233,7 @@ class _GitHubGitEvidenceSource:
             text=True,
             check=False,
             env=self._git_env(),
+            timeout=GIT_COMMAND_TIMEOUT_SECONDS,
         )
         if proc.returncode == 0:
             return True
@@ -355,6 +437,14 @@ class _GitHubGitEvidenceSource:
             "expected_public_result": expected_public_result,
         }
 
+    def effect_journal_dir(self) -> Path:
+        git_dir_raw = self._run(["rev-parse", "--git-dir"])
+        assert isinstance(git_dir_raw, str)
+        git_dir = Path(git_dir_raw.strip())
+        if not git_dir.is_absolute():
+            git_dir = self.worktree / git_dir
+        return git_dir.resolve() / "projector-public-effects"
+
 
 @dataclass(frozen=True, slots=True, init=False)
 class _GitHubIssueCommentAuthoritySource:
@@ -452,12 +542,15 @@ def _authority_locator(value: Any, repository: str) -> tuple[int, int, str, int]
     locator_repo = _repo_name(_string(locator.get("repository"), "human authority locator.repository"))
     if locator_repo != repository:
         raise _Blocked("Human authority locator is bound to a different repository")
-    return (
+    resolved = (
         _positive_int(locator.get("issue_number"), "human authority locator.issue_number"),
         _positive_int(locator.get("comment_id"), "human authority locator.comment_id"),
         _string(locator.get("actor_login"), "human authority locator.actor_login"),
         _positive_int(locator.get("actor_id"), "human authority locator.actor_id"),
     )
+    if (resolved[2], resolved[3]) not in _load_authority_policy(repository):
+        raise _Blocked("Human authority actor is not authorized by trusted policy")
+    return resolved
 
 
 def _canonicalize_trusted_git_proof(observed: dict[str, Any]) -> dict[str, Any]:
@@ -496,6 +589,7 @@ def prepare_trusted_public_effect_authority_request(
     try:
         spec_snapshot = _json_snapshot(spec, "effect spec")
         repository = _repo_name(_string(spec_snapshot.get("repository"), "repository"))
+        _load_authority_policy(repository)
         git_source = _GitHubGitEvidenceSource(git_worktree, repository)
         prepared = _fresh_prepare(spec_snapshot, git_source, "TRUSTED_LIVE_GIT_PRE_HUMAN_GATE")
         return {
@@ -562,21 +656,66 @@ def execute_trusted_public_effect(
         if authority_request(write_time) != request:
             raise _Blocked("write-time live Git state differs from Human-authorized tuple")
         _validate_human_authority(write_time, authority)
+
+        gate = write_time["public_effect_gate"]
+        authority_identity = hashlib.sha256(
+            authority["human_decision_evidence_ref"].encode("utf-8")
+        ).hexdigest()
+        journal_root = git_source.effect_journal_dir()
+        attempt_dir = journal_root / f"{gate['effect_sha256']}-{authority_identity}"
+        reservation_path = attempt_dir / "0001-WRITE_RESERVED.json"
+        write_record_exclusive_atomic(
+            reservation_path,
+            {
+                "schema_version": "projector-public-effect-journal/1.0",
+                "status": "WRITE_RESERVED",
+                "reserved_at": _utc_now(),
+                "authority_request": request,
+                "human_authority": authority,
+                "public_effect_gate": gate,
+            },
+        )
     except _Blocked as exc:
         return _blocked(exc.reason)
+    except PublicEffectGateError as exc:
+        if "refusing to overwrite public-effect evidence" in str(exc):
+            return _blocked("PUBLIC_EFFECT_AUTHORITY_REPLAY_BLOCKED")
+        return _blocked(f"PUBLIC_EFFECT_JOURNAL_FAILURE:{type(exc).__name__}")
     except Exception as exc:
         return _blocked(f"TRUSTED_SOURCE_FAILURE:{type(exc).__name__}")
 
-    write_result = sink.write(write_time["public_effect_gate"]["effect_descriptor"])
     try:
-        result = _validated_write_result(write_result)
-    except _Blocked as exc:
-        raise RuntimeError(
-            "external write occurred but exact result identity is unavailable; reconciliation required: " + exc.reason
-        ) from exc
+        write_result = sink.write(gate["effect_descriptor"])
+        result = _validated_write_result(
+            write_result,
+            gate["effect_descriptor"]["expected_public_result"],
+        )
+    except Exception as exc:
+        failure = {
+            "schema_version": "projector-public-effect-journal/1.0",
+            "status": "RECONCILIATION_REQUIRED",
+            "recorded_at": _utc_now(),
+            "reason": f"{type(exc).__name__}:{exc}",
+            "target_write_performed": "UNKNOWN",
+            "public_effect_gate": gate,
+        }
+        try:
+            write_record_exclusive_atomic(attempt_dir / "0002-RECONCILIATION_REQUIRED.json", failure)
+        except Exception:
+            pass
+        return {
+            **failure,
+            "effect_evidence_status": "UNKNOWN",
+            "target_write_result": "UNKNOWN_REQUIRES_RECONCILIATION",
+            "next_route": "RECONCILE_REMOTE_STATE_BEFORE_ANY_RETRY",
+            "merge_authorized": False,
+            "release_authorized": False,
+            "deploy_authorized": False,
+            "capability_promotion_authorized": False,
+            "human_final_acceptance_created": False,
+        }
 
-    gate = write_time["public_effect_gate"]
-    return {
+    completed = {
         "schema_version": "projector-public-effect-gate-result/1.2",
         "status": "PUBLIC_EFFECT_COMPLETED_REVIEW_REQUIRED",
         "effect_evidence_status": "OBSERVED",
@@ -616,3 +755,21 @@ def execute_trusted_public_effect(
         "capability_promotion_authorized": False,
         "human_final_acceptance_created": False,
     }
+    try:
+        write_record_exclusive_atomic(attempt_dir / "0002-WRITE_OBSERVED.json", completed)
+    except Exception as exc:
+        return {
+            "schema_version": "projector-public-effect-journal/1.0",
+            "status": "RECONCILIATION_REQUIRED",
+            "effect_evidence_status": "OBSERVED_BUT_DURABLE_RECORD_FAILED",
+            "target_write_performed": True,
+            "target_write_result": result,
+            "reason": f"DURABLE_RESULT_RECORD_FAILED:{type(exc).__name__}",
+            "next_route": "PRESERVE_RESULT_AND_RECONCILE_BEFORE_ANY_RETRY",
+            "merge_authorized": False,
+            "release_authorized": False,
+            "deploy_authorized": False,
+            "capability_promotion_authorized": False,
+            "human_final_acceptance_created": False,
+        }
+    return completed
