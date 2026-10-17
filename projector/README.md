@@ -17,6 +17,14 @@ Najważniejsze reguły:
 - `run.json` oraz stany są append-only;
 - JSON z powtórzonymi kluczami albo polami spoza schematu jest odrzucany;
 - timestampy muszą zawierać strefę czasową;
+- nowe runy używają schematu 2.1 i deklarują niepustą listę
+  `done_criteria`; każde kryterium musi wskazać dopuszczalny zakres dowodu,
+  a przejście do `DONE` musi zawierać aktualny dowód, którego `supports`
+  wymienia identyfikator tego kryterium;
+- historyczne runy 2.0 pozostają weryfikowalne bez przepisywania ich
+  zahaszowanych manifestów i stanów;
+- definicja `DONE` i jej kryteria są w runie 2.1 nierozdzielną, niezmienną
+  parą; zmiana wymaga nowego runu z jawnym powiązaniem pochodzenia;
 - `DONE` jest stanem terminalnym — dalsza praca wymaga nowego runu z jawnym
   powiązaniem pochodzenia;
 - pliki tymczasowe po przerwanym zapisie nie są traktowane jako stany.
@@ -41,6 +49,13 @@ Runtime dodatkowo:
   `.git/projector-public-effects/`;
 - nie zezwala na ponowną próbę po niepewnym zapisie bez wcześniejszego
   uzgodnienia rzeczywistego stanu zdalnego.
+
+Granice obecnej wersji są istotne: dziennik wykorzystania zgody jest lokalny
+dla danego klonu, a `observed_public_result` jest raportem wykonawcy zapisu,
+nie niezależnym odczytem GitHub. Z tego powodu warstwa publicznych efektów nie
+powinna jeszcze otrzymać akceptacji P4 ani uprawnienia do automatycznego merge.
+Kolejna wersja musi użyć współdzielonej idempotencji i niezależnego odczytu
+stanu zdalnego po zapisie.
 
 ## Testy
 

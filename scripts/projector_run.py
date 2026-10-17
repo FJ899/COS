@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Projector v2.0 durable run recorder and transition verifier.
+"""Projector durable run recorder and transition verifier.
 
 This executable is deliberately not a planner or workflow engine. It validates
 machine-readable run bindings/transitions produced by the existing Intelligence
@@ -19,7 +19,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = "2.0"
+SCHEMA_VERSION = "2.1"
+SUPPORTED_SCHEMA_VERSIONS = {"2.0", SCHEMA_VERSION}
 TASK_CONTRACT = {
     "version": "v1.0",
     "commit": "ef128a0885310524475fba1cd291d1f34400b0cc",
@@ -267,6 +268,62 @@ def validate_evidence_refs(value: Any, name: str) -> list[dict[str, Any]]:
     return validated
 
 
+def validate_done_criteria(value: Any, name: str = "done_criteria") -> list[dict[str, Any]]:
+    criteria = require_list(value, name)
+    if not criteria:
+        raise ProjectorError(f"{name} must contain at least one criterion")
+    seen: set[str] = set()
+    validated: list[dict[str, Any]] = []
+    for index, item in enumerate(criteria):
+        criterion_name = f"{name}[{index}]"
+        criterion = require_object(item, criterion_name)
+        require_exact_keys(
+            criterion,
+            {"criterion_id", "description", "required_evidence_scope"},
+            criterion_name,
+        )
+        criterion_id = require_string(criterion["criterion_id"], f"{criterion_name}.criterion_id")
+        if not RUN_ID_RE.fullmatch(criterion_id):
+            raise ProjectorError(f"{criterion_name}.criterion_id contains unsupported characters")
+        if criterion_id in seen:
+            raise ProjectorError(f"duplicate criterion_id in {name}: {criterion_id}")
+        seen.add(criterion_id)
+        require_string(criterion["description"], f"{criterion_name}.description")
+        scope = criterion["required_evidence_scope"]
+        if scope not in {"WORKLOAD_EXTERNAL", "HUMAN_DECISION"}:
+            raise ProjectorError(
+                f"{criterion_name}.required_evidence_scope must be WORKLOAD_EXTERNAL or HUMAN_DECISION"
+            )
+        validated.append(criterion)
+    return validated
+
+
+def validate_done_evidence(run: dict[str, Any], refs: list[dict[str, Any]]) -> None:
+    """Require every v2.1 DONE criterion to have an exact, current evidence binding."""
+    if run["schema_version"] == "2.0":
+        external = [ref for ref in refs if ref["scope"] == "WORKLOAD_EXTERNAL"]
+        if not external:
+            raise ProjectorError("DONE requires workload-external effect evidence")
+        return
+
+    criteria = validate_done_criteria(
+        run["initial_binding"]["done_criteria"], "initial_binding.done_criteria"
+    )
+    missing: list[str] = []
+    for criterion in criteria:
+        matched = any(
+            ref["scope"] == criterion["required_evidence_scope"]
+            and criterion["criterion_id"] in ref["supports"]
+            for ref in refs
+        )
+        if not matched:
+            missing.append(criterion["criterion_id"])
+    if missing:
+        raise ProjectorError(
+            "DONE lacks current evidence satisfying criteria: " + ", ".join(sorted(missing))
+        )
+
+
 def validate_route(value: Any, name: str = "route") -> dict[str, Any]:
     route = require_object(value, name)
     required = {"route_id", "next_move_kind", "description", "justification", "evidence_basis"}
@@ -403,7 +460,7 @@ def validate_state_common(state: dict[str, Any], run: dict[str, Any]) -> None:
         "state_sha256",
     }
     require_exact_keys(state, required, "state")
-    if state["schema_version"] != SCHEMA_VERSION:
+    if state["schema_version"] != run["schema_version"]:
         raise ProjectorError("state schema_version mismatch")
     if state["run_id"] != run["run_id"]:
         raise ProjectorError("state run_id does not match run manifest")
@@ -454,8 +511,11 @@ def validate_run_manifest(run: dict[str, Any], expected_run_id: str | None = Non
         "provenance",
     }
     require_exact_keys(run, required, "run.json")
-    if run["schema_version"] != SCHEMA_VERSION:
-        raise ProjectorError("run schema_version mismatch")
+    if run["schema_version"] not in SUPPORTED_SCHEMA_VERSIONS:
+        raise ProjectorError(
+            "unsupported run schema_version; supported versions: "
+            + ", ".join(sorted(SUPPORTED_SCHEMA_VERSIONS))
+        )
     run_id = require_string(run["run_id"], "run_id")
     if not RUN_ID_RE.fullmatch(run_id):
         raise ProjectorError("run_id contains unsupported characters")
@@ -473,11 +533,15 @@ def validate_run_manifest(run: dict[str, Any], expected_run_id: str | None = Non
         "assumptions",
         "known_human_authority_gates",
     }
+    if run["schema_version"] == "2.1":
+        required_binding.add("done_criteria")
     require_exact_keys(binding, required_binding, "initial_binding")
     for key in ("bounded_target", "goal", "done", "verification_method", "current_critical_unknown"):
         require_string(binding[key], f"initial_binding.{key}")
     require_list(binding["assumptions"], "initial_binding.assumptions")
     require_list(binding["known_human_authority_gates"], "initial_binding.known_human_authority_gates")
+    if run["schema_version"] == "2.1":
+        validate_done_criteria(binding["done_criteria"], "initial_binding.done_criteria")
     validate_provenance(run["provenance"])
 
 
@@ -506,6 +570,7 @@ def validate_init_input(value: dict[str, Any], run_id: str) -> tuple[dict[str, A
         "bounded_target",
         "goal",
         "done",
+        "done_criteria",
         "verification_method",
         "current_critical_unknown",
         "assumptions",
@@ -535,6 +600,7 @@ def validate_init_input(value: dict[str, Any], run_id: str) -> tuple[dict[str, A
             "bounded_target": value["bounded_target"],
             "goal": value["goal"],
             "done": value["done"],
+            "done_criteria": validate_done_criteria(value["done_criteria"]),
             "verification_method": value["verification_method"],
             "current_critical_unknown": value["current_critical_unknown"],
             "assumptions": assumptions,
@@ -668,9 +734,7 @@ def verify_bundle(run_dir: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
             )
 
         if state["status"] == "DONE":
-            external = [ref for ref in state["material_evidence_refs"] if ref["scope"] == "WORKLOAD_EXTERNAL"]
-            if not external:
-                raise ProjectorError("DONE requires workload-external effect evidence")
+            validate_done_evidence(run, current_refs)
             if state["critical_unknown_or_blocker"] is not None:
                 raise ProjectorError("DONE cannot retain a critical unknown/blocker")
             require_string(run["initial_binding"]["verification_method"], "initial_binding.verification_method")
@@ -735,6 +799,11 @@ def validate_transition_input(
         proposed_done=proposed_done,
         evidence_index=evidence_index,
     )
+    if run["schema_version"] == "2.1" and proposed_done != previous["current_done"]:
+        raise ProjectorError(
+            "schema 2.1 DONE criteria are immutable; create a new run with explicit parent provenance "
+            "to change DONE"
+        )
     human_intervention = validate_human_intervention(proposed["human_intervention"], evidence_index)
     if goal_change is not None:
         if human_intervention is None:
@@ -781,9 +850,7 @@ def validate_transition_input(
             raise ProjectorError("declared route invalidation must reroute or truthfully BLOCK")
 
     if status == "DONE":
-        external = [ref for ref in current_refs if ref["scope"] == "WORKLOAD_EXTERNAL"]
-        if not external:
-            raise ProjectorError("DONE requires at least one workload-external effect evidence reference")
+        validate_done_evidence(run, current_refs)
         if critical is not None:
             raise ProjectorError("DONE cannot retain a critical unknown/blocker")
         require_string(run["initial_binding"]["verification_method"], "initial_binding.verification_method")
@@ -791,7 +858,7 @@ def validate_transition_input(
     require_string(proposed["transition_reason"], "transition_reason")
     sequence = previous["sequence"] + 1
     state = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": run["schema_version"],
         "run_id": run["run_id"],
         "sequence": sequence,
         "previous_state_sha256": previous["state_sha256"],

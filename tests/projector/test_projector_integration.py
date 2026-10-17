@@ -38,6 +38,13 @@ def init_payload() -> dict:
         "bounded_target": "Reach one observable external effect through an evidence-driven route.",
         "goal": "Reach the bounded external effect",
         "done": "External verification reports the predefined effect",
+        "done_criteria": [
+            {
+                "criterion_id": "done.external-effect",
+                "description": "External verification reports the predefined effect",
+                "required_evidence_scope": "WORKLOAD_EXTERNAL",
+            }
+        ],
         "verification_method": "Inspect the frozen workload-external result",
         "current_critical_unknown": "Will route A remain viable after inspection?",
         "assumptions": ["Route A is initially available"],

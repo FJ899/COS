@@ -39,6 +39,13 @@ def init_payload() -> dict:
         "bounded_target": "Maintain a durable recoverable state for the bounded work.",
         "goal": "Preserve enough durable state to continue correctly",
         "done": "A fresh process reconstructs the exact current state",
+        "done_criteria": [
+            {
+                "criterion_id": "done.recovered-state",
+                "description": "A fresh process reconstructs the exact current state",
+                "required_evidence_scope": "WORKLOAD_EXTERNAL",
+            }
+        ],
         "verification_method": "Run the recover command in a fresh process",
         "current_critical_unknown": "Will the first evidence update remain recoverable?",
         "assumptions": ["Filesystem persistence is available"],

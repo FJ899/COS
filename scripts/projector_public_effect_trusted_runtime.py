@@ -28,6 +28,7 @@ from projector_public_effect_gate import (
     EQUAL,
     OBJECT_TYPES,
     PROVEN_ANCESTOR,
+    PublicEffectGateError,
     PublicEffectWriteSink,
     _Blocked,
     _blocked,
@@ -653,13 +654,13 @@ def execute_trusted_public_effect(
                 "public_effect_gate": gate,
             },
         )
-    except FileExistsError as exc:
-        return _blocked(f"PUBLIC_EFFECT_AUTHORITY_REPLAY_BLOCKED:{exc}")
     except _Blocked as exc:
         return _blocked(exc.reason)
-    except Exception as exc:
+    except PublicEffectGateError as exc:
         if "refusing to overwrite public-effect evidence" in str(exc):
             return _blocked("PUBLIC_EFFECT_AUTHORITY_REPLAY_BLOCKED")
+        return _blocked(f"PUBLIC_EFFECT_JOURNAL_FAILURE:{type(exc).__name__}")
+    except Exception as exc:
         return _blocked(f"TRUSTED_SOURCE_FAILURE:{type(exc).__name__}")
 
     try:
