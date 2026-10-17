@@ -1,7 +1,7 @@
 ---
 system: "Creative OS"
 role: "single-entrypoint"
-version: "1.1"
+version: "1.2"
 status: "ACTIVE"
 state_owner: "CREATIVE_OS.md"
 ---
@@ -32,7 +32,7 @@ TRYB: BOOT
 Tryby:
 
 - `BOOT` — odtwórz stan, blokadę i jeden następny krok; bez zmian;
-- `WORK` — wykonaj jeden jawnie zlecony, odwracalny krok po pełnym BOOT, o ile nie ma blokady;
+- `WORK` — wykonaj zlecony pakiet odwracalnej pracy po pełnym BOOT, do ustalonego rezultatu lub rzeczywistej blokady;
 - `AUDIT` — oceń spójność i dowody; bez zmian;
 - `PORTFOLIO` — pokaż Human-owned global priority/order z `MASTER_TODO.md` oraz high-level portfolio continuity z `CREATIVE_OS.md`; lokalne next steps nie stają się globalnym priorytetem.
 
@@ -166,11 +166,11 @@ Run 001 jest zintegrowanym observed evidence; późniejszy P0 root-containment h
 Zatrzymaj pracę, gdy:
 
 - pojawia się ryzyko utraty danych, złamania authority/security boundary, nieodwracalnego efektu albo utraty integrity/provenance;
-- lokalny stan zawiera aktywną blokadę;
-- wymagany plik albo repo jest niedostępne;
+- lokalny stan zawiera aktywną blokadę dla planowanego działania; niezależne autoryzowane działania mogą być kontynuowane;
+- wymagany plik albo repo jest niedostępne dla danego działania;
 - źródła są sprzeczne, a hierarchia nie rozstrzyga;
 - `WORK` wymaga zmiany celu, globalnego priorytetu, kanonu albo statusu bez decyzji użytkownika;
-- dostępna jest tylko specyfikacja, plan lub pamięć AI bez dowodu wykonania.
+- trzeba potwierdzić wykonanie, a dostępna jest tylko specyfikacja, plan lub pamięć AI bez dowodu. Specyfikacja może być wejściem do zleconej implementacji, ale nie dowodem jej ukończenia.
 
 Brak dostępu raportuj jako `ACCESS BLOCKED`. Brak źródła raportuj jako `SOURCE REQUIRED`. Nie uzupełniaj danych z pamięci AI.
 
@@ -189,8 +189,10 @@ Nowy finding nie staje się automatycznie zadaniem. Stosuj `MASTER_TODO.md` → 
 
 - najpierw pełny BOOT;
 - potwierdź, że projekt/task jest zgodny z Human-owned `CURRENT PRIORITY` albo został jawnie wybrany przez Human;
-- przy blokadzie zatrzymaj się;
-- bez blokady wykonaj jeden krok wynikający z lokalnego stanu i polecenia;
+- ustal rezultat, zakres, sposób sprawdzenia i rzeczywiste bramki decyzji;
+- wykonuj kolejne odwracalne działania w tym zakresie bez pytania po każdym kroku;
+- przy blokadzie zatrzymaj zależną część i wykonaj niezależną autoryzowaną pracę;
+- jeśli użytkownik zlecił dokładnie jeden krok, zachowaj to ograniczenie;
 - zmiany semantyczne wymagają jawnej decyzji;
 - repo zmieniaj przez branch, walidację, PR i merge zgodnie z poleceniem.
 
@@ -222,11 +224,11 @@ GDZIE STANĘLIŚMY:
 BRAK / BLOKADA:
 JEDEN LOKALNY NASTĘPNY KROK:
 SPRZECZNOŚCI: BRAK | LISTA
-DZIAŁANIE: REPORT ONLY | STOPPED ON BLOCKER | READY FOR ONE STEP | EXECUTED
+DZIAŁANIE: REPORT ONLY | STOPPED ON BLOCKER | READY FOR WORK | EXECUTED
 PYTANIE KIERUNKOWE: BRAK | JEDNO PYTANIE
 ```
 
-`READY FOR ONE STEP` nie jest zgodą na zmianę kierunku. `EXECUTED` wymaga obserwowalnego dowodu.
+`READY FOR WORK` nie jest zgodą na zmianę kierunku. Jeden lokalny następny krok służy wznowieniu; nie ogranicza długości już zleconego pakietu pracy. `EXECUTED` wymaga obserwowalnego dowodu.
 
 ## 7. Minimalne klucze
 

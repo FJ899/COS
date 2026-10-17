@@ -47,6 +47,29 @@
       ],
       "integration_ci_commands": [],
       "notes": "Promoted from IMPLEMENTED only after Verify Creative OS run #122 passed on exact head 77ce387d7ca8eb080b3d6781d2d7e97ea818212a. This promotion claims tested gate behavior only; no integration, real-work or reliability claim is made."
+    },
+    {
+      "id": "CAP-IDEA-001",
+      "name": "Evidence-based idea comparison",
+      "claim": "Given supplied criterion directions, comparable measurements and evidence references, identify dominated feasible alternatives, preserve tradeoffs and list unresolved alternatives without changing project priority.",
+      "status": "IMPLEMENTED",
+      "implementation": [
+        "scripts/compare_ideas.py"
+      ],
+      "executable_evidence": [
+        "tests/capability/test_idea_comparison.py"
+      ],
+      "failure_evidence": [
+        "tests/capability/test_idea_comparison.py"
+      ],
+      "integration_evidence": [],
+      "real_work_evidence": [],
+      "reliability_evidence": [],
+      "ci_commands": [
+        "python -m unittest discover -s tests/capability -p 'test_*.py'"
+      ],
+      "integration_ci_commands": [],
+      "notes": "New bounded comparison helper. Local regression tests are supplied; no real-work or reliability claim. Evidence references are supplied by the caller and are not authenticated by this tool."
     }
   ]
 }

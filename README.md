@@ -126,7 +126,7 @@ Brak sprzeczności oznacza rozpoczęcie pracy bez dodatkowego pytania.
 
 # 5. Praca nad aktualnym rezultatem
 
-1. AI utrzymuje jeden jawny rezultat sesji.
+1. AI utrzymuje jeden jawny rezultat sesji. Zlecenie obejmujące pakiet pracy upoważnia do kolejnych odwracalnych działań do tego rezultatu; zapis jednego następnego kroku nie jest nakazem zakończenia sesji po jednej operacji.
 2. Nowa informacja otrzymuje werdykt:
    - `ZMIENIA PLAN`;
    - `NIE ZMIENIA PLANU`;
@@ -202,6 +202,24 @@ Alias:
 - `DRIFT` — pomysł nie służy jawnemu rezultatowi albo jego siłą jest głównie atrakcyjność nowości.
 
 `DRIFT` nie oznacza usunięcia. Pomysł zostaje zachowany, ale nie jest rozwijany bez jawnej decyzji o zmianie kierunku.
+
+## Porównanie pomysłów, gdy użytkownik zleca wybór lub rozwój
+
+Tag `CORE / DETOUR / PARKING / DRIFT` opisuje związek z aktualnym celem,
+a nie jakość pomysłu. `PARKING` może zawierać najlepszy pomysł na kolejny etap.
+Przy zleceniu analizy lub rozwoju AI może od razu porównać warianty w tym zakresie.
+
+1. Ustal efekt, odbiorcę, ograniczenia i kryteria przed oceną wariantów.
+2. Porównaj 2–5 rzeczywiście różnych rozwiązań, w tym najmniejszą korektę obecnego.
+3. Oddziel obserwacje, estymacje i brak danych. Dopisz źródło i jednostkę każdej miary.
+4. Odrzuć wariant tylko po wykazaniu naruszonego twardego ograniczenia.
+5. Wskaż kompromisy, założenia i najtańszy test mogący odwrócić rekomendację.
+6. Rozwijaj naturalny potencjał jako propozycję: oczekiwany efekt → przesłanka → mały test → koszt → warunek przerwania.
+
+Pomocnicze porównanie danych: `python scripts/compare_ideas.py comparison.json`.
+Opis wejścia i ograniczeń znajduje się w `scripts/README.md`.
+Narzędzie porównuje dostarczone miary; ich prawdziwość i porównywalność podlegają ocenie.
+Nie zastępuje analizy treści, preferencji użytkownika ani decyzji o priorytecie.
 
 ## Krok 4 — powrót do pracy
 
@@ -328,7 +346,7 @@ Proces:
 
 Przykłady:
 
-- nowy plik;
+- nowy plik ustanawiający nowego właściciela stanu lub nowy mechanizm systemowy (zwykły test, raport lub plik implementacji nie jest sam w sobie zmianą architektury);
 - nowy obowiązkowy status;
 - zmiana odpowiedzialności między Creative OS i systemem lokalnym;
 - zmiana hierarchii źródeł;

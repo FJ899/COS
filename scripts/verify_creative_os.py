@@ -54,8 +54,8 @@ def fail(message: str) -> None:
 def load(path: str) -> str:
     try:
         return (ROOT / path).read_text(encoding="utf-8")
-    except UnicodeDecodeError as exc:
-        fail(f"{path} nie jest UTF-8: {exc}")
+    except (OSError, UnicodeDecodeError) as exc:
+        fail(f"nie można odczytać {path}: {exc}")
     raise AssertionError("unreachable")
 
 
@@ -80,6 +80,8 @@ def parse_rows(content: str) -> dict[str, list[str]]:
             cells = [c.strip() for c in line.strip().strip("|").split("|")]
             if len(cells) != 6:
                 fail(f"wiersz tabeli nie ma 6 kolumn: {line}")
+            if cells[0] in result:
+                fail(f"zduplikowany projekt w tabeli: {cells[0]}")
             result[cells[0]] = cells
     return result
 
