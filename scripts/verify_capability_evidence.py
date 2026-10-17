@@ -6,9 +6,13 @@ from __future__ import annotations
 import ast
 import json
 import re
+import shlex
+
 import sys
 from pathlib import Path
 from typing import Iterable
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = Path("governance/CAPABILITY_REGISTRY.json")
@@ -41,23 +45,35 @@ LIST_FIELDS = [
 
 def _list(entry: dict, field: str, errors: list[str], cap_id: str) -> list[str]:
     value = entry.get(field)
-    if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
+    if not isinstance(value, list) or not all(isinstance(item, str) and item.strip() for item in value):
         errors.append(f"{cap_id}: {field} must be a list of non-empty strings")
         return []
     return value
 
 
+def _repository_file(root: Path, value: str) -> Path | None:
+    """Require canonical, repository-local files, including symlink targets."""
+    relative = Path(value)
+    if relative.is_absolute() or ".." in relative.parts or "\\" in value:
+        return None
+    try:
+        resolved = (root / relative).resolve(strict=True)
+        resolved.relative_to(root.resolve())
+        return resolved if resolved.is_file() else None
+    except (OSError, RuntimeError, ValueError):
+        return None
+
+
 def _existing_paths(root: Path, cap_id: str, field: str, values: Iterable[str], errors: list[str]) -> None:
     for value in values:
-        path = root / value
-        if not path.is_file():
-            errors.append(f"{cap_id}: {field} path does not exist: {value}")
+        if _repository_file(root, value) is None:
+            errors.append(f"{cap_id}: {field} path does not exist or escapes repository: {value}")
 
 
 def _python_stub_errors(path: Path) -> list[str]:
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    except (UnicodeDecodeError, SyntaxError) as exc:
+    except (OSError, UnicodeDecodeError, SyntaxError) as exc:
         return [f"cannot inspect registered Python implementation {path}: {exc}"]
 
     issues: list[str] = []
@@ -76,8 +92,8 @@ def _python_stub_errors(path: Path) -> list[str]:
 def _implementation_stub_errors(root: Path, cap_id: str, implementations: Iterable[str]) -> list[str]:
     issues: list[str] = []
     for value in implementations:
-        path = root / value
-        if not path.is_file():
+        path = _repository_file(root, value)
+        if path is None:
             continue
         if path.suffix == ".py":
             for issue in _python_stub_errors(path):
@@ -85,17 +101,82 @@ def _implementation_stub_errors(root: Path, cap_id: str, implementations: Iterab
     return issues
 
 
-def _workflow_text(root: Path) -> str:
+def _tokens(command: str) -> tuple[str, ...]:
+    try:
+        lexer = shlex.shlex(command, posix=True, punctuation_chars=True)
+        lexer.whitespace_split = True
+        tokens = tuple(lexer)
+        if any(token in {";", "&&", "||", "|", "&", ">", ">>", "<", "<<", "(", ")"} or "$" in token or "`" in token for token in tokens):
+            return ()
+        return tokens
+    except ValueError:
+        return ()
+
+
+def _workflow_commands(root: Path, errors: list[str]) -> set[tuple[str, ...]]:
+    """Read actual unconditional root-level run steps; never execute registry input.
+
+    This checks declarations, not GitHub run results. Complex shell wrappers,
+    reusable workflows and conditional jobs need explicit review.
+    """
+    commands: set[tuple[str, ...]] = set()
     workflow_root = root / ".github" / "workflows"
-    if not workflow_root.is_dir():
-        return ""
-    chunks: list[str] = []
-    for path in sorted(workflow_root.glob("*.y*ml")):
+    paths = sorted(set(workflow_root.glob("*.yml")) | set(workflow_root.glob("*.yaml")))
+    for path in paths:
         try:
-            chunks.append(path.read_text(encoding="utf-8"))
-        except UnicodeDecodeError:
+            workflow = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, yaml.YAMLError) as exc:
+            errors.append(f"cannot inspect workflow {path.name}: {exc}")
             continue
-    return "\n".join(chunks)
+        if not isinstance(workflow, dict):
+            errors.append(f"workflow {path.name} must be a mapping")
+            continue
+        # PyYAML's YAML 1.1 loader reads the unquoted Actions key 'on' as True.
+        events = workflow.get("on", workflow.get(True))
+        if isinstance(events, str):
+            events = [events]
+        if not isinstance(events, (list, dict)) or "pull_request" not in events:
+            continue
+        jobs = workflow.get("jobs", {})
+        if not isinstance(jobs, dict):
+            errors.append(f"workflow {path.name} jobs must be a mapping")
+            continue
+        for job in jobs.values():
+            if not isinstance(job, dict) or "uses" in job:
+                continue
+            if job.get("if", True) is not True or job.get("continue-on-error", False) is not False:
+                continue
+            steps = job.get("steps", [])
+            if not isinstance(steps, list):
+                errors.append(f"workflow {path.name} steps must be a list")
+                continue
+            for step in steps:
+                if not isinstance(step, dict) or not isinstance(step.get("run"), str):
+                    continue
+                if step.get("if", True) is not True or step.get("continue-on-error", False) is not False:
+                    continue
+                defaults = workflow.get("defaults", {})
+                job_defaults = job.get("defaults", {})
+                if not isinstance(defaults, dict) or not isinstance(job_defaults, dict):
+                    continue
+                global_run = defaults.get("run", {})
+                job_run = job_defaults.get("run", {})
+                if not isinstance(global_run, dict) or not isinstance(job_run, dict):
+                    continue
+                run_defaults = {**global_run, **job_run}
+                directory = step.get("working-directory", run_defaults.get("working-directory", "."))
+                if directory not in (".", "./"):
+                    continue
+                shell = step.get("shell", run_defaults.get("shell", "bash"))
+                if shell != "bash":
+                    continue
+                lines = [line.strip() for line in step["run"].splitlines()
+                         if line.strip() and not line.lstrip().startswith("#")]
+                parsed = [_tokens(line) for line in lines]
+                # Reject the whole block if shell flow can skip/mask a command.
+                if parsed and all(tokens and tokens[0] in {"python", "python3"} for tokens in parsed):
+                    commands.update(parsed)
+    return commands
 
 
 def _formal_claim_errors(root: Path, registered_ids: set[str]) -> list[str]:
@@ -104,14 +185,27 @@ def _formal_claim_errors(root: Path, registered_ids: set[str]) -> list[str]:
     for path in root.rglob("*.md"):
         if ignored_parts.intersection(path.parts):
             continue
+        if _repository_file(root, str(path.relative_to(root))) is None:
+            errors.append(f"formal claim document escapes repository or is unavailable: {path.relative_to(root)}")
+            continue
         try:
             content = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
+        except (OSError, UnicodeDecodeError) as exc:
+            errors.append(f"cannot inspect formal claim document {path.relative_to(root)}: {exc}")
             continue
         for cap_id in CLAIM_RE.findall(content):
             if cap_id not in registered_ids:
                 errors.append(f"unregistered formal claim {cap_id} in {path.relative_to(root)}")
     return errors
+
+
+def _unique_object(pairs: list[tuple[str, object]]) -> dict:
+    result: dict = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
 
 
 def validate_repository(root: Path) -> list[str]:
@@ -126,12 +220,15 @@ def validate_repository(root: Path) -> list[str]:
         return errors
 
     try:
-        registry = json.loads(registry_file.read_text(encoding="utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        registry = json.loads(registry_file.read_text(encoding="utf-8"), object_pairs_hook=_unique_object)
+    except (OSError, UnicodeDecodeError, ValueError) as exc:
         errors.append(f"invalid capability registry: {exc}")
         return errors
 
-    if registry.get("schema_version") != 1:
+    if not isinstance(registry, dict):
+        return errors + ["capability registry must be an object"]
+
+    if type(registry.get("schema_version")) is not int or registry.get("schema_version") != 1:
         errors.append("registry schema_version must be 1")
     if registry.get("allowed_statuses") != STATUSES:
         errors.append("registry allowed_statuses must exactly match the frozen status ladder")
@@ -141,7 +238,7 @@ def validate_repository(root: Path) -> list[str]:
         errors.append("registry capabilities must be a list")
         return errors
 
-    workflow_text = _workflow_text(root)
+    workflow_commands = _workflow_commands(root, errors)
     seen: set[str] = set()
 
     for entry in capabilities:
@@ -165,7 +262,7 @@ def validate_repository(root: Path) -> list[str]:
             errors.append(f"{cap_id}: name must be non-empty")
         if not isinstance(claim, str) or not claim.strip():
             errors.append(f"{cap_id}: claim must be non-empty")
-        if status not in RANK:
+        if not isinstance(status, str) or status not in RANK:
             errors.append(f"{cap_id}: invalid status {status!r}")
             continue
 
@@ -187,7 +284,7 @@ def validate_repository(root: Path) -> list[str]:
             _existing_paths(root, cap_id, "executable_evidence", values["executable_evidence"], errors)
             _existing_paths(root, cap_id, "failure_evidence", values["failure_evidence"], errors)
             for command in values["ci_commands"]:
-                if command not in workflow_text:
+                if not _tokens(command) or _tokens(command) not in workflow_commands:
                     errors.append(f"{cap_id}: CI does not execute declared command: {command}")
 
         if RANK[status] >= RANK["INTEGRATION_TESTED"]:
@@ -197,7 +294,7 @@ def validate_repository(root: Path) -> list[str]:
                 errors.append(f"{cap_id}: INTEGRATION_TESTED+ requires integration_ci_commands")
             _existing_paths(root, cap_id, "integration_evidence", values["integration_evidence"], errors)
             for command in values["integration_ci_commands"]:
-                if command not in workflow_text:
+                if not _tokens(command) or _tokens(command) not in workflow_commands:
                     errors.append(f"{cap_id}: CI does not execute integration command: {command}")
 
         if RANK[status] >= RANK["OBSERVED_IN_REAL_WORK"]:
@@ -206,7 +303,7 @@ def validate_repository(root: Path) -> list[str]:
             _existing_paths(root, cap_id, "real_work_evidence", values["real_work_evidence"], errors)
 
         if status == "RELIABLE":
-            if len(set(values["real_work_evidence"])) < 2:
+            if len({_repository_file(root, value) for value in values["real_work_evidence"]} - {None}) < 2:
                 errors.append(f"{cap_id}: RELIABLE requires at least two independent real_work_evidence paths")
             if not values["reliability_evidence"]:
                 errors.append(f"{cap_id}: RELIABLE requires reliability_evidence")

@@ -11,3 +11,6 @@ secrets/
 private/
 exports/
 raw_conversations/
+
+__pycache__/
+*.py[cod]
