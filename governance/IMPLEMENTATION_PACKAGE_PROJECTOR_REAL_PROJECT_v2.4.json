@@ -1,0 +1,192 @@
+{
+  "schema_version": "1.0",
+  "package_version": "v2.4",
+  "package_status": "P3_REMEDIATION_AFTER_SECOND_P4_FAIL_READY_FOR_INDEPENDENT_P4_REAUDIT",
+  "purpose": "Additive P3 remediation package for the second P4 FAIL. It removes caller-supplied/mutable Git and Human evidence-source objects from the external PUBLIC_EFFECT API, preserves all prior FAIL evidence, and performs no target PUBLIC_EFFECT.",
+  "task_contract": {
+    "version": "v1.0",
+    "commit": "ef128a0885310524475fba1cd291d1f34400b0cc",
+    "path": "governance/TASK_CONTRACT_PROJECTOR_REAL_PROJECT_v1.0.md",
+    "blob_sha": "b75045bb1b83fffdee87a4cb697c289f82f29655"
+  },
+  "architecture_parent": {
+    "version": "v2.0",
+    "commit": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+    "path": "governance/ARCHITECTURE_CONTRACT_PROJECTOR_REAL_PROJECT_v2.0.md",
+    "blob_sha": "e2e2158440939ba96cddffe9c0ac158ad07510f4"
+  },
+  "architecture_amendment": {
+    "version": "v2.1",
+    "decision": "AD-V2.1-001 — FRESH EXACT PUBLIC-EFFECT AUTHORITY GATE",
+    "commit": "6e07fa2cce685521e216c1c2e5c1ccf3cf7e779e",
+    "path": "governance/ARCHITECTURE_CONTRACT_PROJECTOR_REAL_PROJECT_v2.1.md",
+    "blob_sha": "caf6f6f08219cdd961af712febc37c92fe9cc768",
+    "frozen_parent": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1"
+  },
+  "p4_history": [
+    {
+      "audited_p3_head": "2aa7f8e2c498853fd54a7f596b027e44616dfbcf",
+      "verdict": "FAIL",
+      "ownership": "P3 IMPLEMENTATION",
+      "blocker": "Caller-supplied Human authority and caller-supplied/replayed Git proof could reach sink.write after structural validation only.",
+      "status_after_later_work": "HISTORICAL_FAIL_PRESERVED"
+    },
+    {
+      "audited_p3_head": "4b4a534c1e5c47a3951deda69ea1118e258a0c65",
+      "audited_p3_tree": "34151f0e22b9530c8dbf7e34bd338b191b56c529",
+      "verdict": "FAIL",
+      "ownership": "P3 IMPLEMENTATION",
+      "previous_counterexample": "REMEDIATED",
+      "new_blocker": "TRUSTED SOURCE ORIGIN / TEST-ADAPTER ISOLATION IS BYPASSABLE",
+      "failure": "Caller-controlled exact-class Git/Human adapter objects could retain test evidence, mutate test_only/remote_url/_test_comment state and reach an external effect-capable sink.",
+      "required_remediation": "Production effect path must establish trusted sources internally and test adapters must be structurally unable to enter the external-write path.",
+      "status_after_this_package": "HISTORICAL_FAIL_PRESERVED_PENDING_NEW_P4_REAUDIT"
+    }
+  ],
+  "remediation_lineage": {
+    "repository": "FJ899/COS",
+    "branch": "impl/projector-real-project-v2",
+    "previous_failed_package_head": "4b4a534c1e5c47a3951deda69ea1118e258a0c65",
+    "trusted_origin_closure_commit": "f12325c5201a4f1e43fa37b2c040df166c55a5a8",
+    "trusted_origin_closure_tree": "9fd233b8eaf07b210c831c95d57c838029aab8e5",
+    "regression_assertion_fix_commit": "5a7da40e535e474c31fd0c63f42dd292c979f862",
+    "regression_assertion_fix_tree": "0683227ff3f801d7bf0bfd51c108a7c2a78145e9",
+    "history_rewritten": false,
+    "merge_or_rebase_used_for_remediation": false,
+    "force_push_used": false
+  },
+  "implementation_files": [
+    {
+      "path": "scripts/projector_public_effect_gate.py",
+      "blob_sha": "fde937e70c68a72b0e3d70beecb707e76a020b4c",
+      "git_mode": "100755",
+      "role": "Unchanged deterministic non-effect-capable builder. Legacy caller-structural execute path remains physically disarmed."
+    },
+    {
+      "path": "scripts/projector_public_effect_trusted_runtime.py",
+      "blob_sha": "479f35ae2a11b338180d88125b25fe9e28c38b12",
+      "git_mode": "100755",
+      "role": "Canonical external effect runtime. It accepts no Git/Human evidence-source objects; snapshots locator/spec JSON, constructs immutable production Git and GitHub Human sources internally, performs two live Git reads and only then invokes sink.write."
+    },
+    {
+      "path": "tests/projector/test_projector_public_effect_gate.py",
+      "blob_sha": "0dc2c26b26b1fa28e19a488c96775509a1d22e99",
+      "git_mode": "100644",
+      "role": "Unchanged pure-builder/adversarial coverage for the first P4 caller-dictionary blocker."
+    },
+    {
+      "path": "tests/projector/test_projector_public_effect_trusted_runtime.py",
+      "blob_sha": "edc2fe35fed357c905a8966659e1646ece6d106f",
+      "git_mode": "100644",
+      "role": "Adversarial origin-isolation tests covering exact external API signature, absence of test factories/flags/payload fields, attempted test_only/remote_url/_test_comment mutation, object injection, real Git object proof, immutable Human comment verification, base advance and two-read race."
+    }
+  ],
+  "trusted_source_origin_boundary": {
+    "external_effect_api": "execute_trusted_public_effect(spec, human_authority_locator, git_worktree, sink)",
+    "caller_git_source_object_parameter": false,
+    "caller_human_source_object_parameter": false,
+    "caller_test_adapter_parameter": false,
+    "spec_and_locator_snapshot_before_trust_setup": true,
+    "production_git_source": {
+      "type": "_GitHubGitEvidenceSource",
+      "constructed_inside_external_effect_function": true,
+      "frozen_slots": true,
+      "test_factory_present": false,
+      "test_only_attribute_present": false,
+      "stored_mutable_remote_url_present": false,
+      "remote_url_derivation": "https://github.com/<exact repository>.git",
+      "process_level_git_override_hardening": [
+        "GIT_NO_REPLACE_OBJECTS=1",
+        "GIT_CONFIG_COUNT removed",
+        "GIT_CONFIG_KEY_* removed",
+        "GIT_CONFIG_VALUE_* removed",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES removed",
+        "GIT_OBJECT_DIRECTORY removed",
+        "GIT_REPLACE_REF_BASE removed"
+      ]
+    },
+    "production_human_source": {
+      "type": "_GitHubIssueCommentAuthoritySource",
+      "constructed_inside_external_effect_function": true,
+      "frozen_slots": true,
+      "test_factory_present": false,
+      "test_only_attribute_present": false,
+      "_test_comment_attribute_present": false,
+      "comment_retrieval": "always GitHub HTTPS GET of exact comment ID"
+    },
+    "human_locator_is_evidence": false,
+    "human_locator_role": "Select exact durable GitHub comment and expected actor identity only; comment bytes are fetched independently and exact authority tuple is reverified.",
+    "write_time_revalidation": "second distinct internally-created live Git invocation must reproduce the exact Human-bound authority request before sink.write",
+    "downstream_authority_created": false
+  },
+  "p4_counterexample_regression": {
+    "attacker_attempt": "construct old test-style Git/Human objects; set test_only=False; replace remote_url/_test_comment; pass objects with external-like sink",
+    "current_structural_result": [
+      "production source classes expose no for_non_public_test factory",
+      "production source objects expose no test_only marker or _test_comment payload",
+      "remote URL is derived read-only from repository",
+      "normal setattr cannot apply the attempted mutations",
+      "external effect API has no source-object parameters",
+      "passing source objects in locator/worktree positions is BLOCKED before sink.write"
+    ],
+    "target_write_performed_in_regression": false
+  },
+  "verification": {
+    "projector_test_command": "python -m unittest discover -s tests/projector -p 'test_projector_*.py'",
+    "latest_pre_package_suite": {
+      "commit": "5a7da40e535e474c31fd0c63f42dd292c979f862",
+      "workflow_run_id": 33089317455,
+      "run_number": 146,
+      "job_id": 98577522385,
+      "checked_out_pr_merge_sha": "04e9858afaa4a95e21701e8694769d72e0e515fc",
+      "base_integrated_by_pr_merge_ref": "6e07fa2cce685521e216c1c2e5c1ccf3cf7e779e",
+      "python": "3.11.16",
+      "projector_tests": 36,
+      "projector_result": "OK",
+      "job_conclusion": "success",
+      "workflow_token_permissions": ["Contents: read", "Metadata: read"]
+    },
+    "intermediate_failure_preserved": {
+      "commit": "f12325c5201a4f1e43fa37b2c040df166c55a5a8",
+      "workflow_run_id": 33089129061,
+      "job_id": 98576855674,
+      "conclusion": "failure",
+      "projector_tests_observed": 38,
+      "error_count": 5,
+      "error": "Regression test expected AttributeError, while CPython frozen+slots rejected unknown-field mutation with TypeError; attempted mutation still did not occur.",
+      "effect_write_before_failure": false,
+      "containment": "Corrected by a new test-only fast-forward commit; failed SHA remains FAIL and is not relabeled."
+    }
+  },
+  "historical_evidence_boundary": {
+    "prior_v2_3_package": "governance/IMPLEMENTATION_PACKAGE_PROJECTOR_REAL_PROJECT_v2.3.json",
+    "prior_v2_3_package_blob": "a24ef17cd2bcc65709fbc03390dc54f42e44f479",
+    "prior_v2_2_package": "governance/IMPLEMENTATION_PACKAGE_PROJECTOR_REAL_PROJECT_v2.2.json",
+    "prior_v2_2_package_blob": "7135bd8b93a20b85862133fecd59a9801182675d",
+    "prior_v2_1_package": "governance/IMPLEMENTATION_PACKAGE_PROJECTOR_REAL_PROJECT_v2.1.json",
+    "prior_v2_1_package_blob": "3470cb14b46baa152a772c39abb494ffd6087dcc",
+    "prior_real_work_evidence": "E-REAL-WORK-001 / target PR #13",
+    "retroactively_reclassified_as_v2_1_compliance": false
+  },
+  "external_effect_state": {
+    "real_target_public_effect_executed_for_this_remediation": false,
+    "target_repository_write_performed": false,
+    "pr_47_metadata_updated_by_this_remediation": false,
+    "reason_pr_47_metadata_not_updated": "CREATE_OR_UPDATE_PR remains a separately governed PUBLIC_EFFECT and no Human authority was granted for PR metadata mutation."
+  },
+  "capability_registry": {
+    "capability": "CAP-ITO-001",
+    "status": "PROPOSED",
+    "modified_by_this_remediation": false
+  },
+  "authority_state": {
+    "target_public_effect_authority": "NOT GRANTED",
+    "merge_authority": "NOT GRANTED",
+    "release_authority": "NOT GRANTED",
+    "deploy_authority": "NOT GRANTED",
+    "capability_promotion_authority": "NOT GRANTED",
+    "human_final_acceptance": "NOT YET CREATED"
+  },
+  "p4_reaudit": "NOT YET PERFORMED",
+  "package_freeze_commit": "RECORDED_EXTERNALLY_IN_P3_TO_P4_HANDOFF_BECAUSE_A_COMMIT_CANNOT_SELF_EMBED_ITS_OWN_SHA"
+}

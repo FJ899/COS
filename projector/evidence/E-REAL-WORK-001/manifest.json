@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "E-REAL-WORK-001",
+  "status": "CREATED",
+  "workload": {
+    "repository": "FJ899/executor-pilot-target",
+    "issue": 4,
+    "case": "CASE-003: restore canonical deterministic output",
+    "starting_branch": "case-003-broken",
+    "starting_sha": "c42bead2bbbff9c84486f17637ec80f35eeffa25",
+    "official_result_branch": "projector/e-real-work-001-case003",
+    "final_sha": "6d013df645c85faf2823097c86d534be53bf4093",
+    "final_blob": "project_registry/registry.py@c7a348cf2b0005d6ca515d23306998902d24800a",
+    "review_pr": 13,
+    "merged": false
+  },
+  "pre_run_freeze": {
+    "repository": "FJ899/COS",
+    "commit": "9d7c0aa22975df882d58850738f68466dab9a7f3",
+    "projector_build_sha": "590c6203a567117af3c52cdaff11a5ccfe4eee97",
+    "run_id": "E-REAL-WORK-001-CASE003"
+  },
+  "effect_evidence": {
+    "baseline": "sha256:e15a8fdae3f1304727b3a40a86224d19b649fe4af19770fe2fb7ef88a1248cdb",
+    "final_diff": "sha256:b9f54796c8ffde1da523401179ada2005928716d56dc12d7e7308cf6790755ff",
+    "final_tests": "sha256:f34b55522934441055650f3c4d4667a345499d7f59c7851416d6925b9d1a2a81",
+    "output_properties": "sha256:d46ac9f1e6759ca593ee66ec755af3a3fb73116bff0a5e24217bde6faaf3661f",
+    "target_ci_run_40": "sha256:23c6337c849faa5e27ade37aca54935c2725f0768cc930c0ad0687760cf016e3",
+    "final_review_state": "sha256:3d717bf4fe8a9016a337d4245cdd9d4827a7b24bd6318e99aa28b45e77db2a28",
+    "projector_final_verify": "sha256:a47f10d3a19cdfeb9a3fd5c89c253ba01ae2a875950c122a355b390674b93663",
+    "projector_final_recover": "sha256:fe105fa5b4caada57412023029f2f7133e9872cf96dbdcb7fc83b670f27e1d0f",
+    "projector_final_state_file": "sha256:4b267b5fb1b2dd238522e8b667c6dcd2cdf7fa0e3040d9ec250d845979f7bfae",
+    "projector_final_state_identity": "cedf51387357367c6c6aba97e2a8008a3a275cdd9c7876a089476c6e6a306ef3"
+  },
+  "observed_results": {
+    "baseline_tests": "13 run; exactly 2 named deterministic-order failures",
+    "final_local_compile": "PASS",
+    "final_local_tests": "13/13 PASS",
+    "named_test_different_input_order": "PASS",
+    "named_test_sorted_stable_utf8": "PASS",
+    "order_independent": true,
+    "utf8_preserved": true,
+    "exactly_one_final_newline": true,
+    "changed_files": ["project_registry/registry.py"],
+    "target_ci": "SUCCESS",
+    "target_ci_run": 40,
+    "target_ci_compile_step": "SUCCESS",
+    "target_ci_test_step": "SUCCESS",
+    "review_only_unmerged": true,
+    "human_operational_rescue": "NONE"
+  },
+  "deviations": {
+    "record": "sha256:7fc4c796d3e8f851e13a3c83c0b5dd2ec11f8cb90315a283190b98e6acd0c09c",
+    "P3-DEV-001": "Pre-freeze exploratory target execution retained as history and explicitly excluded from official E-REAL-WORK-001.",
+    "P3-DEV-002": "Accidental Issue #11 metadata write immediately closed as not_planned; no target file changed."
+  },
+  "p4_audit": "NOT YET AUDITED",
+  "human_final_acceptance": "NOT YET CREATED"
+}

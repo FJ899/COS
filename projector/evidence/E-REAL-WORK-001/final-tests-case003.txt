@@ -1,0 +1,30 @@
+FINAL_SHA=6d013df645c85faf2823097c86d534be53bf4093
+SOURCE_BLOBS:
+project_registry/__init__.py 1a22d91f6e4a344591e461530a520a5d2725d5ec
+project_registry/cli.py 7927c744492be42e4b010da3372b607c3449d67e
+project_registry/model.py 5be05fa2812aa53770551d865a6e5a8ff430e9b2
+project_registry/registry.py c7a348cf2b0005d6ca515d23306998902d24800a
+tests/test_cli.py f7bfa432bfaa6cebd384ec2845a66f81cfb4d519
+tests/test_registry.py c040b86152072f209622326e5a7b53a9884a4db1
+$ python -m compileall -q project_registry tests
+compile_exit=0
+$ python -m unittest discover -s tests -v
+test_different_input_order_produces_identical_stdout (test_cli.ProjectRegistryCliTests.test_different_input_order_produces_identical_stdout) ... ok
+test_duplicate_input_returns_error_without_output_file (test_cli.ProjectRegistryCliTests.test_duplicate_input_returns_error_without_output_file) ... ok
+test_input_file_is_not_modified (test_cli.ProjectRegistryCliTests.test_input_file_is_not_modified) ... ok
+test_output_cannot_replace_input (test_cli.ProjectRegistryCliTests.test_output_cannot_replace_input) ... ok
+test_active_project_can_be_closed (test_registry.ProjectRegistryTests.test_active_project_can_be_closed) ... ok
+test_closed_project_can_reopen_with_reason (test_registry.ProjectRegistryTests.test_closed_project_can_reopen_with_reason) ... ok
+test_closed_project_requires_reason_before_reopening (test_registry.ProjectRegistryTests.test_closed_project_requires_reason_before_reopening) ... ok
+test_duplicate_batch_does_not_partially_mutate_registry (test_registry.ProjectRegistryTests.test_duplicate_batch_does_not_partially_mutate_registry) ... ok
+test_duplicate_project_id_is_rejected (test_registry.ProjectRegistryTests.test_duplicate_project_id_is_rejected) ... ok
+test_json_output_is_sorted_stable_and_utf8_friendly (test_registry.ProjectRegistryTests.test_json_output_is_sorted_stable_and_utf8_friendly) ... ok
+test_single_project_is_added (test_registry.ProjectRegistryTests.test_single_project_is_added) ... ok
+test_two_distinct_projects_are_added (test_registry.ProjectRegistryTests.test_two_distinct_projects_are_added) ... ok
+test_unknown_status_is_rejected (test_registry.ProjectRegistryTests.test_unknown_status_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.004s
+
+OK
+test_exit=0

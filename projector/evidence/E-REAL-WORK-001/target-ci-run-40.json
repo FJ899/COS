@@ -1,0 +1,25 @@
+{
+  "repository": "FJ899/executor-pilot-target",
+  "workflow": "pilot-target-ci",
+  "workflow_file": ".github/workflows/ci.yml",
+  "run_number": 40,
+  "run_id": 32909611801,
+  "job_id": 98000971606,
+  "event": "pull_request",
+  "pr_number": 13,
+  "base_branch": "case-003-broken",
+  "base_sha": "c42bead2bbbff9c84486f17637ec80f35eeffa25",
+  "head_branch": "projector/e-real-work-001-case003",
+  "head_sha": "6d013df645c85faf2823097c86d534be53bf4093",
+  "environment": "ubuntu-latest; Python 3.11 configured by unchanged workflow",
+  "status": "completed",
+  "conclusion": "success",
+  "steps": {
+    "Compile": "success",
+    "Test": "success"
+  },
+  "frozen_commands": [
+    "python -m compileall -q project_registry tests",
+    "python -m unittest discover -s tests -v"
+  ]
+}

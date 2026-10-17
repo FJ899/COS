@@ -1,0 +1,8 @@
+HUMAN RESOLUTION — P2-OQ-V2-001
+STATUS: RESOLVED
+FIRST BOUNDED REAL-WORK VALIDATION WORKLOAD: FJ899/executor-pilot-target Issue #4 — CASE-003: restore canonical deterministic output
+HUMAN GOAL: Przywrócić deterministyczny, kanoniczny output rejestru projektów tak, aby wynik nie zależał od kolejności wejścia.
+PINNED INPUT: repository FJ899/executor-pilot-target; branch case-003-broken; starting commit c42bead2bbbff9c84486f17637ec80f35eeffa25; allowed implementation scope project_registry/registry.py; do not modify tests, PILOT_CONTRACT.md, cases/**, CI, project configuration; do not merge.
+PREDEFINED EFFECT-BASED DONE: named deterministic-order tests pass; full existing suite passes; UTF-8 preserved; exactly one final newline; no files outside allowed scope changed; result remains independently reviewable and unmerged.
+FROZEN VERIFICATION: python -m compileall -q project_registry tests ; python -m unittest discover -s tests -v ; P4 independently checks starting/final SHA, diff scope, same tests, input-order behavior, UTF-8, final newline.
+HUMAN AUTHORITY: routine reversible implementation/debugging/verification is authorized without Human operational routing; any Human operational rescue must be recorded; merge requires separate Human authority.

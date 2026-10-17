@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0",
+  "package_version": "v2.2",
+  "package_status": "P3_V2_1_PUBLIC_EFFECT_GATE_IMPLEMENTED_READY_FOR_P4_AUDIT",
+  "purpose": "Additive P3 implementation evidence for frozen Architecture Contract v2.1 AD-V2.1-001. Historical v2.0/v2.1 P3 evidence remains unchanged and separately identifiable.",
+  "task_contract": {
+    "version": "v1.0",
+    "commit": "ef128a0885310524475fba1cd291d1f34400b0cc",
+    "path": "governance/TASK_CONTRACT_PROJECTOR_REAL_PROJECT_v1.0.md",
+    "blob_sha": "b75045bb1b83fffdee87a4cb697c289f82f29655"
+  },
+  "architecture_parent": {
+    "version": "v2.0",
+    "commit": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+    "path": "governance/ARCHITECTURE_CONTRACT_PROJECTOR_REAL_PROJECT_v2.0.md",
+    "blob_sha": "e2e2158440939ba96cddffe9c0ac158ad07510f4"
+  },
+  "architecture_amendment": {
+    "version": "v2.1",
+    "decision": "AD-V2.1-001 — FRESH EXACT PUBLIC-EFFECT AUTHORITY GATE",
+    "commit": "6e07fa2cce685521e216c1c2e5c1ccf3cf7e779e",
+    "path": "governance/ARCHITECTURE_CONTRACT_PROJECTOR_REAL_PROJECT_v2.1.md",
+    "blob_sha": "caf6f6f08219cdd961af712febc37c92fe9cc768",
+    "frozen_parent": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1"
+  },
+  "implementation_lineage": {
+    "repository": "FJ899/COS",
+    "branch": "impl/projector-real-project-v2",
+    "historical_v2_0_p3_head": "68de880fe05e121e8c4aa7c15325053260da6e6b",
+    "architecture_binding_commit": "2614898f80c24660903fe711bea33353a39d9a98",
+    "implementation_commit": "e3f749181a82dada48e98d7b000b1729b8662857",
+    "implementation_tree": "6793907ab4ea4222a25f98312345c627117a299f",
+    "history_rewritten": false,
+    "merge_or_rebase_used_for_p3_continuation": false
+  },
+  "implementation_files": [
+    {
+      "path": "scripts/projector_public_effect_gate.py",
+      "blob_sha": "9b602c364fb3209f88e6f170742acd09b845b59b",
+      "git_mode": "100755",
+      "role": "Additive deterministic v2.1 public-effect preparation, exact Human authority binding, write-time revalidation, fail-closed UNKNOWN behavior, injected write-sink boundary and append-only evidence persistence."
+    },
+    {
+      "path": "tests/projector/test_projector_public_effect_gate.py",
+      "blob_sha": "5b17547340c8b47315caa59b51d3a42721981e5c",
+      "git_mode": "100644",
+      "role": "Executable non-public fake-sink verification of the ten mandatory AD-V2.1-001 cases."
+    }
+  ],
+  "runtime_boundary": {
+    "provider_credentials_present": false,
+    "provider_io_implemented_by_helper": false,
+    "write_sink": "dependency-injected only",
+    "failure_path_write_sink": "fake/mocked non-public harness",
+    "real_target_public_effect_executed_for_v2_1_verification": false,
+    "target_write_performed": false
+  },
+  "ad_v2_1_001_verification_map": [
+    {
+      "requirement": 1,
+      "claim": "Case 1 CURRENT_BASE_EQUALS_FROZEN_SOURCE is accepted only when remaining exact gates pass.",
+      "test": "test_case1_equals_source_requires_remaining_exact_gates"
+    },
+    {
+      "requirement": 2,
+      "claim": "Case 2 is CURRENT_BASE_ADVANCED_FROM_FROZEN_SOURCE and is not labeled diverged.",
+      "test": "test_case2_is_advanced_from_frozen_source_not_diverged"
+    },
+    {
+      "requirement": 3,
+      "claim": "B_PRE_PUSH and B_PRE_PR require separate fresh observations; push authority cannot authorize a changed PR tuple.",
+      "test": "test_push_and_pr_require_separate_fresh_base_observations"
+    },
+    {
+      "requirement": 4,
+      "claim": "Human PUBLIC_EFFECT authority is exact-tuple authority and rejects changed effect kind/base/candidate/D_HASH/E_HASH/target ref.",
+      "test": "test_human_authority_is_exact_hash_and_target_authority"
+    },
+    {
+      "requirement": 5,
+      "claim": "Git mode-only change changes the authorized diff envelope hash.",
+      "test": "test_mode_only_change_changes_authorized_diff_envelope"
+    },
+    {
+      "requirement": 6,
+      "claim": "Git object-type change changes the authorized diff envelope hash.",
+      "test": "test_object_type_change_changes_authorized_diff_envelope"
+    },
+    {
+      "requirement": 7,
+      "claim": "Candidate topology change changes the authorized diff envelope even with the same final candidate tree.",
+      "test": "test_candidate_topology_changes_hash_even_with_same_final_tree"
+    },
+    {
+      "requirement": 8,
+      "claim": "Unavailable base, unknown ancestry, or incomplete diff identity returns BLOCKED + UNKNOWN and invokes zero target writes.",
+      "test": "test_unknown_identity_or_diff_is_blocked_and_never_calls_sink"
+    },
+    {
+      "requirement": 9,
+      "claim": "Write-time tuple mismatch after Human authority returns BLOCKED + UNKNOWN and invokes zero target writes.",
+      "test": "test_write_time_mismatch_after_human_authority_blocks_without_write"
+    },
+    {
+      "requirement": 10,
+      "claim": "Successful allowed fake-sink path preserves exact authority/effect/result evidence while granting no merge/release/deploy/capability/Human-final-acceptance authority.",
+      "test": "test_success_preserves_exact_evidence_without_downstream_authority"
+    }
+  ],
+  "ci_evidence": {
+    "workflow": "Verify Creative OS",
+    "workflow_run_id": 33054198608,
+    "run_number": 139,
+    "job_id": 98456796583,
+    "trigger_head_sha": "e3f749181a82dada48e98d7b000b1729b8662857",
+    "checked_out_pr_merge_sha": "f1d8f9e74da01d23fecf691a9fb0026451e00635",
+    "base_integrated_by_pr_merge_ref": "6e07fa2cce685521e216c1c2e5c1ccf3cf7e779e",
+    "python": "3.11.16",
+    "projector_test_command": "python -m unittest discover -s tests/projector -p 'test_projector_*.py'",
+    "projector_tests": {
+      "count": 28,
+      "result": "OK"
+    },
+    "job_conclusion": "success",
+    "note": "This is PR integration CI: Actions checked out the synthetic PR merge commit. It is not misrepresented as a direct checkout of the implementation head."
+  },
+  "historical_evidence_boundary": {
+    "prior_p3_package": "governance/IMPLEMENTATION_PACKAGE_PROJECTOR_REAL_PROJECT_v2.1.json",
+    "prior_p3_package_blob": "3470cb14b46baa152a772c39abb494ffd6087dcc",
+    "prior_real_work_evidence": "E-REAL-WORK-001 / target PR #13",
+    "retroactively_reclassified_as_v2_1_compliance": false,
+    "reason": "Frozen Architecture Contract v2.1 is prospective for future PUBLIC_EFFECT claims."
+  },
+  "authority_state": {
+    "public_effect_human_authority_created_by_this_package": false,
+    "merge_authority": "NOT GRANTED",
+    "release_authority": "NOT GRANTED",
+    "deploy_authority": "NOT GRANTED",
+    "capability_promotion_authority": "NOT GRANTED"
+  },
+  "capability_registry": {
+    "capability": "CAP-ITO-001",
+    "status": "PROPOSED",
+    "modified_by_this_amendment_implementation": false
+  },
+  "p4_audit": "NOT YET AUDITED",
+  "human_final_acceptance": "NOT YET CREATED",
+  "package_freeze_commit": "RECORDED_EXTERNALLY_IN_P3_TO_P4_HANDOFF_BECAUSE_A_COMMIT_CANNOT_SELF_EMBED_ITS_OWN_SHA"
+}

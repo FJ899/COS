@@ -1,0 +1,18 @@
+{
+  "repository": "FJ899/executor-pilot-target",
+  "starting_sha": "c42bead2bbbff9c84486f17637ec80f35eeffa25",
+  "final_sha": "6d013df645c85faf2823097c86d534be53bf4093",
+  "status": "ahead",
+  "ahead_by": 1,
+  "behind_by": 0,
+  "total_commits": 1,
+  "changed_files": [
+    {
+      "path": "project_registry/registry.py",
+      "blob_sha": "c7a348cf2b0005d6ca515d23306998902d24800a",
+      "additions": 4,
+      "deletions": 1,
+      "change": "Restore project_id-sorted serialization in ProjectRegistry.to_payload()."
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "schema_version": "1.0",
+  "package_version": "v2.3",
+  "package_status": "P3_REMEDIATION_AFTER_P4_FAIL_READY_FOR_INDEPENDENT_P4_REAUDIT",
+  "purpose": "Additive P3 remediation package for the P4 FAIL against v2.2. It closes the caller-fabricated Human/live-Git trust-boundary blocker without rewriting frozen architecture, prior P3 evidence, or repository history.",
+  "task_contract": {
+    "version": "v1.0",
+    "commit": "ef128a0885310524475fba1cd291d1f34400b0cc",
+    "path": "governance/TASK_CONTRACT_PROJECTOR_REAL_PROJECT_v1.0.md",
+    "blob_sha": "b75045bb1b83fffdee87a4cb697c289f82f29655"
+  },
+  "architecture_parent": {
+    "version": "v2.0",
+    "commit": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1",
+    "path": "governance/ARCHITECTURE_CONTRACT_PROJECTOR_REAL_PROJECT_v2.0.md",
+    "blob_sha": "e2e2158440939ba96cddffe9c0ac158ad07510f4"
+  },
+  "architecture_amendment": {
+    "version": "v2.1",
+    "decision": "AD-V2.1-001 — FRESH EXACT PUBLIC-EFFECT AUTHORITY GATE",
+    "commit": "6e07fa2cce685521e216c1c2e5c1ccf3cf7e779e",
+    "path": "governance/ARCHITECTURE_CONTRACT_PROJECTOR_REAL_PROJECT_v2.1.md",
+    "blob_sha": "caf6f6f08219cdd961af712febc37c92fe9cc768",
+    "frozen_parent": "6916fa5ddb78604ccbf039576a0f1165d5a8a6a1"
+  },
+  "p4_input_verdict": {
+    "audited_p3_head": "2aa7f8e2c498853fd54a7f596b027e44616dfbcf",
+    "audited_p3_tree": "9edf2971ade1c8b217e4a1d718670931729937ff",
+    "verdict": "FAIL",
+    "ownership": "P3 IMPLEMENTATION",
+    "blocker": "The effect-capable consumer could reach sink.write after only structural validation of caller-supplied Human authority and caller-supplied/replayed Git/revalidation evidence.",
+    "required_remediation": "Before sink.write, genuine durable Human decision and fresh/live Git base, ancestry, candidate, diff/topology and write-time state must be obtained/verified through trusted evidence sources/adapters rather than caller assertions.",
+    "target_public_effect_authority_after_fail": "NOT GRANTED"
+  },
+  "remediation_lineage": {
+    "repository": "FJ899/COS",
+    "branch": "impl/projector-real-project-v2",
+    "previous_p3_package_head": "2aa7f8e2c498853fd54a7f596b027e44616dfbcf",
+    "initial_trusted_boundary_commit": "aa2d5a2a58deab22943c8e1fa91a5605e0017f9e",
+    "fail_closed_human_source_fix_commit": "fc860f4980b5583a838dd7bae26240a324bae7cd",
+    "single_write_surface_commit": "92decfdae584d9bb6a71a66f9d8b49402a9271fd",
+    "single_write_surface_tree": "acbc6ca3782733ecce785a485c5e41cd2024e96c",
+    "history_rewritten": false,
+    "merge_or_rebase_used_for_remediation": false,
+    "force_push_used": false
+  },
+  "implementation_files": [
+    {
+      "path": "scripts/projector_public_effect_gate.py",
+      "blob_sha": "fde937e70c68a72b0e3d70beecb707e76a020b4c",
+      "git_mode": "100755",
+      "role": "Deterministic, non-effect-capable manifest/authority tuple builder. Caller-declared evidence is explicitly CALLER_DECLARED_NOT_EFFECT_CAPABLE; legacy execute_authorized_public_effect is physically disarmed and always returns BLOCKED + UNKNOWN without invoking the sink."
+    },
+    {
+      "path": "scripts/projector_public_effect_trusted_runtime.py",
+      "blob_sha": "eb42e4610a4dfbe92261e787e9825b35c2067549",
+      "git_mode": "100755",
+      "role": "Sole canonical effect-capable runtime. It owns concrete live Git evidence retrieval/proof, concrete immutable GitHub Issue Comment Human-authority verification, a second distinct live Git write-time observation, and only then the write sink call."
+    },
+    {
+      "path": "tests/projector/test_projector_public_effect_gate.py",
+      "blob_sha": "0dc2c26b26b1fa28e19a488c96775509a1d22e99",
+      "git_mode": "100644",
+      "role": "Pure-builder and adversarial tests, including direct reproduction of the P4 caller-fabricated authority/revalidation counterexample with zero FakeSink calls."
+    },
+    {
+      "path": "tests/projector/test_projector_public_effect_trusted_runtime.py",
+      "blob_sha": "70f4e1fd9e458ff694de4f97db9a88e8a7d9651e",
+      "git_mode": "100644",
+      "role": "Non-public harness using a real temporary bare Git repository to prove ancestry/object/mode/topology reads, plus immutable-Human-comment, stale-authority, write-time race, app-mediated-authority and test-source isolation cases."
+    }
+  ],
+  "trusted_runtime_boundary": {
+    "caller_supplied_authority_can_reach_write": false,
+    "caller_supplied_git_proof_can_reach_write": false,
+    "legacy_structural_execute_path": "DISARMED_BLOCKED_UNKNOWN_ZERO_WRITE",
+    "production_git_source": "GitRepositoryEvidenceSource bound to https://github.com/<owner>/<repo>.git",
+    "fresh_base_observation": "git ls-remote per trusted invocation followed by exact fetch/FETCH_HEAD identity check",
+    "positive_ancestry": "git merge-base --is-ancestor",
+    "merge_base": "git merge-base",
+    "object_identity_and_type": "git diff --raw --no-abbrev plus git cat-file -t",
+    "candidate_topology": "git rev-list --reverse --topo-order plus git show exact commit/tree/ordered parents",
+    "human_authority_source": "GitHubIssueCommentAuthoritySource GET of exact GitHub Issue Comment",
+    "human_authority_verifies": [
+      "exact comment id",
+      "exact Issue URL",
+      "exact Human actor login/id and User type",
+      "performed_via_github_app is null",
+      "created_at equals updated_at",
+      "exact JSON decision schema",
+      "decision AUTHORIZE",
+      "exact authority_request tuple",
+      "durable comment node/body hash evidence reference"
+    ],
+    "write_time_revalidation": "a second distinct trusted Git source invocation must recompute the exact same Human-bound authority_request before the sole write call",
+    "test_source_isolation": "test-only trusted sources are accepted only with exact InMemoryNonPublicTestSink; any external-like sink is BLOCKED before write",
+    "downstream_authority_created": false
+  },
+  "p4_counterexample_remediation": {
+    "old_path": "prepare_public_effect_gate(caller data) -> caller-created authority -> caller-created revalidation -> execute_authorized_public_effect -> sink.write",
+    "current_result": "execute_authorized_public_effect always returns BLOCKED with reason UNTRUSTED_CALLER_EVIDENCE_NOT_EFFECT_CAPABLE and zero sink calls",
+    "canonical_effect_path": "trusted Git observation -> exact authority request -> immutable GitHub Human comment verification -> second distinct trusted Git observation -> exact tuple equality -> sink.write",
+    "write_before_trusted_proof_possible_by_canonical_api": false
+  },
+  "verification": {
+    "projector_test_command": "python -m unittest discover -s tests/projector -p 'test_projector_*.py'",
+    "latest_pre_package_suite": {
+      "commit": "92decfdae584d9bb6a71a66f9d8b49402a9271fd",
+      "workflow_run_id": 33056703035,
+      "run_number": 143,
+      "job_id": 98465168016,
+      "checked_out_pr_merge_sha": "77d64bd3e5ad776072c6b7f854b0602e1ea672de",
+      "base_integrated_by_pr_merge_ref": "6e07fa2cce685521e216c1c2e5c1ccf3cf7e779e",
+      "python": "3.11.16",
+      "projector_tests": 36,
+      "projector_result": "OK",
+      "job_conclusion": "success",
+      "workflow_token_permissions": ["Contents: read", "Metadata: read"]
+    },
+    "intermediate_failure_preserved": {
+      "commit": "aa2d5a2a58deab22943c8e1fa91a5605e0017f9e",
+      "workflow_run_id": 33056330132,
+      "job_id": 98463925196,
+      "conclusion": "failure",
+      "projector_tests_observed": 36,
+      "error_count": 1,
+      "error": "TypeError while handling a dict-valued performed_via_github_app test fixture",
+      "effect_write_before_failure": false,
+      "containment": "Fixed by new commits only; the failed SHA was not relabeled as PASS."
+    },
+    "post_failure_fix_ci": {
+      "commit": "fc860f4980b5583a838dd7bae26240a324bae7cd",
+      "workflow_run_id": 33056450670,
+      "job_id": 98464332586,
+      "conclusion": "success"
+    }
+  },
+  "historical_evidence_boundary": {
+    "prior_v2_2_package": "governance/IMPLEMENTATION_PACKAGE_PROJECTOR_REAL_PROJECT_v2.2.json",
+    "prior_v2_2_package_blob": "7135bd8b93a20b85862133fecd59a9801182675d",
+    "prior_v2_1_package": "governance/IMPLEMENTATION_PACKAGE_PROJECTOR_REAL_PROJECT_v2.1.json",
+    "prior_v2_1_package_blob": "3470cb14b46baa152a772c39abb494ffd6087dcc",
+    "prior_real_work_evidence": "E-REAL-WORK-001 / target PR #13",
+    "retroactively_reclassified_as_v2_1_compliance": false
+  },
+  "external_effect_state": {
+    "real_target_public_effect_executed_for_remediation": false,
+    "target_repository_write_performed": false,
+    "pr_47_metadata_updated_by_remediation": false,
+    "reason_pr_47_metadata_not_updated": "CREATE_OR_UPDATE_PR is a separately governed PUBLIC_EFFECT under frozen v2.1 and no such Human authority was granted for remediation metadata changes."
+  },
+  "capability_registry": {
+    "capability": "CAP-ITO-001",
+    "status": "PROPOSED",
+    "modified_by_remediation": false
+  },
+  "authority_state": {
+    "target_public_effect_authority": "NOT GRANTED",
+    "merge_authority": "NOT GRANTED",
+    "release_authority": "NOT GRANTED",
+    "deploy_authority": "NOT GRANTED",
+    "capability_promotion_authority": "NOT GRANTED",
+    "human_final_acceptance": "NOT YET CREATED"
+  },
+  "p4_reaudit": "NOT YET PERFORMED",
+  "package_freeze_commit": "RECORDED_EXTERNALLY_IN_P3_TO_P4_HANDOFF_BECAUSE_A_COMMIT_CANNOT_SELF_EMBED_ITS_OWN_SHA"
+}

@@ -1,0 +1,120 @@
+{
+  "assumptions": [
+    "A fresh review-only branch from the pinned starting SHA is reversible and within granted Human authority.",
+    "No Human operational rescue is required for routine implementation/debugging/verification."
+  ],
+  "claims": [],
+  "critical_unknown_or_blocker": "Whether the official post-freeze fresh-branch implementation will satisfy all frozen DONE conditions on an exact descendant of the pinned SHA.",
+  "current_done": "DONE only if test_different_input_order_produces_identical_stdout PASS; test_json_output_is_sorted_stable_and_utf8_friendly PASS; full existing suite PASS; output preserves UTF-8; output has exactly one final newline; no files outside project_registry/registry.py change; result remains review-only and unmerged.",
+  "current_goal": "Przywrócić deterministyczny, kanoniczny output rejestru projektów tak, aby wynik nie zależał od kolejności wejścia.",
+  "evidence_basis": [
+    "E-HUMAN-RESOLUTION-001",
+    "E-TARGET-ISSUE-004",
+    "E-BASELINE-FAIL-001",
+    "E-P3-DEVIATIONS-001"
+  ],
+  "goal_change": null,
+  "human_intervention": null,
+  "material_evidence_change": {
+    "evidence_refs": [
+      "E-TARGET-ISSUE-004",
+      "E-BASELINE-FAIL-001"
+    ],
+    "invalidates_current_route": false
+  },
+  "material_evidence_refs": [
+    {
+      "evidence_id": "E-HUMAN-RESOLUTION-001",
+      "immutable_identity": "sha256:de34e77a0522910f38ca20c9198c871c97676bc194ebc4c663c57f9eaacd73be",
+      "kind": "HUMAN_WORKLOAD_SELECTION",
+      "locator": "projector/evidence/E-REAL-WORK-001/human-resolution.txt",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "HUMAN",
+      "scope": "HUMAN_DECISION",
+      "supports": [
+        "P2-OQ-V2-001",
+        "R-007",
+        "AC-006"
+      ]
+    },
+    {
+      "evidence_id": "E-TARGET-ISSUE-004",
+      "immutable_identity": "sha256:bdd4ca0fcd603cae6e0380a45ec6fc807f11a1488186fc13e6af9688b89e7a62",
+      "kind": "PINNED_WORKLOAD_CONTRACT",
+      "locator": "projector/evidence/E-REAL-WORK-001/issue-4-snapshot.json",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "GitHub/FJ899-executor-pilot-target",
+      "scope": "WORKLOAD_EXTERNAL",
+      "supports": [
+        "R-007",
+        "R-011",
+        "AC-006",
+        "starting-sha",
+        "allowed-scope"
+      ]
+    },
+    {
+      "evidence_id": "E-BASELINE-FAIL-001",
+      "immutable_identity": "sha256:e15a8fdae3f1304727b3a40a86224d19b649fe4af19770fe2fb7ef88a1248cdb",
+      "kind": "TEST_RESULT",
+      "locator": "projector/evidence/E-REAL-WORK-001/baseline-case003.txt",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "P3 local exact-source reconstruction",
+      "scope": "TEST",
+      "supports": [
+        "R-005",
+        "R-007",
+        "R-008",
+        "AC-006",
+        "baseline-failure"
+      ]
+    },
+    {
+      "evidence_id": "E-P3-DEVIATIONS-001",
+      "immutable_identity": "sha256:7fc4c796d3e8f851e13a3c83c0b5dd2ec11f8cb90315a283190b98e6acd0c09c",
+      "kind": "PROCESS_DEVIATION_RECORD",
+      "locator": "projector/evidence/E-REAL-WORK-001/p3-pre-freeze-deviations.json",
+      "observed_at": "2026-08-25T23:09:12Z",
+      "producer": "P3 IMPLEMENTATION",
+      "scope": "PROJECTOR_INTERNAL",
+      "supports": [
+        "R-006",
+        "R-011",
+        "P3-DEV-001",
+        "P3-DEV-002"
+      ]
+    }
+  ],
+  "observed_facts": [
+    "Human resolved P2-OQ-V2-001 and selected FJ899/executor-pilot-target Issue #4 CASE-003.",
+    "Pinned input is case-003-broken@c42bead2bbbff9c84486f17637ec80f35eeffa25 and the branch still points to that SHA.",
+    "Reproduced baseline from exact pinned source blobs: compileall exit 0; unittest ran 13 tests and failed exactly the two deterministic-order tests named by Issue #4.",
+    "P3 performed a pre-freeze exploratory execution and an accidental Issue #11 metadata write; both are explicitly preserved as deviations and excluded from the official post-freeze execution."
+  ],
+  "previous_state_sha256": "ca9869785c15c707e3247eea5e6f853f118b31e031f363384430c9d4eec18145",
+  "route": {
+    "description": "Create a fresh review-only branch from c42bead2bbbff9c84486f17637ec80f35eeffa25, restore canonical project ordering by project_id only in project_registry/registry.py, then run the frozen verification commands.",
+    "evidence_basis": [
+      "E-TARGET-ISSUE-004",
+      "E-BASELINE-FAIL-001"
+    ],
+    "justification": "Exact baseline evidence isolates the failure to insertion-order serialization; Issue #4 requires canonical project_id ordering and limits implementation to registry.py.",
+    "next_move_kind": "ROUTINE_REVERSIBLE_IMPLEMENTATION",
+    "route_id": "CASE003-CANONICALIZE-BY-PROJECT-ID"
+  },
+  "route_change": {
+    "from_route_id": "INITIAL_BINDING",
+    "reason": "Pinned issue and reproduced baseline establish a specific reversible implementation route.",
+    "to_route_id": "CASE003-CANONICALIZE-BY-PROJECT-ID"
+  },
+  "run_id": "E-REAL-WORK-001-CASE003",
+  "run_manifest_sha256": "f8385483ebfd92981a4827db2a608c198fcf1137262b1bde091516da0f877f74",
+  "schema_version": "2.0",
+  "sequence": 1,
+  "state_sha256": "5003857689598fb3a55699d5f0c5aee4094cbba306092d4647ba0acc0bf43661",
+  "status": "ACTIVE",
+  "transition_reason": "Bind exact workload evidence and select the minimal evidence-justified implementation route before official material execution.",
+  "unknowns": [
+    "Whether the official post-freeze fresh-branch implementation will satisfy all frozen DONE conditions on an exact descendant of the pinned SHA."
+  ]
+}
